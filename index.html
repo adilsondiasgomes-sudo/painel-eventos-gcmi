@@ -787,6 +787,20 @@ details.roster-view summary{
 .about-box{font-size:13px;color:var(--ink-2);line-height:1.7;flex:1 1 auto;min-height:0;overflow-y:auto;}
 .about-box strong{color:var(--ink-1);}
 
+.backup-box{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1 1 auto;min-height:0;overflow-y:auto;}
+@media (max-width:900px){.backup-box{grid-template-columns:1fr;}}
+.backup-block{border:1px solid var(--line-soft);border-radius:var(--radius-lg);padding:14px 16px;}
+.backup-block h4{font-size:13px;letter-spacing:.04em;color:var(--gold);margin-bottom:8px;text-transform:uppercase;}
+.backup-block p{font-size:12.5px;color:var(--ink-2);line-height:1.65;margin-bottom:12px;}
+.backup-block p strong{color:var(--ink-1);}
+.backup-block code{font-family:var(--font-mono);font-size:11.5px;background:var(--bg-panel-2);padding:1px 5px;border-radius:4px;}
+.backup-import-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.backup-file-name{font-size:12px;color:var(--ink-3);font-family:var(--font-mono);}
+.backup-summary{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bg-panel-2);border:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2);line-height:1.6;}
+.backup-summary strong{color:var(--ink-1);}
+#btnBackupImport{margin-top:12px;}
+#btnBackupImport.confirm{background:var(--red-crest);color:#fff;border-color:var(--red-crest);}
+
 /* ================= RELATORIOS =================
    Título "Relatórios" já aparece na barra superior compacta (subheader),
    então aqui o botão de imprimir entra direto na própria linha de filtros
@@ -1144,6 +1158,12 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 .version-entry ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:13px;line-height:1.7;}
 .version-entry li{margin-bottom:2px;}
 
+/* Garante que o atributo "hidden" sempre esconda o elemento visualmente,
+   mesmo em componentes (.btn, .tab-btn etc.) que definem display próprio
+   com a mesma origem de autor — sem isso, [hidden] perde a disputa de
+   cascata para regras de display mais específicas do componente. */
+[hidden]{display:none!important;}
+
 </style>
 
 <header class="topbar brushed">
@@ -1174,8 +1194,8 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 <nav class="tabs" id="tabsNav">
   <button class="tab-btn active" data-view="agenda">Agenda <span class="n" id="tabCountAll">0</span></button>
   <button class="tab-btn" data-view="form">＋ Novo Evento</button>
-  <button class="tab-btn" data-view="config">Configurações</button>
   <button class="tab-btn" data-view="relatorios">Relatórios</button>
+  <button class="tab-btn" data-view="config">Configurações</button>
 </nav>
 
 <div class="subheader brushed" id="subHeader">
@@ -1361,6 +1381,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <button data-cfgpane="recursos">B · Recursos</button>
       <button data-cfgpane="gestao">C · Gestão</button>
       <button data-cfgpane="efetivo">D · Efetivo</button>
+      <button data-cfgpane="backup">E · Backup</button>
       <button data-cfgpane="sobre">i · Sobre</button>
     </div>
 
@@ -1415,9 +1436,33 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <div class="cfg-pane" data-cfgpane="backup">
+      <div class="panel">
+        <div class="panel-head"><span class="idx">E</span><h3>Backup de Dados</h3><span class="desc">Exportar ou restaurar uma cópia de segurança dos eventos e configurações</span></div>
+        <div class="backup-box">
+          <div class="backup-block">
+            <h4>Exportar</h4>
+            <p>Baixa um arquivo <code>.json</code> com todos os eventos e as configurações atuais (locais, recursos, gestão e efetivo). Guarde em local seguro como cópia de segurança.</p>
+            <button class="btn btn-sm btn-gold" id="btnBackupExport" type="button">Exportar backup (.json)</button>
+          </div>
+          <div class="backup-block">
+            <h4>Importar</h4>
+            <p>Restaura os dados a partir de um arquivo de backup exportado anteriormente. <strong>Isso substitui todos os eventos e configurações atuais do painel</strong> — use com cuidado.</p>
+            <input type="file" id="backupFileInput" accept="application/json,.json" hidden />
+            <div class="backup-import-row">
+              <button class="btn btn-sm" id="btnBackupChooseFile" type="button">Selecionar arquivo…</button>
+              <span class="backup-file-name" id="backupFileName">Nenhum arquivo selecionado</span>
+            </div>
+            <div class="backup-summary" id="backupSummary" hidden></div>
+            <button class="btn btn-sm btn-danger" id="btnBackupImport" type="button" hidden>Substituir dados atuais</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v1.9.7 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v1.9.10 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1623,6 +1668,27 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 var VERSION_LOG = [
   {
+    version: 'v1.9.10', date: '11/09/2026',
+    changes: [
+      'Corrigido bug real de CSS: elementos marcados para ficar ocultos (ex.: aba "＋ Novo Evento" sem login) tinham o atributo certo aplicado, mas em botões com estilo próprio de exibição (".btn", ".tab-btn") isso não bastava para escondê-los de fato na tela — agora um estilo mais forte garante que "oculto" sempre significa oculto visualmente, em qualquer componente.',
+      'Novo módulo em Configurações → "E · Backup" (visível só para quem está logado): exportar um arquivo .json com todos os eventos e configurações atuais, e importar um arquivo de backup para restaurar os dados — com resumo do conteúdo do arquivo e confirmação em dois cliques antes de substituir os dados atuais.'
+    ]
+  },
+  {
+    version: 'v1.9.9', date: '11/09/2026',
+    changes: [
+      'Na apresentação pública (sem login), a aba "＋ Novo Evento" também deixou de aparecer no menu.',
+      'Reforço de segurança: os botões "Editar" e "Duplicar" dos eventos agora pedem login antes de abrir o formulário, em vez de deixar preencher e só bloquear no final.'
+    ]
+  },
+  {
+    version: 'v1.9.8', date: '11/09/2026',
+    changes: [
+      'Ordem das abas ajustada: "Relatórios" agora aparece antes de "Configurações" no menu principal.',
+      'Na apresentação pública (sem login), a tela de Configurações passou a exibir apenas a sub-aba "i · Sobre" — as demais (Locais, Recursos, Gestão, Efetivo) só ficam visíveis para quem está logado.'
+    ]
+  },
+  {
     version: 'v1.9.7', date: '11/09/2026',
     changes: [
       'Créditos de autoria inseridos de forma discreta: agora aparecem só ao clicar no brasão, que abre ampliado, com contorno neon dourado retroiluminado.',
@@ -1791,6 +1857,8 @@ var mode = 'connecting';
 var seedTried = false;
 var pendingDelete = null;
 var pendingRosterDelete = null;
+var pendingBackupPayload = null;
+var pendingBackupConfirm = false;
 
 /* ---------------- helpers ---------------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -2043,7 +2111,124 @@ function saveRosterAdded(items){
   return Promise.resolve();
 }
 
+/* ---------------- backup: exportar / importar (JSON) ---------------- */
+var BACKUP_SCHEMA = 'painel-eventos-gcmi-backup';
+function backupExportPayload(){
+  return {
+    schema: BACKUP_SCHEMA,
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    events: (state.events||[]).map(function(e){
+      return {
+        tipo:e.tipo, data:e.data, horaInicio:e.horaInicio, horaTermino:e.horaTermino,
+        localRef:e.localRef, endereco:e.endereco||{}, efetivo:e.efetivo||[], recursos:e.recursos||[],
+        modalidade:e.modalidade||null, solicitante:e.solicitante||null, contato:e.contato||null,
+        exemplo:!!e.exemplo, createdAt:e.createdAt||null
+      };
+    }),
+    config: {
+      localRefs: state.localRefs||[],
+      resourceTypes: state.resourceTypes||[],
+      gestaoExtra: state.gestaoExtra||[],
+      rosterRemoved: state.rosterRemoved||[],
+      rosterAdded: state.rosterAdded||[]
+    }
+  };
+}
+function downloadBackupFile(){
+  if(!requireAuth()) return;
+  var payload = backupExportPayload();
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var d = new Date();
+  var stamp = d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());
+  var a = document.createElement('a');
+  a.href = url; a.download = 'painel-eventos-gcmi-backup-'+stamp+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  showToast('Backup exportado: '+payload.events.length+' evento(s).');
+}
+function parseBackupFile(text){
+  var data;
+  try{ data = JSON.parse(text); }catch(e){ throw new Error('Arquivo não é um JSON válido.'); }
+  if(!data || typeof data!=='object' || !Array.isArray(data.events)){
+    throw new Error('Arquivo não parece ser um backup deste painel (estrutura inesperada).');
+  }
+  return data;
+}
+function replaceAllEvents(events){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  if(mode==='live'){
+    var rows = events.map(toDbRow);
+    return sb.from('events').delete().not('id','is',null).then(function(delRes){
+      if(delRes.error) throw delRes.error;
+      if(!rows.length) return fetchEvents();
+      return sb.from('events').insert(rows).then(function(insRes){
+        if(insRes.error) throw insRes.error;
+        return fetchEvents();
+      });
+    });
+  }
+  var list = events.map(function(e, i){ return Object.assign({id:'imp_'+Date.now()+'_'+i}, e); });
+  saveLS(LS_KEYS.events, list);
+  state.events = list;
+  renderMain();
+  return Promise.resolve();
+}
+function replaceConfigAll(cfg){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  cfg = cfg || {};
+  var localRefs = (Array.isArray(cfg.localRefs) && cfg.localRefs.length) ? cfg.localRefs : DEFAULT_LOCAL_REFS.slice();
+  var resourceTypes = (Array.isArray(cfg.resourceTypes) && cfg.resourceTypes.length) ? cfg.resourceTypes : DEFAULT_RESOURCE_TYPES.slice();
+  var gestaoExtra = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra : [];
+  var rosterRemoved = Array.isArray(cfg.rosterRemoved) ? cfg.rosterRemoved : [];
+  var rosterAdded = Array.isArray(cfg.rosterAdded) ? cfg.rosterAdded : [];
+  if(mode==='live'){
+    return Promise.all([
+      upsertConfig('local-refs', {items:localRefs}),
+      upsertConfig('resource-types', {items:resourceTypes}),
+      upsertConfig('gestao-extra', {items:gestaoExtra}),
+      upsertConfig('roster-removed', {items:rosterRemoved}),
+      upsertConfig('roster-added', {items:rosterAdded})
+    ]).then(function(){ return fetchConfigAll(); });
+  }
+  state.localRefs = localRefs; state.resourceTypes = resourceTypes; state.gestaoExtra = gestaoExtra;
+  state.rosterRemoved = rosterRemoved; state.rosterAdded = rosterAdded;
+  saveLS(LS_KEYS.refs, localRefs); saveLS(LS_KEYS.res, resourceTypes); saveLS(LS_KEYS.gestao, gestaoExtra);
+  saveLS(LS_KEYS.rosterRemoved, rosterRemoved); saveLS(LS_KEYS.rosterAdded, rosterAdded);
+  renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources();
+  renderCfgGestao(); renderEfetivoList(); renderRosterGrid();
+  return Promise.resolve();
+}
+function importBackupPayload(payload){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  return replaceAllEvents(payload.events||[]).then(function(){
+    return replaceConfigAll(payload.config||{});
+  });
+}
+
 /* ---------------- auth (login restrito para edição) ---------------- */
+function isPublicRestricted(){
+  return mode==='live' && !authUser;
+}
+function updateCfgAccessUI(){
+  var restricted = isPublicRestricted();
+  document.querySelectorAll('#cfgSubnav button').forEach(function(b){
+    b.hidden = restricted && b.dataset.cfgpane!=='sobre';
+  });
+  if(restricted && document.body.getAttribute('data-screen')==='config'){
+    var activePane = document.querySelector('.cfg-pane.active');
+    if(activePane && activePane.dataset.cfgpane!=='sobre'){ goToCfgPane('sobre'); }
+  }
+}
+function updateFormAccessUI(){
+  var restricted = isPublicRestricted();
+  document.querySelectorAll('[data-view="form"], [data-goto="form"]').forEach(function(b){ b.hidden = restricted; });
+  if(restricted && document.body.getAttribute('data-screen')==='form'){
+    resetForm();
+    goToView('agenda');
+  }
+}
 function updateAuthUI(){
   var btn = $('authBtn'), label = $('authUserLabel');
   if(!btn) return;
@@ -2056,6 +2241,8 @@ function updateAuthUI(){
     label.hidden = true;
     label.textContent = '';
   }
+  updateCfgAccessUI();
+  updateFormAccessUI();
 }
 function loginModalHTML(){
   return '<div class="modal-head"><h3>Entrar para editar</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
@@ -2103,6 +2290,7 @@ function initStore(){
     setSyncStatus(false, true);
     loadLocalAll();
     maybeSeedLocal();
+    updateAuthUI();
     return;
   }
   try{
@@ -2113,10 +2301,12 @@ function initStore(){
     setSyncStatus(false, true);
     loadLocalAll();
     maybeSeedLocal();
+    updateAuthUI();
     return;
   }
   mode = 'live';
   setSyncStatus(true);
+  updateAuthUI();
   sb.auth.getSession().then(function(res){
     authUser = (res.data && res.data.session) ? res.data.session.user : null;
     updateAuthUI();
@@ -2610,7 +2800,7 @@ function resetForm(){
   renderRefSelect();
   renderLocalSugestoes();
 }
-function newEventFlow(){ resetForm(); goToView('form'); }
+function newEventFlow(){ if(!requireAuth()) return; resetForm(); goToView('form'); }
 function fillFormFromEvent(ev, opts){
   opts = opts || {};
   selectType(ev.tipo);
@@ -2637,6 +2827,7 @@ function fillFormFromEvent(ev, opts){
   $('f-contato').value = ev.contato||'';
 }
 function openEditForm(id){
+  if(!requireAuth()) return;
   var ev = state.events.find(function(x){ return x.id===id; });
   if(!ev) return;
   resetForm();
@@ -2646,6 +2837,7 @@ function openEditForm(id){
   $('btnSubmitForm').textContent = 'Salvar Alterações';
 }
 function duplicateEvent(id){
+  if(!requireAuth()) return;
   var ev = state.events.find(function(x){ return x.id===id; });
   if(!ev) return;
   resetForm();
@@ -2846,7 +3038,7 @@ function goToView(name){
   document.body.setAttribute('data-screen', name);
   if(name==='form'){ $('subHeaderTitle').textContent = state.editingId ? 'Editar Evento' : 'Novo Evento'; }
   else if(SUBHEADER_TITLES[name]){ $('subHeaderTitle').textContent = SUBHEADER_TITLES[name]; }
-  if(name==='config'){ goToCfgPane('locais'); }
+  if(name==='config'){ goToCfgPane(isPublicRestricted() ? 'sobre' : 'locais'); }
   if(name==='relatorios'){ initRelFilters(); renderRelatorio(); }
   window.scrollTo({top:0, behavior:'auto'});
 }
@@ -3136,6 +3328,81 @@ $_onReady(function(){
       showToast('Eventos de exemplo removidos.');
     }).catch(function(){});
   });
+
+  /* ---------------- backup: wiring ---------------- */
+  try{
+    $('btnBackupExport').addEventListener('click', function(){
+      if(!requireAuth()) return;
+      downloadBackupFile();
+    });
+    $('btnBackupChooseFile').addEventListener('click', function(){
+      if(!requireAuth()) return;
+      $('backupFileInput').click();
+    });
+    $('backupFileInput').addEventListener('change', function(e){
+      var file = e.target.files && e.target.files[0];
+      pendingBackupPayload = null;
+      pendingBackupConfirm = false;
+      var importBtn = $('btnBackupImport');
+      importBtn.hidden = true; importBtn.disabled = false; importBtn.classList.remove('confirm'); importBtn.textContent = 'Substituir dados atuais';
+      var summaryEl = $('backupSummary'); summaryEl.hidden = true; summaryEl.innerHTML = '';
+      if(!file){ $('backupFileName').textContent = 'Nenhum arquivo selecionado'; return; }
+      $('backupFileName').textContent = file.name;
+      var reader = new FileReader();
+      reader.onload = function(){
+        try{
+          var payload = parseBackupFile(String(reader.result||''));
+          pendingBackupPayload = payload;
+          var cfg = payload.config || {};
+          var nLocais = Array.isArray(cfg.localRefs) ? cfg.localRefs.length : 0;
+          var nRecursos = Array.isArray(cfg.resourceTypes) ? cfg.resourceTypes.length : 0;
+          var nGestao = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra.length : 0;
+          var exportedInfo = payload.exportedAt ? (' — exportado em '+new Date(payload.exportedAt).toLocaleString('pt-BR')) : '';
+          summaryEl.innerHTML = 'Arquivo lido: <strong>'+payload.events.length+' evento(s)</strong>, '+nLocais+' referência(s) de local, '+nRecursos+' tipo(s) de recurso, '+nGestao+' integrante(s) de gestão extra'+exportedInfo+'.';
+          summaryEl.hidden = false;
+          importBtn.hidden = false;
+        }catch(err){
+          showToast((err && err.message) || 'Não foi possível ler o arquivo de backup.');
+          $('backupFileName').textContent = 'Nenhum arquivo selecionado';
+        }
+      };
+      reader.onerror = function(){ showToast('Erro ao ler o arquivo.'); };
+      reader.readAsText(file);
+    });
+    $('btnBackupImport').addEventListener('click', function(){
+      if(!requireAuth()) return;
+      if(!pendingBackupPayload) return;
+      var btn = $('btnBackupImport');
+      if(pendingBackupConfirm){
+        pendingBackupConfirm = false;
+        btn.disabled = true;
+        btn.textContent = 'Importando…';
+        var payload = pendingBackupPayload;
+        importBackupPayload(payload).then(function(){
+          showToast('Backup importado: '+(payload.events||[]).length+' evento(s) restaurado(s).');
+          pendingBackupPayload = null;
+          btn.hidden = true; btn.disabled = false; btn.classList.remove('confirm'); btn.textContent = 'Substituir dados atuais';
+          $('backupSummary').hidden = true;
+          $('backupFileName').textContent = 'Nenhum arquivo selecionado';
+          $('backupFileInput').value = '';
+        }).catch(function(err){
+          btn.disabled = false;
+          showToast('Erro ao importar backup: '+((err && err.message) || err));
+        });
+      } else {
+        pendingBackupConfirm = true;
+        btn.classList.add('confirm');
+        btn.textContent = 'Confirmar substituição (todos os dados atuais serão perdidos)';
+        setTimeout(function(){
+          if(pendingBackupConfirm){
+            pendingBackupConfirm = false;
+            btn.classList.remove('confirm');
+            btn.textContent = 'Substituir dados atuais';
+          }
+        }, 6000);
+      }
+    });
+  }catch(e){ console.error('wiring backup', e); }
 
   initStore();
 });
