@@ -480,6 +480,10 @@ input:focus,select:focus,textarea:focus{
 }
 .panel-head h3{font-size:15px;letter-spacing:.05em;}
 .panel-head .desc{font-size:12px;color:var(--ink-3);font-family:var(--font-body);text-transform:none;letter-spacing:0;margin-left:2px;}
+@media (max-width:480px){
+  .panel-head{flex-wrap:wrap;}
+  .panel-head .desc{flex-basis:100%;margin-left:0;margin-top:2px;}
+}
 
 /* ---------- type selector ---------- */
 .type-select{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -1322,8 +1326,8 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
           <div class="form-col">
             <div class="panel">
-              <div class="panel-head"><span class="idx">3</span><h3>Logística</h3><span class="desc">Recurso/equipe empregado — o dado principal do planejamento</span></div>
-              <div class="field-hint">Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):</div>
+              <div class="panel-head"><span class="idx">3</span><h3 id="logisticaTitle">Logística</h3><span class="desc" id="logisticaDesc">Recurso/equipe empregado — o dado principal do planejamento</span></div>
+              <div class="field-hint" id="logisticaHint">Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):</div>
               <div class="recurso-add" style="margin-top:10px;">
                 <select id="f-recurso-tipo"></select>
                 <input type="text" id="f-recurso-qtd" value="1" inputmode="numeric" placeholder="Qtd." />
@@ -1355,10 +1359,14 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             </div>
 
             <div class="panel">
-              <div class="panel-head"><span class="idx">5</span><h3>Solicitante</h3><span class="desc">Responsável pela solicitação do evento</span></div>
+              <div class="panel-head"><span class="idx">5</span><h3 id="solicitanteTitle">Solicitante</h3><span class="desc" id="solicitanteDesc">Responsável pela solicitação do evento</span></div>
+              <div class="field" id="fieldAssunto" hidden>
+                <label for="f-assunto">Assunto / Motivo</label>
+                <input type="text" id="f-assunto" placeholder="Ex.: Reunião de alinhamento com a Corregedoria" />
+              </div>
               <div class="grid grid-2">
-                <div class="field"><label for="f-solicitante">Nome do solicitante</label><input type="text" id="f-solicitante" placeholder="Nome completo" required /></div>
-                <div class="field"><label for="f-contato">Contato (celular/outro)</label><input type="tel" id="f-contato" placeholder="(31) 9XXXX-XXXX" required /></div>
+                <div class="field"><label for="f-solicitante" id="labelSolicitante">Nome do solicitante</label><input type="text" id="f-solicitante" placeholder="Nome completo" required /></div>
+                <div class="field"><label for="f-contato" id="labelContato">Contato (celular/outro)</label><input type="tel" id="f-contato" placeholder="(31) 9XXXX-XXXX" required /></div>
               </div>
             </div>
           </div>
@@ -1379,9 +1387,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="seg cfg-subnav" id="cfgSubnav">
       <button class="active" data-cfgpane="locais">A · Locais</button>
       <button data-cfgpane="recursos">B · Recursos</button>
-      <button data-cfgpane="gestao">C · Gestão</button>
-      <button data-cfgpane="efetivo">D · Efetivo</button>
-      <button data-cfgpane="backup">E · Backup</button>
+      <button data-cfgpane="participantes">C · Participantes</button>
+      <button data-cfgpane="gestao">D · Gestão</button>
+      <button data-cfgpane="efetivo">E · Efetivo</button>
+      <button data-cfgpane="backup">F · Backup</button>
       <button data-cfgpane="sobre">i · Sobre</button>
     </div>
 
@@ -1398,7 +1407,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="recursos">
       <div class="panel">
-        <div class="panel-head"><span class="idx">B</span><h3>Tipos de Recurso / Equipe</h3><span class="desc">Opções para previsão sem nominação (ex.: viaturas, grupamentos)</span></div>
+        <div class="panel-head"><span class="idx">B</span><h3>Tipos de Recurso / Equipe</h3><span class="desc">Logística de eventos operacionais — viaturas, grupamentos e equipes</span></div>
         <div class="cfg-add">
           <input type="text" id="cfgResInput" placeholder="Novo tipo (ex.: GPR (Motos))" />
           <button class="btn btn-sm" id="cfgResAdd">Adicionar</button>
@@ -1407,9 +1416,20 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <div class="cfg-pane" data-cfgpane="participantes">
+      <div class="panel">
+        <div class="panel-head"><span class="idx">C</span><h3>Participantes (Eventos Administrativos)</h3><span class="desc">Quem participa de reuniões, cursos e demais compromissos internos</span></div>
+        <div class="cfg-add">
+          <input type="text" id="cfgPartInput" placeholder="Novo tipo (ex.: Inspetores)" />
+          <button class="btn btn-sm" id="cfgPartAdd">Adicionar</button>
+        </div>
+        <div class="cfg-list scroll" id="cfgPartList"></div>
+      </div>
+    </div>
+
     <div class="cfg-pane" data-cfgpane="gestao">
       <div class="panel">
-        <div class="panel-head"><span class="idx">C</span><h3>Integrantes de Gestão</h3><span class="desc">GCM de gestão que não constam na planilha de efetivo</span></div>
+        <div class="panel-head"><span class="idx">D</span><h3>Integrantes de Gestão</h3><span class="desc">GCM de gestão que não constam na planilha de efetivo</span></div>
         <div class="cfg-add">
           <input type="text" id="cfgGestNome" placeholder="Nome completo" style="flex:2;" />
           <input type="text" id="cfgGestFunc" placeholder="Nome funcional" style="flex:1;" />
@@ -1423,7 +1443,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="efetivo">
       <div class="panel">
-        <div class="panel-head"><span class="idx">D</span><h3>Efetivo da Planilha</h3><span class="desc">Base extraída da relação atualizada da GCMI, com integrantes incluídos manualmente</span></div>
+        <div class="panel-head"><span class="idx">E</span><h3>Efetivo da Planilha</h3><span class="desc">Base extraída da relação atualizada da GCMI, com integrantes incluídos manualmente</span></div>
         <div class="roster-note">Carregados da planilha (08/09/2026) + inclusões manuais: <span class="count" id="rosterCount">0</span> integrantes</div>
         <div class="cfg-add">
           <input type="text" id="rosterAddNome" placeholder="Nome completo" style="flex:2;" />
@@ -1438,7 +1458,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="backup">
       <div class="panel">
-        <div class="panel-head"><span class="idx">E</span><h3>Backup de Dados</h3><span class="desc">Exportar ou restaurar uma cópia de segurança dos eventos e configurações</span></div>
+        <div class="panel-head"><span class="idx">F</span><h3>Backup de Dados</h3><span class="desc">Exportar ou restaurar uma cópia de segurança dos eventos e configurações</span></div>
         <div class="backup-box">
           <div class="backup-block">
             <h4>Exportar</h4>
@@ -1462,7 +1482,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v1.9.10 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v2.0 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1656,17 +1676,29 @@ window.addEventListener('error', function(e){
 /* ---------------- defaults ---------------- */
 var DEFAULT_LOCAL_REFS = ["Escola","Hospital","Posto de Saúde","CONSEP","Igreja Católica","Igreja Evangélica","Delegacia","14º BPM","58º BPM","12ª RPM","12ª Delegacia Regional","11º BBM"];
 var DEFAULT_RESOURCE_TYPES = ["GM (Guarda Municipal)","VTR","GPEC (Escolar)","GPR (Motos)","Equipe Tática","Apoio Administrativo"];
+var DEFAULT_PARTICIPANT_TYPES = ["Comandante/Subcomandante","Inspetores","Todo o Efetivo (Curso/Formação)","Efetivo Convocado"];
 var MODALIDADES = {
   operacional: ["Ponto Base","Passagem Periódica","Início ao Término"],
   administrativo: ["Curso (EQP)","Palestra","Diligência","Reunião","Ponto Base","Passagem Periódica","Início ao Término","Outro"]
 };
-var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_gestao', res:'gcmi_ev_res', meta:'gcmi_ev_meta', rosterRemoved:'gcmi_ev_roster_removed', rosterAdded:'gcmi_ev_roster_added'};
+var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_gestao', res:'gcmi_ev_res', part:'gcmi_ev_part', meta:'gcmi_ev_meta', rosterRemoved:'gcmi_ev_roster_removed', rosterAdded:'gcmi_ev_roster_added'};
 
 /* ---------------- Supabase ---------------- */
 var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v2.0', date: '15/09/2026',
+    changes: [
+      'Formulário de lançamento revisado a partir da análise dos eventos já registrados: eventos administrativos (reuniões, cursos, diligências) agora têm um campo próprio de "Assunto/Motivo" — antes esse dado era anotado de improviso no campo Solicitante, misturando informações.',
+      'O painel "Logística" passou a se chamar "Participantes" nos eventos administrativos, com uma lista de tipos de participante configurável separadamente (ex.: Comandante/Subcomandante, Inspetores, Todo o Efetivo) — distinta da lista de recursos operacionais (viaturas, equipes), que fica só para eventos operacionais. Nova sub-aba "C · Participantes" em Configurações.',
+      'Em eventos administrativos, Solicitante/Contato deixaram de ser obrigatórios (o dado relevante agora é o Assunto); em eventos operacionais nada mudou — continuam obrigatórios como antes.',
+      'Cartões, modal de detalhes e tabela de eventos passaram a exibir o Assunto e a rotular corretamente "Participantes" x "Recursos" e "Responsável" x "Solicitante" conforme o tipo do evento.',
+      'Backup (exportar/importar) atualizado para incluir a nova lista de tipos de participante.',
+      'Correção de dados: foram ajustados no banco alguns lançamentos administrativos antigos que usavam o campo Solicitante como título da reunião, contatos "genéricos" incorretos, uma quantidade de recurso digitada errada, e duplicidade no nome de um dos locais cadastrados.'
+    ]
+  },
   {
     version: 'v1.9.10', date: '11/09/2026',
     changes: [
@@ -1836,6 +1868,7 @@ var state = {
   events: [],
   localRefs: DEFAULT_LOCAL_REFS.slice(),
   resourceTypes: DEFAULT_RESOURCE_TYPES.slice(),
+  participantTypes: DEFAULT_PARTICIPANT_TYPES.slice(),
   gestaoExtra: [],
   rosterRemoved: [],
   rosterAdded: [],
@@ -1939,7 +1972,7 @@ function toDbRow(e){
   var row = {
     tipo: e.tipo, data: e.data, hora_inicio: e.horaInicio, hora_termino: e.horaTermino,
     local_ref: e.localRef, endereco: e.endereco||{}, efetivo: e.efetivo||[], recursos: e.recursos||[],
-    modalidade: e.modalidade||null, solicitante: e.solicitante||null, contato: e.contato||null,
+    modalidade: e.modalidade||null, assunto: e.assunto||null, solicitante: e.solicitante||null, contato: e.contato||null,
     exemplo: !!e.exemplo
   };
   if(e.createdAt) row.created_at = e.createdAt;
@@ -1949,7 +1982,7 @@ function fromDbRow(r){
   return {
     id:r.id, tipo:r.tipo, data:r.data, horaInicio:r.hora_inicio, horaTermino:r.hora_termino,
     localRef:r.local_ref, endereco:r.endereco||{}, efetivo:r.efetivo||[], recursos:r.recursos||[],
-    modalidade:r.modalidade, solicitante:r.solicitante, contato:r.contato, exemplo:!!r.exemplo,
+    modalidade:r.modalidade, assunto:r.assunto||null, solicitante:r.solicitante, contato:r.contato, exemplo:!!r.exemplo,
     createdAt:r.created_at
   };
 }
@@ -1978,11 +2011,14 @@ function fetchConfigAll(){
     if(!map['local-refs']) upsertConfig('local-refs', {items: state.localRefs}).catch(function(){});
     state.resourceTypes = (map['resource-types'] && Array.isArray(map['resource-types'].items) && map['resource-types'].items.length) ? map['resource-types'].items : DEFAULT_RESOURCE_TYPES.slice();
     if(!map['resource-types']) upsertConfig('resource-types', {items: state.resourceTypes}).catch(function(){});
+    state.participantTypes = (map['participant-types'] && Array.isArray(map['participant-types'].items) && map['participant-types'].items.length) ? map['participant-types'].items : DEFAULT_PARTICIPANT_TYPES.slice();
+    if(!map['participant-types']) upsertConfig('participant-types', {items: state.participantTypes}).catch(function(){});
     state.gestaoExtra = (map['gestao-extra'] && Array.isArray(map['gestao-extra'].items)) ? map['gestao-extra'].items : [];
     state.rosterRemoved = (map['roster-removed'] && Array.isArray(map['roster-removed'].items)) ? map['roster-removed'].items : [];
     state.rosterAdded = (map['roster-added'] && Array.isArray(map['roster-added'].items)) ? map['roster-added'].items : [];
     renderRefSelect(); renderCfgRefs();
     renderResourceSelect(); renderCfgResources();
+    renderParticipantSelect(); renderCfgParticipants();
     renderCfgGestao();
     renderEfetivoList(); renderRosterGrid();
   });
@@ -1999,10 +2035,11 @@ function loadLocalAll(){
   state.events = loadLS(LS_KEYS.events, []);
   state.localRefs = loadLS(LS_KEYS.refs, null) || DEFAULT_LOCAL_REFS.slice();
   state.resourceTypes = loadLS(LS_KEYS.res, null) || DEFAULT_RESOURCE_TYPES.slice();
+  state.participantTypes = loadLS(LS_KEYS.part, null) || DEFAULT_PARTICIPANT_TYPES.slice();
   state.gestaoExtra = loadLS(LS_KEYS.gestao, []);
   state.rosterRemoved = loadLS(LS_KEYS.rosterRemoved, []);
   state.rosterAdded = loadLS(LS_KEYS.rosterAdded, []);
-  renderMain(); renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources(); renderEfetivoList(); renderCfgGestao(); renderRosterGrid();
+  renderMain(); renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources(); renderParticipantSelect(); renderCfgParticipants(); renderEfetivoList(); renderCfgGestao(); renderRosterGrid();
 }
 function maybeSeedLocal(){
   var meta = loadLS(LS_KEYS.meta, {});
@@ -2086,6 +2123,14 @@ function saveResourceTypes(items){
   renderResourceSelect(); renderCfgResources();
   return Promise.resolve();
 }
+function saveParticipantTypes(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  state.participantTypes = items;
+  if(mode==='live'){ return upsertConfig('participant-types', {items:items}).then(function(){ return fetchConfigAll(); }); }
+  saveLS(LS_KEYS.part, items);
+  renderParticipantSelect(); renderCfgParticipants();
+  return Promise.resolve();
+}
 function saveGestao(items){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   state.gestaoExtra = items;
@@ -2122,13 +2167,14 @@ function backupExportPayload(){
       return {
         tipo:e.tipo, data:e.data, horaInicio:e.horaInicio, horaTermino:e.horaTermino,
         localRef:e.localRef, endereco:e.endereco||{}, efetivo:e.efetivo||[], recursos:e.recursos||[],
-        modalidade:e.modalidade||null, solicitante:e.solicitante||null, contato:e.contato||null,
+        modalidade:e.modalidade||null, assunto:e.assunto||null, solicitante:e.solicitante||null, contato:e.contato||null,
         exemplo:!!e.exemplo, createdAt:e.createdAt||null
       };
     }),
     config: {
       localRefs: state.localRefs||[],
       resourceTypes: state.resourceTypes||[],
+      participantTypes: state.participantTypes||[],
       gestaoExtra: state.gestaoExtra||[],
       rosterRemoved: state.rosterRemoved||[],
       rosterAdded: state.rosterAdded||[]
@@ -2180,6 +2226,7 @@ function replaceConfigAll(cfg){
   cfg = cfg || {};
   var localRefs = (Array.isArray(cfg.localRefs) && cfg.localRefs.length) ? cfg.localRefs : DEFAULT_LOCAL_REFS.slice();
   var resourceTypes = (Array.isArray(cfg.resourceTypes) && cfg.resourceTypes.length) ? cfg.resourceTypes : DEFAULT_RESOURCE_TYPES.slice();
+  var participantTypes = (Array.isArray(cfg.participantTypes) && cfg.participantTypes.length) ? cfg.participantTypes : DEFAULT_PARTICIPANT_TYPES.slice();
   var gestaoExtra = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra : [];
   var rosterRemoved = Array.isArray(cfg.rosterRemoved) ? cfg.rosterRemoved : [];
   var rosterAdded = Array.isArray(cfg.rosterAdded) ? cfg.rosterAdded : [];
@@ -2187,16 +2234,18 @@ function replaceConfigAll(cfg){
     return Promise.all([
       upsertConfig('local-refs', {items:localRefs}),
       upsertConfig('resource-types', {items:resourceTypes}),
+      upsertConfig('participant-types', {items:participantTypes}),
       upsertConfig('gestao-extra', {items:gestaoExtra}),
       upsertConfig('roster-removed', {items:rosterRemoved}),
       upsertConfig('roster-added', {items:rosterAdded})
     ]).then(function(){ return fetchConfigAll(); });
   }
-  state.localRefs = localRefs; state.resourceTypes = resourceTypes; state.gestaoExtra = gestaoExtra;
+  state.localRefs = localRefs; state.resourceTypes = resourceTypes; state.participantTypes = participantTypes; state.gestaoExtra = gestaoExtra;
   state.rosterRemoved = rosterRemoved; state.rosterAdded = rosterAdded;
-  saveLS(LS_KEYS.refs, localRefs); saveLS(LS_KEYS.res, resourceTypes); saveLS(LS_KEYS.gestao, gestaoExtra);
+  saveLS(LS_KEYS.refs, localRefs); saveLS(LS_KEYS.res, resourceTypes); saveLS(LS_KEYS.part, participantTypes); saveLS(LS_KEYS.gestao, gestaoExtra);
   saveLS(LS_KEYS.rosterRemoved, rosterRemoved); saveLS(LS_KEYS.rosterAdded, rosterAdded);
   renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources();
+  renderParticipantSelect(); renderCfgParticipants();
   renderCfgGestao(); renderEfetivoList(); renderRosterGrid();
   return Promise.resolve();
 }
@@ -2420,9 +2469,10 @@ function eventModalHTML(e){
   '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Endereço</span><span>'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
+  (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
   '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>'+
-  '<div class="ec-row"><span class="k">Recursos</span><div class="ec-efetivo">'+recursoTags+'</div></div>'+
-  '<div class="ec-row"><span class="k">Solicitante</span><span>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</span></div>'+
+  '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>'+
+  '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Responsável':'Solicitante')+'</span><span>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</span></div>'+
   '<div class="ec-row"><span class="k">Contato</span><span>'+(e.contato?esc(e.contato):'&mdash;')+'</span></div>'+
   '<div class="modal-actions">'+
     '<button type="button" class="btn btn-danger btn-sm" data-modal-act="del" data-id="'+esc(e.id)+'">Excluir</button>'+
@@ -2465,11 +2515,12 @@ function cardHTML(e){
     '<div class="ec-local" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;">'+esc(e.localRef||'')+'</div>'+
     '<div class="ec-addr">'+esc(addrLine1)+(addr.bairro ? ' &middot; '+esc(addr.bairro) : '')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</div>'+
     '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
+    (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (efetivoTags ? '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>' : '')+
-    (recursoTags ? '<div class="ec-row"><span class="k">Recursos</span><div class="ec-efetivo">'+recursoTags+'</div></div>' : '')+
+    (recursoTags ? '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>' : '')+
     (!efetivoTags && !recursoTags ? '<div class="ec-row"><span class="k">Efetivo</span><span>&mdash; a definir &mdash;</span></div>' : '')+
     '<div class="ec-foot">'+
-      '<span>Solicitante: <strong style="color:var(--ink-2)">'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</strong></span>'+
+      '<span>'+(e.tipo==='administrativo'?'Responsável':'Solicitante')+': <strong style="color:var(--ink-2)">'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</strong></span>'+
       '<span>'+esc(e.contato||'')+'</span>'+
     '</div>'+
   '</article>';
@@ -2483,7 +2534,7 @@ function eventsForTipoSearch(){
   if(q){
     list = list.filter(function(e){
       var addr = e.endereco||{};
-      var hay = [e.localRef, addr.rua, addr.bairro, e.solicitante, e.modalidade,
+      var hay = [e.localRef, addr.rua, addr.bairro, e.solicitante, e.modalidade, e.assunto,
         (e.efetivo||[]).map(function(x){return x.nome;}).join(' '),
         (e.recursos||[]).map(function(x){return x.tipo;}).join(' ')].join(' ').toLowerCase();
       return hay.indexOf(q) !== -1;
@@ -2635,7 +2686,7 @@ function tableRowHTML(e){
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
     '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
-    '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'+
+    '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'+
     '<td class="tbl-actions">'+
       '<button class="icon-btn" title="Duplicar / reaproveitar" data-act="dup" data-id="'+esc(e.id)+'">&#10697;</button>'+
       '<button class="icon-btn" title="Editar" data-act="edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
@@ -2705,6 +2756,20 @@ function selectType(type){
   $('eventForm').classList.add('show');
   $('formFrameOuter').style.display = '';
   renderModalidadeOptions();
+  applyFormTypeUI(type);
+  renderResourceSelect();
+}
+function applyFormTypeUI(type){
+  var isAdmin = type === 'administrativo';
+  $('logisticaTitle').textContent = isAdmin ? 'Participantes' : 'Logística';
+  $('logisticaDesc').textContent = isAdmin ? 'Quem participa do compromisso — o dado principal do planejamento' : 'Recurso/equipe empregado — o dado principal do planejamento';
+  $('logisticaHint').textContent = isAdmin ? 'Informe o(s) grupo(s)/participante(s) previsto(s) (ex.: Inspetores, Comandante/Subcomandante):' : 'Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):';
+  $('fieldAssunto').hidden = !isAdmin;
+  $('f-assunto').required = isAdmin;
+  $('labelSolicitante').textContent = isAdmin ? 'Nome do responsável (opcional)' : 'Nome do solicitante';
+  $('labelContato').textContent = isAdmin ? 'Contato (opcional)' : 'Contato (celular/outro)';
+  $('f-solicitante').required = !isAdmin;
+  $('f-contato').required = !isAdmin;
 }
 function renderModalidadeOptions(){
   var sel = $('f-modalidade');
@@ -2741,9 +2806,11 @@ function renderRefSelect(){
 function renderResourceSelect(){
   var sel = $('f-recurso-tipo');
   var current = sel.value;
-  sel.innerHTML = state.resourceTypes.map(function(r){ return '<option value="'+esc(r)+'">'+esc(r)+'</option>'; }).join('');
-  if(current && state.resourceTypes.indexOf(current)!==-1) sel.value = current;
+  var list = (state.formType === 'administrativo') ? state.participantTypes : state.resourceTypes;
+  sel.innerHTML = list.map(function(r){ return '<option value="'+esc(r)+'">'+esc(r)+'</option>'; }).join('');
+  if(current && list.indexOf(current)!==-1) sel.value = current;
 }
+function renderParticipantSelect(){ renderResourceSelect(); }
 function renderRecursoChips(){
   var chips = $('recursoChips');
   chips.innerHTML = state.formRecursos.map(function(r,i){
@@ -2823,6 +2890,7 @@ function fillFormFromEvent(ev, opts){
   renderRecursoChips();
   renderModalidadeOptions();
   $('f-modalidade').value = ev.modalidade||'';
+  $('f-assunto').value = ev.assunto||'';
   $('f-solicitante').value = ev.solicitante||'';
   $('f-contato').value = ev.contato||'';
 }
@@ -2850,6 +2918,7 @@ function handleSubmit(e){
   e.preventDefault();
   var errEl = $('formErr'); errEl.textContent = '';
   if(!state.formType){ errEl.textContent = 'Selecione o tipo de evento.'; return; }
+  var isAdmin = state.formType === 'administrativo';
   var data = $('f-data').value;
   var hi = $('f-hi').value;
   var ht = $('f-ht').value;
@@ -2860,21 +2929,27 @@ function handleSubmit(e){
   var cidade = $('f-cidade').value.trim();
   var estado = $('f-estado').value.trim();
   var modalidade = $('f-modalidade').value;
+  var assunto = $('f-assunto').value.trim();
   var solicitante = $('f-solicitante').value.trim();
   var contato = $('f-contato').value.trim();
-  if(!data||!hi||!ht||!ref||!rua||!bairro||!cidade||!estado||!modalidade||!solicitante||!contato){
+  if(!data||!hi||!ht||!ref||!rua||!bairro||!cidade||!estado||!modalidade){
+    errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
+  }
+  if(isAdmin){
+    if(!assunto){ errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
+  } else if(!solicitante||!contato){
     errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
   }
   if(hi>=ht){ errEl.textContent = 'A hora de término deve ser posterior à hora de início.'; return; }
   if(state.formRecursos.length===0){
-    errEl.textContent = 'Informe ao menos um recurso/equipe a ser empregado (ex.: 01 VTR, 03 GM).'; return;
+    errEl.textContent = isAdmin ? 'Informe ao menos um participante previsto (ex.: Inspetores, Comandante/Subcomandante).' : 'Informe ao menos um recurso/equipe a ser empregado (ex.: 01 VTR, 03 GM).'; return;
   }
   var payload = {
     tipo: state.formType, data: data, horaInicio: hi, horaTermino: ht, localRef: ref,
     endereco: {rua:rua, numero:num, bairro:bairro, cidade:cidade, estado:estado},
     efetivo: Array.from(state.formEfetivo.entries()).map(function(entry){ return {matricula:entry[0], nome:entry[1].nome, funcional:entry[1].funcional}; }),
     recursos: state.formRecursos.slice(),
-    modalidade: modalidade, solicitante: solicitante, contato: contato
+    modalidade: modalidade, assunto: (assunto || null), solicitante: solicitante, contato: contato
   };
   var btn = $('btnSubmitForm'); btn.disabled = true;
   var task;
@@ -2899,6 +2974,12 @@ function renderCfgRefs(){
 function renderCfgResources(){
   var box = $('cfgResList');
   box.innerHTML = state.resourceTypes.map(function(r,i){
+    return '<div class="cfg-row"><span class="rn">'+esc(r)+'</span><button class="icon-btn del" data-i="'+i+'" title="Remover">&#10005;</button></div>';
+  }).join('');
+}
+function renderCfgParticipants(){
+  var box = $('cfgPartList');
+  box.innerHTML = state.participantTypes.map(function(r,i){
     return '<div class="cfg-row"><span class="rn">'+esc(r)+'</span><button class="icon-btn del" data-i="'+i+'" title="Remover">&#10005;</button></div>';
   }).join('');
 }
@@ -2972,7 +3053,7 @@ function relTableRowHTML(e){
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
     '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
-    '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'+
+    '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'+
   '</tr>';
 }
 function renderRelatorio(){
@@ -3270,6 +3351,19 @@ $_onReady(function(){
     if(!v) return;
     if(state.resourceTypes.indexOf(v)!==-1){ showToast('Tipo já existe.'); return; }
     saveResourceTypes(state.resourceTypes.concat([v]));
+    input.value = '';
+  });
+  $('cfgPartList').addEventListener('click', function(e){
+    var btn = e.target.closest('button'); if(!btn) return;
+    var i = Number(btn.dataset.i);
+    var items = state.participantTypes.slice(); items.splice(i,1);
+    saveParticipantTypes(items);
+  });
+  $('cfgPartAdd').addEventListener('click', function(){
+    var input = $('cfgPartInput'); var v = input.value.trim();
+    if(!v) return;
+    if(state.participantTypes.indexOf(v)!==-1){ showToast('Tipo já existe.'); return; }
+    saveParticipantTypes(state.participantTypes.concat([v]));
     input.value = '';
   });
   $('cfgGestList').addEventListener('click', function(e){
