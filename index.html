@@ -1302,6 +1302,16 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                   <select id="f-ht" required></select>
                 </div>
               </div>
+              <div class="grid grid-2" id="rowMultiDia" style="margin-top:10px;" hidden>
+                <div class="field">
+                  <label for="f-data-fim">Até (opcional — cursos de vários dias)</label>
+                  <input type="date" id="f-data-fim" />
+                </div>
+                <div class="field">
+                  <label for="f-encerramento">Atividade de encerramento (opcional)</label>
+                  <input type="text" id="f-encerramento" placeholder="Ex.: Treinamento de tiro" />
+                </div>
+              </div>
             </div>
 
             <div class="panel">
@@ -1482,7 +1492,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v2.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v2.1 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1688,6 +1698,16 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v2.1', date: '16/09/2026',
+    changes: [
+      'Eventos administrativos agora podem ter duração de vários dias: no painel "Quando" surge um campo opcional "Até" para cursos como o EQP (80h, ~10 dias) — sem preencher, o evento continua valendo para um dia só, como sempre.',
+      'Novo campo opcional "Atividade de encerramento" (ex.: Treinamento de tiro no fim do EQP), exibido no card e no modal do evento junto com a data do último dia.',
+      'O evento passa a aparecer em todos os dias do intervalo no Calendário (mês, semana e dia) — não só no dia de início — e os filtros de período da Agenda e dos Relatórios passaram a considerar o evento presente em qualquer período que sobreponha algum dia do intervalo.',
+      'Cards, modal, tabela da Agenda e tabela dos Relatórios passaram a mostrar a data como intervalo ("05 A 15 SET 2026") quando o evento tiver mais de um dia.',
+      'Essa opção de vários dias vale só para eventos administrativos (cursos, treinamentos); eventos operacionais continuam sempre de um dia só, como já eram.'
+    ]
+  },
   {
     version: 'v2.0', date: '15/09/2026',
     changes: [
@@ -1923,6 +1943,29 @@ function fmtDateCompact(iso){
   var wd = WEEKDAYS_SHORT[dt.getDay()].toLowerCase();
   return dd+mon+yy+' - '+wd;
 }
+function fmtDateRangeLong(dataIni, dataFim){
+  if(!dataFim || dataFim===dataIni) return fmtDateLong(dataIni);
+  var di = parseISODate(dataIni), df = parseISODate(dataFim);
+  if(di.getFullYear()===df.getFullYear() && di.getMonth()===df.getMonth()){
+    var mon = df.toLocaleDateString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+    return pad(di.getDate())+' A '+pad(df.getDate())+' '+mon+' '+df.getFullYear();
+  }
+  return fmtDateLong(dataIni)+' A '+fmtDateLong(dataFim);
+}
+function fmtDateRangeCompact(dataIni, dataFim){
+  if(!dataFim || dataFim===dataIni) return fmtDateCompact(dataIni);
+  var di = parseISODate(dataIni), df = parseISODate(dataFim);
+  var mon = df.toLocaleDateString('pt-BR',{month:'short'}).replace('.','').toLowerCase();
+  var yy = String(df.getFullYear()).slice(-2);
+  return pad(di.getDate())+'-'+pad(df.getDate())+mon+yy;
+}
+/* Um evento "ocorre" em um dia quando esse dia cai dentro do intervalo
+   [data, dataFim] (dataFim opcional — sem ela, o evento vale só para "data"). */
+function eventOccursOn(e, iso){
+  if(!e.data) return false;
+  if(!e.dataFim || e.dataFim <= e.data) return e.data === iso;
+  return iso >= e.data && iso <= e.dataFim;
+}
 
 /* ---------------- roster ---------------- */
 function activeRosterBase(){
@@ -1970,9 +2013,9 @@ function buildExampleEvents(){
 /* ---------------- store: live (Supabase) ---------------- */
 function toDbRow(e){
   var row = {
-    tipo: e.tipo, data: e.data, hora_inicio: e.horaInicio, hora_termino: e.horaTermino,
+    tipo: e.tipo, data: e.data, data_fim: e.dataFim||null, hora_inicio: e.horaInicio, hora_termino: e.horaTermino,
     local_ref: e.localRef, endereco: e.endereco||{}, efetivo: e.efetivo||[], recursos: e.recursos||[],
-    modalidade: e.modalidade||null, assunto: e.assunto||null, solicitante: e.solicitante||null, contato: e.contato||null,
+    modalidade: e.modalidade||null, assunto: e.assunto||null, encerramento: e.encerramento||null, solicitante: e.solicitante||null, contato: e.contato||null,
     exemplo: !!e.exemplo
   };
   if(e.createdAt) row.created_at = e.createdAt;
@@ -1980,9 +2023,9 @@ function toDbRow(e){
 }
 function fromDbRow(r){
   return {
-    id:r.id, tipo:r.tipo, data:r.data, horaInicio:r.hora_inicio, horaTermino:r.hora_termino,
+    id:r.id, tipo:r.tipo, data:r.data, dataFim:r.data_fim||null, horaInicio:r.hora_inicio, horaTermino:r.hora_termino,
     localRef:r.local_ref, endereco:r.endereco||{}, efetivo:r.efetivo||[], recursos:r.recursos||[],
-    modalidade:r.modalidade, assunto:r.assunto||null, solicitante:r.solicitante, contato:r.contato, exemplo:!!r.exemplo,
+    modalidade:r.modalidade, assunto:r.assunto||null, encerramento:r.encerramento||null, solicitante:r.solicitante, contato:r.contato, exemplo:!!r.exemplo,
     createdAt:r.created_at
   };
 }
@@ -2165,9 +2208,9 @@ function backupExportPayload(){
     exportedAt: new Date().toISOString(),
     events: (state.events||[]).map(function(e){
       return {
-        tipo:e.tipo, data:e.data, horaInicio:e.horaInicio, horaTermino:e.horaTermino,
+        tipo:e.tipo, data:e.data, dataFim:e.dataFim||null, horaInicio:e.horaInicio, horaTermino:e.horaTermino,
         localRef:e.localRef, endereco:e.endereco||{}, efetivo:e.efetivo||[], recursos:e.recursos||[],
-        modalidade:e.modalidade||null, assunto:e.assunto||null, solicitante:e.solicitante||null, contato:e.contato||null,
+        modalidade:e.modalidade||null, assunto:e.assunto||null, encerramento:e.encerramento||null, solicitante:e.solicitante||null, contato:e.contato||null,
         exemplo:!!e.exemplo, createdAt:e.createdAt||null
       };
     }),
@@ -2465,11 +2508,12 @@ function eventModalHTML(e){
   }).join('') || '<span class="ec-resource-tag">&mdash; nenhum &mdash;</span>';
   return ''+
   '<div class="modal-head"><h3>'+(e.tipo==='operacional'?'Evento Operacional Especial':'Evento Administrativo')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateLong(e.data)+'</span><span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span></div>'+
+  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateRangeLong(e.data, e.dataFim)+'</span><span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span></div>'+
   '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Endereço</span><span>'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
   (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
+  (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
   '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>'+
   '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>'+
   '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Responsável':'Solicitante')+'</span><span>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</span></div>'+
@@ -2488,7 +2532,7 @@ function openEventModal(id){
 
 /* ---------------- agenda: card + filters ---------------- */
 function cardHTML(e){
-  var dt = fmtDateLong(e.data);
+  var dt = fmtDateRangeLong(e.data, e.dataFim);
   var efetivoTags = (e.efetivo||[]).map(function(p){
     return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+' <span class="mono">'+esc(p.matricula)+'</span></span>';
   }).join('');
@@ -2516,6 +2560,7 @@ function cardHTML(e){
     '<div class="ec-addr">'+esc(addrLine1)+(addr.bairro ? ' &middot; '+esc(addr.bairro) : '')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</div>'+
     '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
     (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
+    (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
     (efetivoTags ? '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>' : '')+
     (recursoTags ? '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>' : '')+
     (!efetivoTags && !recursoTags ? '<div class="ec-row"><span class="k">Efetivo</span><span>&mdash; a definir &mdash;</span></div>' : '')+
@@ -2534,7 +2579,7 @@ function eventsForTipoSearch(){
   if(q){
     list = list.filter(function(e){
       var addr = e.endereco||{};
-      var hay = [e.localRef, addr.rua, addr.bairro, e.solicitante, e.modalidade, e.assunto,
+      var hay = [e.localRef, addr.rua, addr.bairro, e.solicitante, e.modalidade, e.assunto, e.encerramento,
         (e.efetivo||[]).map(function(x){return x.nome;}).join(' '),
         (e.recursos||[]).map(function(x){return x.tipo;}).join(' ')].join(' ').toLowerCase();
       return hay.indexOf(q) !== -1;
@@ -2557,7 +2602,8 @@ function applyPeriodRange(list, period, anchor){
   return list.filter(function(e){
     if(!e.data) return false;
     var d = parseISODate(e.data);
-    return d >= r.start && d < r.end;
+    var dFim = e.dataFim ? parseISODate(e.dataFim) : d;
+    return d < r.end && dFim >= r.start;
   });
 }
 
@@ -2604,7 +2650,7 @@ function renderMonthGrid(container, anchor, filtered){
     var day = addDays(gridStart, i);
     var iso = toISODate(day);
     var inMonth = day.getMonth()===month;
-    var evs = filtered.filter(function(e){ return e.data===iso; });
+    var evs = filtered.filter(function(e){ return eventOccursOn(e, iso); });
     html += '<div class="cal-cell'+(inMonth?'':' out')+(isWeekend(day)?' weekend':'')+(iso===todayIso?' today':'')+'" data-act="daycell" data-date="'+iso+'">';
     html += '<div class="cal-daynum">'+day.getDate()+'</div>';
     html += '<div class="cal-pills">';
@@ -2622,7 +2668,7 @@ function renderWeekGrid(container, anchor, filtered){
   for(var i=0;i<7;i++){
     var day = addDays(r.start, i);
     var iso = toISODate(day);
-    var evs = filtered.filter(function(e){ return e.data===iso; }).sort(function(a,b){ return (a.horaInicio||'').localeCompare(b.horaInicio||''); });
+    var evs = filtered.filter(function(e){ return eventOccursOn(e, iso); }).sort(function(a,b){ return (a.horaInicio||'').localeCompare(b.horaInicio||''); });
     html += '<div class="cal-daycol'+(isWeekend(day)?' weekend':'')+'">';
     html += '<div class="cal-daycol-head'+(isWeekend(day)?' weekend':'')+(iso===todayIso?' today':'')+'" data-act="daycell" data-date="'+iso+'">'+WEEKDAYS_SHORT[day.getDay()]+' <span class="mono">'+day.getDate()+'</span></div>';
     html += '<div class="cal-daycol-body">';
@@ -2635,7 +2681,7 @@ function renderWeekGrid(container, anchor, filtered){
 }
 function renderDayList(container, anchor, filtered){
   var iso = toISODate(anchor);
-  var evs = filtered.filter(function(e){ return e.data===iso; }).sort(function(a,b){ return (a.horaInicio||'').localeCompare(b.horaInicio||''); });
+  var evs = filtered.filter(function(e){ return eventOccursOn(e, iso); }).sort(function(a,b){ return (a.horaInicio||'').localeCompare(b.horaInicio||''); });
   if(evs.length===0){
     container.innerHTML = '<div class="empty-state"><h3>Nenhum evento nesta data</h3><p>Use o botão "Lançar Evento" para cadastrar um novo evento neste dia.</p></div>';
     return;
@@ -2657,7 +2703,7 @@ function renderSemesterGrid(container, anchor, filtered){
       var day = addDays(gridStart, i);
       var iso = toISODate(day);
       var inMonth = day.getMonth()===mo;
-      var evs = inMonth ? filtered.filter(function(e){ return e.data===iso; }) : [];
+      var evs = inMonth ? filtered.filter(function(e){ return eventOccursOn(e, iso); }) : [];
       var hasOp = evs.some(function(e){ return e.tipo==='operacional'; });
       var hasAdm = evs.some(function(e){ return e.tipo==='administrativo'; });
       var cls = 'mini-cell'+(inMonth?'':' out')+(isWeekend(day)?' weekend':'')+(iso===todayIso?' today':'')+(hasOp?' has-op':'')+(hasAdm?' has-adm':'');
@@ -2679,7 +2725,7 @@ function tableRowHTML(e){
   }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
   return ''+
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
-    '<td class="tbl-date">'+fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')+'</td>'+
+    '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
     '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span></td>'+
     '<td>'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
@@ -2770,6 +2816,8 @@ function applyFormTypeUI(type){
   $('labelContato').textContent = isAdmin ? 'Contato (opcional)' : 'Contato (celular/outro)';
   $('f-solicitante').required = !isAdmin;
   $('f-contato').required = !isAdmin;
+  $('rowMultiDia').hidden = !isAdmin;
+  if(!isAdmin){ $('f-data-fim').value = ''; $('f-encerramento').value = ''; }
 }
 function renderModalidadeOptions(){
   var sel = $('f-modalidade');
@@ -2872,6 +2920,7 @@ function fillFormFromEvent(ev, opts){
   opts = opts || {};
   selectType(ev.tipo);
   $('f-data').value = opts.keepDate===false ? '' : (ev.data||'');
+  $('f-data-fim').value = opts.keepDate===false ? '' : (ev.dataFim||'');
   $('f-hi').value = ev.horaInicio||'';
   $('f-ht').value = ev.horaTermino||'';
   renderRefSelect();
@@ -2891,6 +2940,7 @@ function fillFormFromEvent(ev, opts){
   renderModalidadeOptions();
   $('f-modalidade').value = ev.modalidade||'';
   $('f-assunto').value = ev.assunto||'';
+  $('f-encerramento').value = ev.encerramento||'';
   $('f-solicitante').value = ev.solicitante||'';
   $('f-contato').value = ev.contato||'';
 }
@@ -2930,6 +2980,8 @@ function handleSubmit(e){
   var estado = $('f-estado').value.trim();
   var modalidade = $('f-modalidade').value;
   var assunto = $('f-assunto').value.trim();
+  var dataFim = isAdmin ? $('f-data-fim').value : '';
+  var encerramento = isAdmin ? $('f-encerramento').value.trim() : '';
   var solicitante = $('f-solicitante').value.trim();
   var contato = $('f-contato').value.trim();
   if(!data||!hi||!ht||!ref||!rua||!bairro||!cidade||!estado||!modalidade){
@@ -2937,6 +2989,7 @@ function handleSubmit(e){
   }
   if(isAdmin){
     if(!assunto){ errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
+    if(dataFim && dataFim < data){ errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return; }
   } else if(!solicitante||!contato){
     errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
   }
@@ -2945,11 +2998,11 @@ function handleSubmit(e){
     errEl.textContent = isAdmin ? 'Informe ao menos um participante previsto (ex.: Inspetores, Comandante/Subcomandante).' : 'Informe ao menos um recurso/equipe a ser empregado (ex.: 01 VTR, 03 GM).'; return;
   }
   var payload = {
-    tipo: state.formType, data: data, horaInicio: hi, horaTermino: ht, localRef: ref,
+    tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht, localRef: ref,
     endereco: {rua:rua, numero:num, bairro:bairro, cidade:cidade, estado:estado},
     efetivo: Array.from(state.formEfetivo.entries()).map(function(entry){ return {matricula:entry[0], nome:entry[1].nome, funcional:entry[1].funcional}; }),
     recursos: state.formRecursos.slice(),
-    modalidade: modalidade, assunto: (assunto || null), solicitante: solicitante, contato: contato
+    modalidade: modalidade, assunto: (assunto || null), encerramento: (encerramento || null), solicitante: solicitante, contato: contato
   };
   var btn = $('btnSubmitForm'); btn.disabled = true;
   var task;
@@ -3024,7 +3077,8 @@ function relFilteredEvents(){
   var solic = ($('rel-solicitante').value||'').trim().toLowerCase();
   var integ = ($('rel-integrante').value||'').trim().toLowerCase();
   return state.events.filter(function(e){
-    if(di && (!e.data || e.data < di)) return false;
+    var eDataFim = e.dataFim || e.data;
+    if(di && (!e.data || eDataFim < di)) return false;
     if(df && (!e.data || e.data > df)) return false;
     if(tipo!=='todos' && e.tipo!==tipo) return false;
     if(local && e.localRef!==local) return false;
@@ -3046,7 +3100,7 @@ function relTableRowHTML(e){
   var efetivoTags = (e.efetivo||[]).map(function(p){ return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>'; }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
   return ''+
   '<tr>'+
-    '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateCompact(e.data))+'</td>'+
+    '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
     '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span></td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
