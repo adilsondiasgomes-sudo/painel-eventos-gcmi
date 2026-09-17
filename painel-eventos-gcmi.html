@@ -2733,7 +2733,14 @@ function currentEtapaInfo(movsOrdenados){
 }
 
 function upsertConfig(key, value){
-  return sb.from('config').upsert({key:key, value:value}, {onConflict:'key'});
+  /* Promise.resolve(...) converte o builder do supabase-js (só "thenable"
+     — tem .then mas não .catch/.finally como métodos de verdade) num
+     Promise nativo antes de devolver, porque todo chamador encadeia
+     .catch() direto no retorno desta função (ex.: upsertConfig(...).catch(
+     ...)) — sem isso, dá TypeError "catch is not a function" na hora de
+     semear uma config ainda inexistente (mesmo bug corrigido na v4.1 pro
+     insert de auditoria de login/logout). */
+  return Promise.resolve(sb.from('config').upsert({key:key, value:value}, {onConflict:'key'}));
 }
 function fetchConfigAll(){
   return sb.from('config').select('*').then(function(res){
@@ -3512,7 +3519,12 @@ function openLoginModal(){
          situações ambíguas (restauração de sessão ao recarregar a página,
          refresh de token) que não são um login de fato; aqui é só quando
          a pessoa realmente acabou de entrar com e-mail/senha. */
-      sb.from('audit_log').insert({tabela:'auth', registro_id: email, acao:'login', autor: email}).catch(function(){});
+      /* Promise.resolve(...) converte o builder do supabase-js (que é só
+         "thenable" — tem .then mas não necessariamente .catch como método
+         de verdade) num Promise nativo de fato, antes de encadear .catch().
+         Sem isso, dá TypeError em produção mesmo passando limpo nos testes
+         com o mock (que expõe .catch explicitamente). */
+      Promise.resolve(sb.from('audit_log').insert({tabela:'auth', registro_id: email, acao:'login', autor: email})).catch(function(){});
       closeModal();
       showToast('Login efetuado.');
     }).catch(function(){
@@ -3528,8 +3540,14 @@ function handleAuthBtnClick(){
        autenticação válida — a policy de RLS de audit_log só libera INSERT
        pra quem está autenticado E é o dono do e-mail gravado. */
     var email = authUser.email;
-    var logoutAudit = sb.from('audit_log').insert({tabela:'auth', registro_id: email, acao:'logout', autor: email}).catch(function(){});
-    Promise.resolve(logoutAudit).then(function(){
+    /* Promise.resolve(...) primeiro: o builder do supabase-js é só
+       "thenable" (tem .then mas não necessariamente .catch como método de
+       verdade) — encadear .catch() direto nele dá TypeError em produção,
+       mesmo passando limpo nos testes com o mock (que expõe .catch
+       explicitamente). Promise.resolve(...).catch(...) já devolve um
+       Promise nativo de verdade, então dá pra encadear .then() normal. */
+    var logoutAudit = Promise.resolve(sb.from('audit_log').insert({tabela:'auth', registro_id: email, acao:'logout', autor: email})).catch(function(){});
+    logoutAudit.then(function(){
       sb.auth.signOut().then(function(){ showToast('Você saiu da conta.'); });
     });
   } else {
