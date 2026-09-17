@@ -156,7 +156,16 @@ header.topbar{
 
 .status-cluster{
   margin-left:auto;
-  margin-right:112px; /* reserva espaço para o widget de login (fixo, canto superior direito) não sobrepor o relógio/sincronização */
+  /* reserva espaço pro widget de login fixo (canto superior direito) não
+     sobrepor o relógio/sincronização. Precisa cobrir o pior caso: e-mail
+     truncado no limite de .auth-user (max-width:220px) + gap (8px) +
+     botão "Sair" (~55px) + a folga de 14px do .auth-widget até a borda
+     da janela — 112px cobria só e-mails curtos (ex.: dg@teste.local, usados
+     nos testes automatizados) e sobrepunha com e-mails reais mais longos
+     (ex.: adilsondiasgomes@gmail.com) em resoluções comuns de notebook
+     (1280–1440px), onde o container central do header já está no seu
+     max-width e não sobra folga extra. */
+  margin-right:300px;
   display:flex;align-items:center;gap:10px;
   flex-wrap:wrap;justify-content:flex-end;
   flex:none;
@@ -354,6 +363,82 @@ body[data-screen="agenda"] #emptyState{
   flex:1 1 auto;min-height:0;overflow-y:auto;
 }
 body[data-screen="agenda"] footer.foot{flex:none;padding:8px 0 0;}
+
+/* v4.3: Logística, Licitações, Calendário e Relatório de Logística/Licitações
+   e Auditoria (todas mantêm o cabeçalho/abas visíveis, como a Agenda) tinham
+   ficado de fora do encaixe exato de viewport quando foram criadas — a
+   página inteira rolava em vez de só a lista/tabela interna, quebrando o
+   "travar em molduras" combinado com o DG. Mesmo padrão da Agenda: só o
+   conteúdo (lista de cards / grade do calendário / tabela) rola, dentro da
+   própria moldura; cabeçalho, abas, filtros e rodapé ficam fixos. */
+body[data-screen="logistica"],
+body[data-screen="licitacoes"],
+body[data-screen="loglicagenda"],
+body[data-screen="loglicrelatorio"],
+body[data-screen="auditoria"]{
+  height:100vh;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body[data-screen="logistica"] header.topbar,
+body[data-screen="logistica"] nav.tabs,
+body[data-screen="licitacoes"] header.topbar,
+body[data-screen="licitacoes"] nav.tabs,
+body[data-screen="loglicagenda"] header.topbar,
+body[data-screen="loglicagenda"] nav.tabs,
+body[data-screen="loglicrelatorio"] header.topbar,
+body[data-screen="loglicrelatorio"] nav.tabs,
+body[data-screen="auditoria"] header.topbar,
+body[data-screen="auditoria"] nav.tabs{flex:none;}
+body[data-screen="logistica"] .app,
+body[data-screen="licitacoes"] .app,
+body[data-screen="loglicagenda"] .app,
+body[data-screen="loglicrelatorio"] .app,
+body[data-screen="auditoria"] .app{
+  flex:1 1 auto;min-height:0;min-width:0;width:100%;overflow:hidden;
+  display:flex;flex-direction:column;
+  padding-bottom:6px;
+}
+body[data-screen="logistica"] main,
+body[data-screen="licitacoes"] main,
+body[data-screen="loglicagenda"] main,
+body[data-screen="loglicrelatorio"] main,
+body[data-screen="auditoria"] main{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body[data-screen="logistica"] .view.active,
+body[data-screen="licitacoes"] .view.active,
+body[data-screen="loglicagenda"] .view.active,
+body[data-screen="loglicrelatorio"] .view.active,
+body[data-screen="auditoria"] .view.active{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body[data-screen="logistica"] .view-head,
+body[data-screen="licitacoes"] .view-head,
+body[data-screen="loglicagenda"] .view-head,
+body[data-screen="auditoria"] .view-head,
+body[data-screen="logistica"] .nominal-details,
+body[data-screen="licitacoes"] .nominal-details,
+body[data-screen="loglicagenda"] .filters2,
+body[data-screen="loglicrelatorio"] .rel-filters,
+body[data-screen="auditoria"] .rel-filters,
+body[data-screen="auditoria"] #auditCapNote{flex:none;}
+body[data-screen="logistica"] #logisticaList,
+body[data-screen="logistica"] #logisticaEmpty,
+body[data-screen="licitacoes"] #licitacoesList,
+body[data-screen="licitacoes"] #licitacoesEmpty,
+body[data-screen="loglicagenda"] #loglicCalWrap,
+body[data-screen="loglicrelatorio"] #loglicRelContent,
+body[data-screen="auditoria"] #auditTableWrap,
+body[data-screen="auditoria"] #auditEmpty{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+}
+body[data-screen="logistica"] footer.foot,
+body[data-screen="licitacoes"] footer.foot,
+body[data-screen="loglicagenda"] footer.foot,
+body[data-screen="loglicrelatorio"] footer.foot,
+body[data-screen="auditoria"] footer.foot{flex:none;padding:8px 0 0;}
 
 /* ---------- config: sub-screens ---------- */
 .cfg-subnav{margin-bottom:14px;flex-wrap:wrap;flex:none;}
@@ -3425,6 +3510,28 @@ function canViewLogLicDomain(){
   if(mode!=='live') return true;
   return isAdmin() || _inLogLicList() || !_hasAnyDomainList();
 }
+/* ---------------- v4.3: Logística x Licitações, um nível a mais de
+   compartimentação dentro do mesmo lado ----------------
+   Até aqui (v4.0), Logística e Licitações eram tratadas como "um lado só"
+   pra visibilidade: editor de QUALQUER uma das duas listas via as DUAS
+   abas (só a edição ficava restrita à lista certa). A pedido do DG,
+   quem é editor de só UMA das duas listas deixa de ver a aba da outra —
+   mesma lógica já usada pra separar Eventos do lado Logística/Licitações,
+   só que um nível mais fundo. Quem está nas duas listas (ou é admin)
+   continua vendo as duas; quem não tem nenhuma lista de domínio (RH,
+   planejamento etc. — "público geral") continua vendo as duas também,
+   sem mudança. Calendário e Relatório (que combinam as duas áreas numa
+   visão só desde a v4.0) continuam visíveis pra quem só tem uma lista,
+   mas o conteúdo é filtrado pra só a área que aquele editor enxerga —
+   ver loglicItemsAll(). */
+function canViewLogisticaTab(){
+  if(mode!=='live') return true;
+  return canViewLogLicDomain() && (isAdmin() || _emailIsIn(state.logisticaEditors) || !_inLogLicList());
+}
+function canViewLicitacoesTab(){
+  if(mode!=='live') return true;
+  return canViewLogLicDomain() && (isAdmin() || _emailIsIn(state.licitacoesEditors) || !_inLogLicList());
+}
 function updateDomainAccessUI(){
   var loggedIn = !isPublicRestricted();
   /* Agenda e Relatórios (Eventos) são públicos por natureza — só somem pra
@@ -3482,15 +3589,20 @@ function updateCmtAgendaAccessUI(){
 function updateLogisticaAccessUI(){
   /* Exige login E pertencer ao lado Logística/Licitações (admin, um dos
      editores, ou ninguém — v4.0). Quem é exclusivo do lado Eventos não vê
-     mais esta aba, "vice-versa" do que acontece com Agenda do Cmt acima. */
-  var restricted = isPublicRestricted() || !canViewLogLicDomain();
+     mais esta aba, "vice-versa" do que acontece com Agenda do Cmt acima.
+     Desde a v4.3, quem é exclusivo de Licitações (não está em
+     logistica-editors) também não vê mais esta aba especificamente. */
+  var restricted = isPublicRestricted() || !canViewLogisticaTab();
   document.querySelectorAll('[data-view="logistica"]').forEach(function(b){ b.hidden = restricted; });
   if(restricted && document.body.getAttribute('data-screen')==='logistica'){ goToView('agenda'); }
   if(typeof renderLogistica === 'function' && $('logisticaList')) renderLogistica();
 }
 /* ---------------- Licitações: acesso ---------------- */
 function updateLicitacoesAccessUI(){
-  var restricted = isPublicRestricted() || !canViewLogLicDomain();
+  /* Desde a v4.3, quem é exclusivo de Logística (não está em
+     licitacoes-editors) não vê mais esta aba especificamente — ver
+     canViewLicitacoesTab(). */
+  var restricted = isPublicRestricted() || !canViewLicitacoesTab();
   document.querySelectorAll('[data-view="licitacoes"]').forEach(function(b){ b.hidden = restricted; });
   if(restricted && document.body.getAttribute('data-screen')==='licitacoes'){ goToView('agenda'); }
   if(typeof renderLicitacoes === 'function' && $('licitacoesList')) renderLicitacoes();
@@ -5329,29 +5441,38 @@ function cmtPrintReportHTML(selectedKeys){
    motor de calendário da Agenda (fortemente acoplado a state.events/pillHTML/
    eventOccursOn), só as peças genéricas dele (grade, helpers de data). */
 function loglicItemsAll(){
+  /* v4.3: Calendário e Relatório continuam combinando as duas áreas numa
+     visão só (decisão do DG na v4.0), mas agora respeitam a mesma
+     compartimentação por domínio das abas — um editor exclusivo de
+     Logística não vê processos de Licitações aqui (e vice-versa), mesmo
+     que a aba Calendário/Relatório em si continue visível pra ele. */
   var out = [];
-  (state.logistica||[]).forEach(function(e){
-    var movs = logisticaMovimentosFor(e.id);
-    var cur = currentEtapaInfo(movs);
-    out.push({
-      area: 'logistica', id: e.id,
-      titulo: e.item || e.categoria || 'Logística',
-      subtitulo: e.categoria || '',
-      etapa: cur.etapa, prazoProximo: cur.prazoProximo, vencido: cur.vencido,
-      dataMovRecente: movs.length ? movs[0].data : null
+  if(canViewLogisticaTab()){
+    (state.logistica||[]).forEach(function(e){
+      var movs = logisticaMovimentosFor(e.id);
+      var cur = currentEtapaInfo(movs);
+      out.push({
+        area: 'logistica', id: e.id,
+        titulo: e.item || e.categoria || 'Logística',
+        subtitulo: e.categoria || '',
+        etapa: cur.etapa, prazoProximo: cur.prazoProximo, vencido: cur.vencido,
+        dataMovRecente: movs.length ? movs[0].data : null
+      });
     });
-  });
-  (state.licitacoes||[]).forEach(function(e){
-    var movs = licitacoesMovimentosFor(e.id);
-    var cur = currentEtapaInfo(movs);
-    out.push({
-      area: 'licitacoes', id: e.id,
-      titulo: e.objeto || (e.numeroAprova ? ('Nº '+e.numeroAprova) : 'Licitação'),
-      subtitulo: e.numeroAprova || '',
-      etapa: cur.etapa, prazoProximo: cur.prazoProximo, vencido: cur.vencido,
-      dataMovRecente: movs.length ? movs[0].data : null
+  }
+  if(canViewLicitacoesTab()){
+    (state.licitacoes||[]).forEach(function(e){
+      var movs = licitacoesMovimentosFor(e.id);
+      var cur = currentEtapaInfo(movs);
+      out.push({
+        area: 'licitacoes', id: e.id,
+        titulo: e.objeto || (e.numeroAprova ? ('Nº '+e.numeroAprova) : 'Licitação'),
+        subtitulo: e.numeroAprova || '',
+        etapa: cur.etapa, prazoProximo: cur.prazoProximo, vencido: cur.vencido,
+        dataMovRecente: movs.length ? movs[0].data : null
+      });
     });
-  });
+  }
   return out;
 }
 function openLoglicItemModal(area, id){
