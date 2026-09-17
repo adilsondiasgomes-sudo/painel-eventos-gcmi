@@ -753,6 +753,30 @@ body[data-screen="form"] .app{max-width:1360px;}
 .mov-table tbody td{padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
 .mov-table tbody tr:last-child td{border-bottom:none;}
 .mov-table .mov-data-cell{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap;}
+
+/* v4.2: modal de formulário (Nova/Editar Licitação, Nova/Editar Ocorrência
+   de Logística) em tela cheia, sem rolagem — mesma mecânica de tela cheia
+   do .mov-modal, mas o excesso de conteúdo é resolvido dividindo em abas
+   (.form-modal-tabs/.form-modal-pane), não com rolagem interna. */
+.modal-overlay.form-modal-overlay{padding:0;align-items:stretch;}
+.modal-box.form-modal{
+  max-width:100%;width:100%;height:100%;max-height:none;
+  border-radius:0;margin:0;
+  display:flex;flex-direction:column;
+  padding:22px clamp(16px,4vw,52px) 18px;
+  transform:none;
+}
+.modal-box.form-modal .modal-head{flex:none;}
+.modal-box.form-modal form{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.form-modal-tabs{flex:none;margin-bottom:18px;}
+.form-modal-pane{display:none;}
+.form-modal-pane.active{
+  display:block;flex:1 1 auto;min-height:0;
+  overflow-y:auto; /* apenas uma rede de segurança pra janelas muito baixas — em telas normais, dividir em abas já evita a rolagem */
+  animation:fade-in .2s ease both;
+}
+.modal-box.form-modal .login-err{flex:none;}
+.modal-box.form-modal .modal-actions{flex:none;}
 .mov-table .mov-etapa-cell{font-weight:600;white-space:nowrap;}
 .mov-table .mov-prazo-cell{color:var(--ink-3);white-space:nowrap;}
 .mov-table .mov-prazo-cell.vencido{color:var(--red-crest);font-weight:600;}
@@ -3649,8 +3673,32 @@ function openModal(html){
 function closeModal(){
   $('modalOverlay').classList.remove('show');
   $('modalOverlay').classList.remove('mov-modal-overlay');
+  $('modalOverlay').classList.remove('form-modal-overlay');
   movModalCtx = null;
   setTimeout(function(){ $('modalOverlay').hidden = true; $('modalBox').innerHTML=''; $('modalBox').className = 'modal-box'; }, 150);
+}
+/* Modal de formulário em tela cheia, dividido em abas quando o conteúdo é
+   grande demais pra caber numa tela só sem rolar (Nova/Editar Licitação,
+   Nova/Editar Ocorrência de Logística) — mesmo espírito do .mov-modal
+   (tela cheia, v3.3), mas resolvendo o excesso de conteúdo com abas em vez
+   de rolagem interna, a pedido do DG. Com uma seção só (edição, que não
+   tem o bloco de "movimento inicial"), não mostra abas — o formulário
+   sozinho já cabe numa tela. */
+function formModalSectionsHTML(sections){
+  var tabsHTML = sections.length > 1 ? (
+    '<div class="seg form-modal-tabs">'+sections.map(function(s, i){
+      return '<button type="button" class="form-modal-tab'+(i===0?' active':'')+'" data-formtab="'+esc(s.key)+'">'+(i+1)+' · '+esc(s.label)+'</button>';
+    }).join('')+'</div>'
+  ) : '';
+  var panesHTML = sections.map(function(s, i){
+    return '<div class="form-modal-pane'+(i===0?' active':'')+'" data-formpane="'+esc(s.key)+'">'+s.html+'</div>';
+  }).join('');
+  return tabsHTML + panesHTML;
+}
+function switchFormModalTab(form, key){
+  var tabsBox = form.querySelector('.form-modal-tabs');
+  if(tabsBox) tabsBox.querySelectorAll('.form-modal-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.formtab===key); });
+  form.querySelectorAll('.form-modal-pane').forEach(function(p){ p.classList.toggle('active', p.dataset.formpane===key); });
 }
 function versionModalHTML(){
   var body = VERSION_LOG.map(function(v){
@@ -4035,8 +4083,7 @@ function maybeRefreshLogistica(){
 function logisticaFormModalHTML(ev){
   ev = ev || {};
   var isNew = !ev.id;
-  return '<div class="modal-head"><h3>'+(ev.id?'Editar Ocorrência':'Nova Ocorrência')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-    '<form id="logisticaForm">'+
+  var dadosHTML =
       '<div class="field"><label for="log-f-categoria">Categoria</label><select id="log-f-categoria" required>'+logisticaCategoriaOptionsHTML(ev.categoria)+'</select></div>'+
       '<div class="field" style="margin-top:10px;"><label for="log-f-item">Item (placa, patrimônio, nome — opcional)</label><input type="text" id="log-f-item" value="'+esc(ev.item||'')+'" placeholder="Ex.: VTR-12, placa ABC-1234" /></div>'+
       '<div class="grid grid-2" style="margin-top:10px;">'+
@@ -4047,17 +4094,22 @@ function logisticaFormModalHTML(ev){
       '<div class="grid grid-2" style="margin-top:10px;">'+
         '<div class="field"><label for="log-f-responsavel">Responsável/Fornecedor (opcional)</label><input type="text" id="log-f-responsavel" value="'+esc(ev.responsavel||'')+'" /></div>'+
         '<div class="field"><label for="log-f-custo">Custo estimado — R$ (opcional)</label><input type="number" step="0.01" min="0" id="log-f-custo" value="'+(ev.custo!=null?esc(String(ev.custo)):'')+'" /></div>'+
+      '</div>';
+  var sections = [{key:'dados', label:'Dados da Ocorrência', html:dadosHTML}];
+  if(isNew){
+    var movHTML =
+      '<p class="field-hint" style="margin-bottom:8px;">Movimento inicial — todo processo novo começa com uma etapa registrada.</p>'+
+      '<div class="field"><label for="log-f-mov-etapa">Etapa</label><select id="log-f-mov-etapa" required>'+logisticaStatusOptionsHTML(state.logisticaStatusList[0])+'</select></div>'+
+      '<div class="grid grid-2" style="margin-top:10px;">'+
+        '<div class="field"><label for="log-f-mov-data">Data do movimento</label><input type="date" id="log-f-mov-data" value="'+esc(ev.data||toISODate(new Date()))+'" required /></div>'+
+        '<div class="field"><label for="log-f-mov-prazo">Prazo p/ próximo movimento (opcional)</label><input type="date" id="log-f-mov-prazo" /></div>'+
       '</div>'+
-      (isNew ? (
-        '<hr style="border-color:var(--line);margin:14px 0;" />'+
-        '<p class="field-hint" style="margin-bottom:8px;">Movimento inicial — todo processo novo começa com uma etapa registrada.</p>'+
-        '<div class="field"><label for="log-f-mov-etapa">Etapa</label><select id="log-f-mov-etapa" required>'+logisticaStatusOptionsHTML(state.logisticaStatusList[0])+'</select></div>'+
-        '<div class="grid grid-2" style="margin-top:10px;">'+
-          '<div class="field"><label for="log-f-mov-data">Data do movimento</label><input type="date" id="log-f-mov-data" value="'+esc(ev.data||toISODate(new Date()))+'" required /></div>'+
-          '<div class="field"><label for="log-f-mov-prazo">Prazo p/ próximo movimento (opcional)</label><input type="date" id="log-f-mov-prazo" /></div>'+
-        '</div>'+
-        '<div class="field" style="margin-top:10px;"><label for="log-f-mov-obs">Observação (opcional)</label><textarea id="log-f-mov-obs" rows="2" placeholder="O que foi feito/ocorreu nesse movimento"></textarea></div>'
-      ) : '')+
+      '<div class="field" style="margin-top:10px;"><label for="log-f-mov-obs">Observação (opcional)</label><textarea id="log-f-mov-obs" rows="2" placeholder="O que foi feito/ocorreu nesse movimento"></textarea></div>';
+    sections.push({key:'movimento', label:'Movimento Inicial', html:movHTML});
+  }
+  return '<div class="modal-head"><h3>'+(ev.id?'Editar Ocorrência':'Nova Ocorrência')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<form id="logisticaForm" novalidate>'+
+      formModalSectionsHTML(sections)+
       '<div class="login-err" id="logisticaFormErr"></div>'+
       '<div class="modal-actions">'+
         (ev.id ? '<button type="button" class="btn btn-danger btn-sm" id="logisticaFormDelBtn">Excluir</button>' : '')+
@@ -4070,6 +4122,14 @@ function openLogisticaForm(id){
   var ev = id ? state.logistica.find(function(x){ return x.id===id; }) : null;
   var isNew = !(ev && ev.id);
   openModal(logisticaFormModalHTML(ev||{}));
+  /* tela cheia com abas (v4.2) — mesmo padrão da Licitação, ver comentário
+     em formModalSectionsHTML(); remoção defensiva do mov-modal cobre o
+     caso (hoje não existente, mas barato de prevenir) de este formulário
+     ser aberto sem passar por closeModal() antes. */
+  $('modalBox').classList.remove('mov-modal');
+  $('modalOverlay').classList.remove('mov-modal-overlay');
+  $('modalBox').classList.add('form-modal');
+  $('modalOverlay').classList.add('form-modal-overlay');
   var form = $('logisticaForm');
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -4081,8 +4141,8 @@ function openLogisticaForm(id){
     var descricao = $('log-f-descricao').value.trim();
     var responsavel = $('log-f-responsavel').value.trim();
     var custoRaw = $('log-f-custo').value;
-    if(!categoria || !data){ errEl.textContent = 'Selecione a categoria e a data.'; return; }
-    if(dataFim && dataFim < data){ errEl.textContent = 'A data "Até" não pode ser anterior à data inicial.'; return; }
+    if(!categoria || !data){ switchFormModalTab(form, 'dados'); errEl.textContent = 'Selecione a categoria e a data.'; return; }
+    if(dataFim && dataFim < data){ switchFormModalTab(form, 'dados'); errEl.textContent = 'A data "Até" não pode ser anterior à data inicial.'; return; }
     var payload = {
       categoria:categoria, data:data, dataFim:(dataFim && dataFim!==data ? dataFim : null),
       item:(item||null), descricao:(descricao||null), responsavel:(responsavel||null),
@@ -4093,7 +4153,7 @@ function openLogisticaForm(id){
       var movData = $('log-f-mov-data').value;
       var movPrazo = $('log-f-mov-prazo').value;
       var movObs = $('log-f-mov-obs').value.trim();
-      if(!movEtapa || !movData){ errEl.textContent = 'Preencha a etapa e a data do movimento inicial.'; return; }
+      if(!movEtapa || !movData){ switchFormModalTab(form, 'movimento'); errEl.textContent = 'Preencha a etapa e a data do movimento inicial.'; return; }
       payload.movimentoInicial = { etapa: movEtapa, data: movData, prazoProximo: (movPrazo||null), observacao: (movObs||null) };
     }
     var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
@@ -4180,14 +4240,14 @@ function licitacaoCardHTML(e){
   var cur = currentEtapaInfo(licitacoesMovimentosFor(e.id));
   return ''+
   '<article class="event-card licitacao" data-id="'+esc(e.id)+'">'+
-    '<div class="ec-top">'+
-      '<span class="ec-badge">'+(e.numeroAprova ? esc(e.numeroAprova) : 'Sem número Aprova')+'</span>'+
+    '<div class="ec-top" style="justify-content:flex-end;">'+
       (canEdit ? '<div class="ec-actions">'+
         '<button class="icon-btn" title="Editar identificação" data-act="lic-edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
         '<button class="icon-btn del" title="Excluir" data-act="lic-del" data-id="'+esc(e.id)+'">&#10005;</button>'+
       '</div>' : '')+
     '</div>'+
     '<div class="ec-when"><span class="ec-date">'+esc(e.objeto||'')+'</span></div>'+
+    '<div class="ec-row"><span class="k">Número no Sistema Aprova</span><span>'+(e.numeroAprova ? esc(e.numeroAprova) : '<span class="field-hint">Sem número Aprova</span>')+'</span></div>'+
     '<div class="ec-row"><span class="k">Fase atual</span><span>'+
       (cur.etapa ? '<span class="status-pill '+licitacoesFaseClass(cur.etapa)+'">'+esc(cur.etapa)+'</span>' : '<span class="field-hint">Sem movimento registrado</span>')+
       (cur.vencido ? ' <span class="status-pill danger">Vencido — requer atualização</span>' : '')+
@@ -4210,7 +4270,7 @@ function licitacaoMovModalHTML(e){
   var cur = currentEtapaInfo(movs);
   return '<div class="modal-head"><h3>'+(e.objeto ? esc(e.objeto) : 'Licitação')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
     '<div class="mov-modal-meta">'+
-      '<div class="ec-row"><span class="k">Nº Aprova</span><span>'+(e.numeroAprova ? esc(e.numeroAprova) : '&mdash;')+'</span></div>'+
+      '<div class="ec-row"><span class="k">Número no Sistema Aprova</span><span>'+(e.numeroAprova ? esc(e.numeroAprova) : '&mdash;')+'</span></div>'+
       '<div class="ec-row"><span class="k">Fase atual</span><span>'+
         (cur.etapa ? '<span class="status-pill '+licitacoesFaseClass(cur.etapa)+'">'+esc(cur.etapa)+'</span>' : '<span class="field-hint">Sem movimento registrado</span>')+
         (cur.vencido ? ' <span class="status-pill danger">Vencido — requer atualização</span>' : '')+
@@ -4283,11 +4343,10 @@ function maybeRefreshLoglic(){
 function licitacaoFormModalHTML(ev){
   ev = ev || {};
   var isNew = !ev.id;
-  return '<div class="modal-head"><h3>'+(ev.id?'Editar Licitação':'Nova Licitação')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-    '<form id="licitacaoForm">'+
+  var dadosHTML =
       '<div class="field"><label for="lic-f-objeto">Objeto</label><textarea id="lic-f-objeto" rows="2" required placeholder="O que está sendo licitado">'+esc(ev.objeto||'')+'</textarea></div>'+
       '<div class="grid grid-2" style="margin-top:10px;">'+
-        '<div class="field"><label for="lic-f-numero">Número no Aprova (opcional)</label><input type="text" id="lic-f-numero" value="'+esc(ev.numeroAprova||'')+'" /></div>'+
+        '<div class="field"><label for="lic-f-numero">Número no Sistema Aprova (opcional)</label><input type="text" id="lic-f-numero" value="'+esc(ev.numeroAprova||'')+'" /></div>'+
         '<div class="field"><label for="lic-f-modalidade">Modalidade (opcional)</label><select id="lic-f-modalidade">'+licitacoesModalidadeOptionsHTML(ev.modalidade)+'</select></div>'+
       '</div>'+
       '<div class="grid grid-2" style="margin-top:10px;">'+
@@ -4298,17 +4357,22 @@ function licitacaoFormModalHTML(ev){
         '<div class="field"><label for="lic-f-valor">Valor estimado — R$ (opcional)</label><input type="number" step="0.01" min="0" id="lic-f-valor" value="'+(ev.valorEstimado!=null?esc(String(ev.valorEstimado)):'')+'" /></div>'+
         '<div class="field"><label for="lic-f-abertura">Data de abertura (opcional)</label><input type="date" id="lic-f-abertura" value="'+esc(ev.dataAbertura||'')+'" /></div>'+
       '</div>'+
-      '<div class="field" style="margin-top:10px;"><label for="lic-f-obs">Observações gerais (opcional)</label><textarea id="lic-f-obs" rows="2">'+esc(ev.observacoes||'')+'</textarea></div>'+
-      (isNew ? (
-        '<hr style="border-color:var(--line);margin:14px 0;" />'+
-        '<p class="field-hint" style="margin-bottom:8px;">Movimento inicial — todo processo novo começa com uma fase registrada.</p>'+
-        '<div class="field"><label for="lic-f-mov-fase">Fase</label><select id="lic-f-mov-fase" required>'+licitacoesFaseOptionsHTML(state.licitacoesFases[0])+'</select></div>'+
-        '<div class="grid grid-2" style="margin-top:10px;">'+
-          '<div class="field"><label for="lic-f-mov-data">Data do movimento</label><input type="date" id="lic-f-mov-data" value="'+esc(ev.dataAbertura||toISODate(new Date()))+'" required /></div>'+
-          '<div class="field"><label for="lic-f-mov-prazo">Prazo p/ próximo movimento (opcional)</label><input type="date" id="lic-f-mov-prazo" /></div>'+
-        '</div>'+
-        '<div class="field" style="margin-top:10px;"><label for="lic-f-mov-obs">Observação do movimento (opcional)</label><textarea id="lic-f-mov-obs" rows="2"></textarea></div>'
-      ) : '')+
+      '<div class="field" style="margin-top:10px;"><label for="lic-f-obs">Observações gerais (opcional)</label><textarea id="lic-f-obs" rows="2">'+esc(ev.observacoes||'')+'</textarea></div>';
+  var sections = [{key:'dados', label:'Dados do Processo', html:dadosHTML}];
+  if(isNew){
+    var movHTML =
+      '<p class="field-hint" style="margin-bottom:8px;">Movimento inicial — todo processo novo começa com uma fase registrada.</p>'+
+      '<div class="field"><label for="lic-f-mov-fase">Fase</label><select id="lic-f-mov-fase" required>'+licitacoesFaseOptionsHTML(state.licitacoesFases[0])+'</select></div>'+
+      '<div class="grid grid-2" style="margin-top:10px;">'+
+        '<div class="field"><label for="lic-f-mov-data">Data do movimento</label><input type="date" id="lic-f-mov-data" value="'+esc(ev.dataAbertura||toISODate(new Date()))+'" required /></div>'+
+        '<div class="field"><label for="lic-f-mov-prazo">Prazo p/ próximo movimento (opcional)</label><input type="date" id="lic-f-mov-prazo" /></div>'+
+      '</div>'+
+      '<div class="field" style="margin-top:10px;"><label for="lic-f-mov-obs">Observação do movimento (opcional)</label><textarea id="lic-f-mov-obs" rows="2"></textarea></div>';
+    sections.push({key:'movimento', label:'Movimento Inicial', html:movHTML});
+  }
+  return '<div class="modal-head"><h3>'+(ev.id?'Editar Licitação':'Nova Licitação')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<form id="licitacaoForm" novalidate>'+
+      formModalSectionsHTML(sections)+
       '<div class="login-err" id="licitacaoFormErr"></div>'+
       '<div class="modal-actions">'+
         (ev.id ? '<button type="button" class="btn btn-danger btn-sm" id="licitacaoFormDelBtn">Excluir</button>' : '')+
@@ -4321,6 +4385,11 @@ function openLicitacaoForm(id){
   var ev = id ? state.licitacoes.find(function(x){ return x.id===id; }) : null;
   var isNew = !(ev && ev.id);
   openModal(licitacaoFormModalHTML(ev||{}));
+  /* tela cheia com abas (v4.2), ver comentário em formModalSectionsHTML() */
+  $('modalBox').classList.remove('mov-modal');
+  $('modalOverlay').classList.remove('mov-modal-overlay');
+  $('modalBox').classList.add('form-modal');
+  $('modalOverlay').classList.add('form-modal-overlay');
   var form = $('licitacaoForm');
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -4333,7 +4402,7 @@ function openLicitacaoForm(id){
     var valorRaw = $('lic-f-valor').value;
     var dataAbertura = $('lic-f-abertura').value;
     var observacoes = $('lic-f-obs').value.trim();
-    if(!objeto){ errEl.textContent = 'Descreva o objeto.'; return; }
+    if(!objeto){ switchFormModalTab(form, 'dados'); errEl.textContent = 'Descreva o objeto.'; return; }
     var payload = {
       objeto:objeto, numeroAprova:(numeroAprova||null), modalidade:(modalidade||null),
       orgaoSolicitante:(orgaoSolicitante||null), responsavel:(responsavel||null),
@@ -4345,7 +4414,7 @@ function openLicitacaoForm(id){
       var movData = $('lic-f-mov-data').value;
       var movPrazo = $('lic-f-mov-prazo').value;
       var movObs = $('lic-f-mov-obs').value.trim();
-      if(!movFase || !movData){ errEl.textContent = 'Preencha a fase e a data do movimento inicial.'; return; }
+      if(!movFase || !movData){ switchFormModalTab(form, 'movimento'); errEl.textContent = 'Preencha a fase e a data do movimento inicial.'; return; }
       payload.movimentoInicial = { etapa: movFase, data: movData, prazoProximo: (movPrazo||null), observacao: (movObs||null) };
     }
     var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
@@ -5622,6 +5691,8 @@ $_onReady(function(){
   }catch(e){ console.error('wiring crestBtn', e); }
   $('modalOverlay').addEventListener('click', function(e){
     if(e.target.id==='modalOverlay' || e.target.closest('[data-close]')) closeModal();
+    var formTabBtn = e.target.closest('.form-modal-tab');
+    if(formTabBtn) switchFormModalTab(formTabBtn.closest('form'), formTabBtn.dataset.formtab);
     var actBtn = e.target.closest('[data-modal-act]');
     if(actBtn){
       var id = actBtn.dataset.id;
