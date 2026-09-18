@@ -132,16 +132,30 @@ header.topbar{
   filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));
 }
 .topbar-inner{flex-wrap:wrap;row-gap:6px;}
-.brand{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.brand{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%;}
 .brand .eyebrow{
   font-family:var(--font-mono);
   font-size:10px;
   letter-spacing:.12em;
   color:var(--gold);
   text-transform:uppercase;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  /* v4.3-follow-up: esse é o texto mais comprido do header, e .brand não
+     encolhe de verdade por flexbox aqui — o .status-cluster (flex:none)
+     "quebra linha" pro widget de sincronização/relógio antes de forçar
+     a marca a dividir espaço com mais nada, então sobra "espaço de
+     layout" de sobra mesmo quando o widget de login FIXO (fora do fluxo
+     normal) já está visualmente em cima dessa área. Cálculo em vw, não
+     em px fixo: acompanha a largura real do widget (~378px: e-mail +
+     "Trocar senha" + "Sair" + folgas) mais a faixa do brasão (~82px) e
+     uma folga de segurança — encolhe só na faixa estreita onde o widget
+     de fato ameaça, sem cortar à toa em telas largas. Abaixo de 640px o
+     eyebrow já some inteiro (regra mobile mais abaixo), então esse
+     cálculo não entra em conflito com aquele caso. */
+  max-width:calc(100vw - 500px);
 }
 .brand-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.brand h1{font-size:16px;letter-spacing:.05em;white-space:nowrap;}
+.brand h1{font-size:16px;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .brand .sub{font-size:12px;color:var(--ink-3);letter-spacing:.02em;}
 .version-badge{
   appearance:none;cursor:pointer;
@@ -157,15 +171,16 @@ header.topbar{
 .status-cluster{
   margin-left:auto;
   /* reserva espaço pro widget de login fixo (canto superior direito) não
-     sobrepor o relógio/sincronização. Precisa cobrir o pior caso: e-mail
-     truncado no limite de .auth-user (max-width:220px) + gap (8px) +
-     botão "Sair" (~55px) + a folga de 14px do .auth-widget até a borda
-     da janela — 112px cobria só e-mails curtos (ex.: dg@teste.local, usados
-     nos testes automatizados) e sobrepunha com e-mails reais mais longos
-     (ex.: adilsondiasgomes@gmail.com) em resoluções comuns de notebook
-     (1280–1440px), onde o container central do header já está no seu
-     max-width e não sobra folga extra. */
-  margin-right:300px;
+     sobrepor o relógio/sincronização. Precisa cobrir o pior caso medido de
+     verdade (Playwright, e-mail real adilsondiasgomes@gmail.com truncado
+     no limite de .auth-user max-width:220px): e-mail + botão "Trocar
+     senha" (v4.3-follow-up, novo) + botão "Sair" + a folga de 14px do
+     .auth-widget até a borda da janela ≈ 378px medidos — arredondado com
+     folga extra pra variação de fonte entre navegadores/SO. Histórico:
+     112px cobria só e-mails curtos de teste e sobrepunha com e-mails reais
+     em notebook (1280–1440px); 300px cobria só até o botão "Sair", sem o
+     novo botão "Trocar senha" adicionado depois. */
+  margin-right:410px;
   display:flex;align-items:center;gap:10px;
   flex-wrap:wrap;justify-content:flex-end;
   flex:none;
@@ -466,6 +481,11 @@ body[data-screen="auditoria"] footer.foot{flex:none;padding:8px 0 0;}
   .sync-pill{padding:4px 9px;font-size:10px;}
   .auth-widget{top:9px;right:10px;}
   .auth-user{display:none;}
+  /* No celular o botão "Trocar senha" do header some junto com o e-mail
+     (some espaço pra "Entrar"/"Sair" não apertar) — o caminho lá é
+     Configurações → Sobre → "Trocar senha" (sempre alcançável, qualquer
+     largura de tela). */
+  #btnChangePasswordHeader{display:none;}
 }
 
 .view{display:none;}
@@ -1083,7 +1103,15 @@ details.roster-view summary{
   display:flex;align-items:center;gap:8px;
 }
 .auth-user{font-size:11px;color:var(--ink-3);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* v4.3: o e-mail logado é clicável — abre "Trocar senha" — sem crescer o
+   widget (o botão "Sair" já teve sua reserva de espaço calibrada com
+   cuidado em .status-cluster; um botão extra aqui reabriria essa conta). */
+.auth-user[role="button"]{cursor:pointer;}
+.auth-user[role="button"]:hover{color:var(--gold);text-decoration:underline;}
+.auth-user[role="button"]:focus-visible{outline:1px solid var(--gold);outline-offset:2px;border-radius:3px;}
 .login-err{color:var(--red-crest);font-size:12.5px;font-family:var(--font-mono);margin:6px 0 0;min-height:14px;}
+.forgot-pass-link{display:block;margin:10px 0 0;color:var(--ink-3);font-size:12px;text-align:right;}
+.forgot-pass-link:hover{color:var(--gold);}
 
 /* ---------- toast ---------- */
 #toast{
@@ -1393,7 +1421,8 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 </header>
 
 <div class="auth-widget" id="authWidget">
-  <span class="auth-user mono" id="authUserLabel" hidden></span>
+  <span class="auth-user mono" id="authUserLabel" role="button" tabindex="0" title="Clique para trocar a senha" hidden></span>
+  <button class="btn btn-sm btn-ghost" id="btnChangePasswordHeader" type="button" hidden>Trocar senha</button>
   <button class="btn btn-sm btn-gold" id="authBtn" type="button">Entrar</button>
 </div>
 
@@ -1689,12 +1718,12 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <div class="backup-box">
           <div class="backup-block">
             <h4>Exportar</h4>
-            <p>Baixa um arquivo <code>.json</code> com todos os eventos e as configurações atuais (locais, recursos, gestão e efetivo). Guarde em local seguro como cópia de segurança.</p>
+            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança.</p>
             <button class="btn btn-sm btn-gold" id="btnBackupExport" type="button">Exportar backup (.json)</button>
           </div>
           <div class="backup-block">
             <h4>Importar</h4>
-            <p>Restaura os dados a partir de um arquivo de backup exportado anteriormente. <strong>Isso substitui todos os eventos e configurações atuais do painel</strong> — use com cuidado.</p>
+            <p>Restaura os dados a partir de um arquivo de backup exportado anteriormente. <strong>Isso substitui todos os eventos, Logística, Licitações e configurações atuais do painel</strong> — use com cuidado. As listas de quem pode editar cada área (Perfis de Acesso) nunca são alteradas pela importação.</p>
             <input type="file" id="backupFileInput" accept="application/json,.json" hidden />
             <div class="backup-import-row">
               <button class="btn btn-sm" id="btnBackupChooseFile" type="button">Selecionar arquivo…</button>
@@ -1738,7 +1767,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.4 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1746,7 +1775,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções) e Licitações (acompanhamento de processos). Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística e Editor de Licitações — geríveis em Configurações → Perfis de Acesso; a visualização das abas continua aberta a qualquer conta logada.</p>
           <p>A evolução completa de versões e ampliações fica registrada no <a href="#" id="aboutVersionLink">Relatório Técnico</a>, acessível pelo selo ao lado deste título.</p>
           <p>Termo de cessão de uso, direitos autorais e conformidade com a LGPD: <a href="#" id="legalDocsLink">consultar documentação institucional</a>.</p>
-          <button class="btn btn-sm btn-danger" id="btnClearExemplos" style="margin-top:6px;">Remover eventos de exemplo</button>
+          <div class="about-account" id="aboutAccountBox" hidden style="margin:14px 0 2px;padding-top:12px;border-top:1px solid var(--line);">
+            <p style="margin:0 0 8px;color:var(--ink-3);font-size:12.5px;">Conta conectada: <span id="aboutAccountEmail" class="mono"></span></p>
+            <button class="btn btn-sm btn-ghost" id="btnChangePasswordCfg" type="button">Trocar senha</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1839,7 +1871,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="view-head">
       <div>
         <h2>Logística</h2>
-        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Ocorrências de logística — VTR, motos, equipamentos, armamentos, manutenções na sede e outras demandas. Visível a qualquer conta logada; lançar, editar ou excluir é restrito aos editores de Logística e aos administradores.</p>
       </div>
       <button class="btn btn-gold" id="btnNewLogistica" type="button" hidden>＋ Nova Ocorrência</button>
     </div>
@@ -1875,7 +1906,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="view-head">
       <div>
         <h2>Licitações</h2>
-        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Acompanhamento dos processos licitatórios em andamento — fase, prazos estimados, valores e número no sistema Aprova. Visível a qualquer conta logada; lançar, editar ou excluir é restrito aos editores de Licitações e aos administradores.</p>
       </div>
       <button class="btn btn-gold" id="btnNewLicitacao" type="button" hidden>＋ Nova Licitação</button>
     </div>
@@ -2237,6 +2267,15 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.4', date: '18/09/2026',
+    changes: [
+      'Botão "Trocar senha" agora aparece direto no cabeçalho (ao lado do e-mail, junto do "Sair") pra quem está logado — antes só existia dentro de Configurações → Sobre, e alguns relatos de "não encontrei a troca de senha" eram por causa disso; a opção dentro de Sobre continua existindo também (útil no celular, onde o botão do cabeçalho fica oculto por espaço).',
+      'Removido o botão "Remover eventos de exemplo" (Configurações → Sobre) — não fazia mais sentido manter na tela do dia a dia.',
+      'Backup (exportar/importar) passa a incluir também Logística e Licitações — com todo o histórico de movimentações de cada processo — além das listas configuráveis de categoria/status de Logística e fase/modalidade de Licitações. Como já valia para a lista de quem pode lançar na Agenda do Cmt, as listas de quem é Editor de Eventos/Logística/Licitações continuam saindo no arquivo exportado só de referência, mas nunca são alteradas ao importar um backup — evita que um arquivo antigo ou de terceiros mexa em permissões.',
+      'Reforço interno: a inicialização da conexão com o banco agora sempre roda primeiro, antes de qualquer outra configuração de tela — protege contra o tipo de falha onde um problema isolado em algum botão poderia, em tese, impedir o restante do painel de carregar corretamente.'
+    ]
+  },
   {
     version: 'v4.0', date: '16/09/2026',
     changes: [
@@ -3353,6 +3392,26 @@ function backupExportPayload(){
         exemplo:!!e.exemplo, createdAt:e.createdAt||null
       };
     }),
+    logistica: (state.logistica||[]).map(function(p){
+      return {
+        categoria:p.categoria, item:p.item||null, data:p.data, dataFim:p.dataFim||null,
+        descricao:p.descricao||null, responsavel:p.responsavel||null, custo:(p.custo==null?null:p.custo),
+        createdAt:p.createdAt||null,
+        movimentos: (state.logisticaMovimentos||[]).filter(function(m){ return m.logisticaId===p.id; }).map(function(m){
+          return { data:m.data, etapa:m.etapa, prazoProximo:m.prazoProximo||null, observacao:m.observacao||null, createdAt:m.createdAt||null };
+        })
+      };
+    }),
+    licitacoes: (state.licitacoes||[]).map(function(p){
+      return {
+        numeroAprova:p.numeroAprova||null, objeto:p.objeto, modalidade:p.modalidade||null,
+        orgaoSolicitante:p.orgaoSolicitante||null, responsavel:p.responsavel||null, valorEstimado:(p.valorEstimado==null?null:p.valorEstimado),
+        dataAbertura:p.dataAbertura||null, observacoes:p.observacoes||null, createdAt:p.createdAt||null,
+        movimentos: (state.licitacoesMovimentos||[]).filter(function(m){ return m.licitacaoId===p.id; }).map(function(m){
+          return { data:m.data, etapa:m.etapa, prazoProximo:m.prazoProximo||null, observacao:m.observacao||null, createdAt:m.createdAt||null };
+        })
+      };
+    }),
     config: {
       localRefs: state.localRefs||[],
       resourceTypes: state.resourceTypes||[],
@@ -3361,7 +3420,18 @@ function backupExportPayload(){
       rosterRemoved: state.rosterRemoved||[],
       rosterAdded: state.rosterAdded||[],
       cmtCategorias: state.cmtCategorias||[],
-      cmtAgendaEmails: state.cmtAgendaEmails||[]
+      logisticaCategorias: state.logisticaCategorias||[],
+      logisticaStatusList: state.logisticaStatusList||[],
+      licitacoesFases: state.licitacoesFases||[],
+      licitacoesModalidades: state.licitacoesModalidades||[],
+      /* As três listas abaixo (e cmtAgendaEmails) SÓ entram na exportação —
+         nunca são restauradas na importação (ver replaceConfigAll): um
+         backup antigo/de terceiros nunca deve poder alterar quem tem
+         permissão de edição/comando. */
+      cmtAgendaEmails: state.cmtAgendaEmails||[],
+      eventosEditors: state.eventosEditors||[],
+      logisticaEditors: state.logisticaEditors||[],
+      licitacoesEditors: state.licitacoesEditors||[]
     }
   };
 }
@@ -3376,7 +3446,7 @@ function downloadBackupFile(){
   a.href = url; a.download = 'painel-eventos-gcmi-backup-'+stamp+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-  showToast('Backup exportado: '+payload.events.length+' evento(s).');
+  showToast('Backup exportado: '+payload.events.length+' evento(s), '+payload.logistica.length+' registro(s) de Logística, '+payload.licitacoes.length+' processo(s) de Licitação.');
 }
 function parseBackupFile(text){
   var data;
@@ -3418,12 +3488,17 @@ function replaceConfigAll(cfg){
   var gestaoExtra = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra : [];
   var rosterRemoved = Array.isArray(cfg.rosterRemoved) ? cfg.rosterRemoved : [];
   var rosterAdded = Array.isArray(cfg.rosterAdded) ? cfg.rosterAdded : [];
-  /* cmtCategorias (rótulos, sem risco) entra no restore normalmente.
-     cmtAgendaEmails (lista de quem pode lançar na Agenda do Cmt) fica de
-     fora de propósito — um backup antigo/de terceiros nunca deve poder
-     alterar quem tem permissão de comando; essa lista só muda pela própria
-     tela de gerenciamento da Agenda do Cmt. */
+  /* cmtCategorias e as 4 listas suspenso de Logística/Licitações (rótulos,
+     sem risco de permissão) entram no restore normalmente.
+     cmtAgendaEmails/eventosEditors/logisticaEditors/licitacoesEditors
+     (quem pode comandar/editar cada área) ficam de fora de propósito — um
+     backup antigo/de terceiros nunca deve poder alterar quem tem permissão;
+     essas listas só mudam pelas próprias telas de Perfis de Acesso. */
   var cmtCategorias = (Array.isArray(cfg.cmtCategorias) && cfg.cmtCategorias.length) ? cfg.cmtCategorias : DEFAULT_CMT_CATEGORIAS.slice();
+  var logisticaCategorias = (Array.isArray(cfg.logisticaCategorias) && cfg.logisticaCategorias.length) ? cfg.logisticaCategorias : DEFAULT_LOGISTICA_CATEGORIAS.slice();
+  var logisticaStatusList = (Array.isArray(cfg.logisticaStatusList) && cfg.logisticaStatusList.length) ? cfg.logisticaStatusList : DEFAULT_LOGISTICA_STATUS.slice();
+  var licitacoesFases = (Array.isArray(cfg.licitacoesFases) && cfg.licitacoesFases.length) ? cfg.licitacoesFases : DEFAULT_LICITACOES_FASES.slice();
+  var licitacoesModalidades = (Array.isArray(cfg.licitacoesModalidades) && cfg.licitacoesModalidades.length) ? cfg.licitacoesModalidades : DEFAULT_LICITACOES_MODALIDADES.slice();
   if(mode==='live'){
     return Promise.all([
       upsertConfig('local-refs', {items:localRefs}),
@@ -3432,21 +3507,123 @@ function replaceConfigAll(cfg){
       upsertConfig('gestao-extra', {items:gestaoExtra}),
       upsertConfig('roster-removed', {items:rosterRemoved}),
       upsertConfig('roster-added', {items:rosterAdded}),
-      upsertConfig('cmt-categorias', {items:cmtCategorias})
+      upsertConfig('cmt-categorias', {items:cmtCategorias}),
+      upsertConfig('logistica-categorias', {items:logisticaCategorias}),
+      upsertConfig('logistica-status', {items:logisticaStatusList}),
+      upsertConfig('licitacoes-fases', {items:licitacoesFases}),
+      upsertConfig('licitacoes-modalidades', {items:licitacoesModalidades})
     ]).then(function(){ return fetchConfigAll(); });
   }
   state.localRefs = localRefs; state.resourceTypes = resourceTypes; state.participantTypes = participantTypes; state.gestaoExtra = gestaoExtra;
   state.rosterRemoved = rosterRemoved; state.rosterAdded = rosterAdded; state.cmtCategorias = cmtCategorias;
+  state.logisticaCategorias = logisticaCategorias; state.logisticaStatusList = logisticaStatusList;
+  state.licitacoesFases = licitacoesFases; state.licitacoesModalidades = licitacoesModalidades;
   saveLS(LS_KEYS.refs, localRefs); saveLS(LS_KEYS.res, resourceTypes); saveLS(LS_KEYS.part, participantTypes); saveLS(LS_KEYS.gestao, gestaoExtra);
   saveLS(LS_KEYS.rosterRemoved, rosterRemoved); saveLS(LS_KEYS.rosterAdded, rosterAdded); saveLS(LS_KEYS.cmtCat, cmtCategorias);
+  saveLS(LS_KEYS.logisticaCat, logisticaCategorias); saveLS(LS_KEYS.logisticaStatus, logisticaStatusList);
+  saveLS(LS_KEYS.licitacoesFases, licitacoesFases); saveLS(LS_KEYS.licitacoesModalidades, licitacoesModalidades);
   renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources();
   renderParticipantSelect(); renderCfgParticipants();
   renderCfgGestao(); renderEfetivoList(); renderRosterGrid(); renderCmtCategoriaChips();
+  renderLogisticaCategoriaChips(); renderLogisticaStatusChips(); renderLicitacoesFaseChips(); renderLicitacoesModalidadeChips();
+  return Promise.resolve();
+}
+/* Apaga tudo em uma tabela via um filtro sempre-verdadeiro (id != UUID nulo)
+   — o cliente supabase-js exige algum filtro num delete em massa por
+   segurança; não existe (nem pode existir, é o UUID zerado) uma linha real
+   com esse id. */
+var _NIL_UUID = '00000000-0000-0000-0000-000000000000';
+function replaceAllLogistica(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  items = Array.isArray(items) ? items : [];
+  if(mode==='live'){
+    return sb.from('logistica_movimentos').delete().neq('id', _NIL_UUID).then(function(delMovRes){
+      if(delMovRes.error) throw delMovRes.error;
+      return sb.from('logistica').delete().neq('id', _NIL_UUID);
+    }).then(function(delRes){
+      if(delRes.error) throw delRes.error;
+      return items.reduce(function(chain, item){
+        return chain.then(function(){
+          var row = logisticaToDbRow(Object.assign({}, item, {createdAt: item.createdAt || new Date().toISOString()}));
+          return sb.from('logistica').insert(row).select().then(function(insRes){
+            if(insRes.error) throw insRes.error;
+            var newId = insRes.data && insRes.data[0] && insRes.data[0].id;
+            var movs = Array.isArray(item.movimentos) ? item.movimentos : [];
+            if(!newId || !movs.length) return;
+            var movRows = movs.map(function(m){ return logisticaMovimentoToDbRow(Object.assign({}, m, {logisticaId:newId})); });
+            return sb.from('logistica_movimentos').insert(movRows).then(function(mRes){
+              if(mRes.error) throw mRes.error;
+            });
+          });
+        });
+      }, Promise.resolve());
+    }).then(function(){ return fetchLogistica().then(function(){ return fetchLogisticaMovimentos(); }); });
+  }
+  var parentList = [], movList = [];
+  items.forEach(function(item, i){
+    var id = 'lg_imp_'+Date.now()+'_'+i;
+    var parent = Object.assign({}, item); delete parent.movimentos;
+    parentList.push(Object.assign({}, parent, {id:id, createdAt: item.createdAt || new Date().toISOString()}));
+    (Array.isArray(item.movimentos) ? item.movimentos : []).forEach(function(m, mi){
+      movList.push(Object.assign({}, m, {id:'lgm_imp_'+Date.now()+'_'+i+'_'+mi, logisticaId:id, createdAt: m.createdAt || new Date().toISOString()}));
+    });
+  });
+  saveLS(LS_KEYS.logistica, parentList);
+  saveLS(LS_KEYS.logisticaMovimentos, movList);
+  state.logistica = parentList;
+  state.logisticaMovimentos = movList;
+  maybeRefreshLogistica();
+  return Promise.resolve();
+}
+function replaceAllLicitacoes(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  items = Array.isArray(items) ? items : [];
+  if(mode==='live'){
+    return sb.from('licitacoes_movimentos').delete().neq('id', _NIL_UUID).then(function(delMovRes){
+      if(delMovRes.error) throw delMovRes.error;
+      return sb.from('licitacoes').delete().neq('id', _NIL_UUID);
+    }).then(function(delRes){
+      if(delRes.error) throw delRes.error;
+      return items.reduce(function(chain, item){
+        return chain.then(function(){
+          var row = licitacoesToDbRow(Object.assign({}, item, {createdAt: item.createdAt || new Date().toISOString()}));
+          return sb.from('licitacoes').insert(row).select().then(function(insRes){
+            if(insRes.error) throw insRes.error;
+            var newId = insRes.data && insRes.data[0] && insRes.data[0].id;
+            var movs = Array.isArray(item.movimentos) ? item.movimentos : [];
+            if(!newId || !movs.length) return;
+            var movRows = movs.map(function(m){ return licitacoesMovimentoToDbRow(Object.assign({}, m, {licitacaoId:newId})); });
+            return sb.from('licitacoes_movimentos').insert(movRows).then(function(mRes){
+              if(mRes.error) throw mRes.error;
+            });
+          });
+        });
+      }, Promise.resolve());
+    }).then(function(){ return fetchLicitacoes().then(function(){ return fetchLicitacoesMovimentos(); }); });
+  }
+  var parentList = [], movList = [];
+  items.forEach(function(item, i){
+    var id = 'lc_imp_'+Date.now()+'_'+i;
+    var parent = Object.assign({}, item); delete parent.movimentos;
+    parentList.push(Object.assign({}, parent, {id:id, createdAt: item.createdAt || new Date().toISOString()}));
+    (Array.isArray(item.movimentos) ? item.movimentos : []).forEach(function(m, mi){
+      movList.push(Object.assign({}, m, {id:'lcm_imp_'+Date.now()+'_'+i+'_'+mi, licitacaoId:id, createdAt: m.createdAt || new Date().toISOString()}));
+    });
+  });
+  saveLS(LS_KEYS.licitacoes, parentList);
+  saveLS(LS_KEYS.licitacoesMovimentos, movList);
+  state.licitacoes = parentList;
+  state.licitacoesMovimentos = movList;
+  maybeRefreshLicitacoes();
   return Promise.resolve();
 }
 function importBackupPayload(payload){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   return replaceAllEvents(payload.events||[]).then(function(){
+    return replaceAllLogistica(payload.logistica||[]);
+  }).then(function(){
+    return replaceAllLicitacoes(payload.licitacoes||[]);
+  }).then(function(){
     return replaceConfigAll(payload.config||{});
   });
 }
@@ -3619,13 +3796,29 @@ function updateAuthUI(){
     label.hidden = true;
     label.textContent = '';
   }
-  updateCfgAccessUI();
-  updateFormAccessUI();
-  updateCmtAgendaAccessUI();
-  updateLogisticaAccessUI();
-  updateLicitacoesAccessUI();
-  updateDomainAccessUI();
-  updateAuditoriaAccessUI();
+  /* v4.3-follow-up: DG relatou não ter encontrado a troca de senha — o
+     clique no e-mail (sutil) e o caminho por Config→Sobre (enterrado)
+     não bastaram sozinhos. Agora existe um botão dedicado e sempre
+     visível "Trocar senha" no próprio header, ao lado de "Sair" — some
+     junto com o resto do widget só no celular (<640px, mesma regra do
+     e-mail), onde Config→Sobre continua sendo o caminho. */
+  var changePassBtn = $('btnChangePasswordHeader');
+  if(changePassBtn) changePassBtn.hidden = !authUser;
+  var accountBox = $('aboutAccountBox'), accountEmail = $('aboutAccountEmail');
+  if(accountBox){
+    accountBox.hidden = !authUser;
+    if(accountEmail) accountEmail.textContent = authUser ? (authUser.email || '') : '';
+  }
+  /* v4.3-follow-up (blindagem): cada updateXAccessUI() abaixo mexe numa
+     área independente da UI (Config, formulário de Evento, Agenda do
+     Cmt, Logística, Licitações, Domínio, Auditoria). Antes, uma exceção
+     em qualquer uma delas interrompia todas as seguintes sem aviso
+     nenhum, deixando partes inteiras do painel travadas no estado
+     antigo — por isso cada uma agora roda isolada; uma falha aparece só
+     no console (com o nome da função), sem travar as outras. */
+  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI].forEach(function(fn){
+    try{ fn(); }catch(e){ console.error('updateAuthUI: '+fn.name, e); }
+  });
 }
 function loginModalHTML(){
   return '<div class="modal-head"><h3>Entrar para editar</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
@@ -3635,12 +3828,22 @@ function loginModalHTML(){
       '<div class="field"><label for="login-pass">Senha</label><input type="password" id="login-pass" required autocomplete="current-password" /></div>'+
       '<div class="login-err" id="loginErr"></div>'+
       '<div class="modal-actions"><button type="submit" class="btn btn-gold btn-sm" id="loginSubmitBtn">Entrar</button></div>'+
+      '<a href="#" id="forgotPassLink" class="forgot-pass-link">Esqueci minha senha</a>'+
     '</form>';
 }
 function openLoginModal(){
   openModal(loginModalHTML());
   var form = $('loginForm');
   if(!form) return;
+  var emailFieldBeforeSwitch = '';
+  var link = $('forgotPassLink');
+  if(link){
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      emailFieldBeforeSwitch = ($('login-email') && $('login-email').value.trim()) || '';
+      openForgotPasswordModal(emailFieldBeforeSwitch);
+    });
+  }
   form.addEventListener('submit', function(e){
     e.preventDefault();
     var email = $('login-email').value.trim();
@@ -3666,6 +3869,114 @@ function openLoginModal(){
     }).catch(function(){
       btn.disabled = false;
       errEl.textContent = 'Não foi possível entrar agora. Tente novamente.';
+    });
+  });
+}
+/* ---------------- troca de senha (v4.3-follow-up) ----------------
+   Dois fluxos, ambos em cima de sb.auth (sem tabela/tela nova):
+   1) Trocar senha com a pessoa já logada — clique no e-mail no canto
+      superior direito, sb.auth.updateUser({password}).
+   2) "Esqueci minha senha" a partir da tela de login — envia e-mail via
+      sb.auth.resetPasswordForEmail(); ao abrir o link recebido, o
+      supabase-js detecta o token na própria URL sozinho e dispara
+      onAuthStateChange com o evento PASSWORD_RECOVERY (tratado em
+      initStore()), que abre o modal de definir a senha nova. */
+function changePasswordModalHTML(){
+  return '<div class="modal-head"><h3>Trocar senha</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Defina uma senha nova para sua conta ('+esc(authUser?authUser.email:'')+').</p>'+
+    '<form id="changePassForm">'+
+      '<div class="field"><label for="cp-new">Nova senha</label><input type="password" id="cp-new" required minlength="6" autocomplete="new-password" /></div>'+
+      '<div class="field"><label for="cp-confirm">Confirmar nova senha</label><input type="password" id="cp-confirm" required minlength="6" autocomplete="new-password" /></div>'+
+      '<div class="login-err" id="cpErr"></div>'+
+      '<div class="modal-actions"><button type="submit" class="btn btn-gold btn-sm" id="cpSubmitBtn">Salvar nova senha</button></div>'+
+    '</form>';
+}
+function openChangePasswordModal(){
+  if(!authUser) return;
+  openModal(changePasswordModalHTML());
+  var form = $('changePassForm');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('cpErr'); errEl.textContent = '';
+    var novaSenha = $('cp-new').value;
+    var confirmar = $('cp-confirm').value;
+    if(novaSenha.length < 6){ errEl.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
+    if(novaSenha !== confirmar){ errEl.textContent = 'As senhas não coincidem.'; return; }
+    var btn = $('cpSubmitBtn'); btn.disabled = true;
+    sb.auth.updateUser({ password: novaSenha }).then(function(res){
+      btn.disabled = false;
+      if(res.error){ errEl.textContent = 'Não foi possível trocar a senha agora. Tente novamente.'; return; }
+      closeModal();
+      showToast('Senha atualizada.');
+    }).catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Não foi possível trocar a senha agora. Tente novamente.';
+    });
+  });
+}
+function forgotPasswordModalHTML(prefillEmail){
+  return '<div class="modal-head"><h3>Esqueci minha senha</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Informe seu e-mail cadastrado. Se ele estiver autorizado, enviaremos um link para redefinir a senha.</p>'+
+    '<form id="forgotPassForm">'+
+      '<div class="field"><label for="fp-email">E-mail</label><input type="email" id="fp-email" required autocomplete="username" value="'+esc(prefillEmail||'')+'" /></div>'+
+      '<div class="login-err" id="fpErr"></div>'+
+      '<div class="modal-actions"><button type="submit" class="btn btn-gold btn-sm" id="fpSubmitBtn">Enviar link</button></div>'+
+    '</form>';
+}
+function openForgotPasswordModal(prefillEmail){
+  openModal(forgotPasswordModalHTML(prefillEmail));
+  var form = $('forgotPassForm');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = $('fp-email').value.trim();
+    var errEl = $('fpErr'); errEl.textContent = '';
+    if(!email){ errEl.textContent = 'Informe o e-mail.'; return; }
+    var btn = $('fpSubmitBtn'); btn.disabled = true;
+    var redirectUrl = window.location.origin + window.location.pathname;
+    sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl }).then(function(){
+      btn.disabled = false;
+      closeModal();
+      /* Mensagem genérica de propósito (não confirma nem nega se o e-mail
+         está cadastrado) — mesmo padrão do próprio Supabase Auth. */
+      showToast('Se o e-mail estiver cadastrado, enviamos um link de redefinição.');
+    }).catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Não foi possível enviar agora. Tente novamente.';
+    });
+  });
+}
+function setNewPasswordModalHTML(){
+  return '<div class="modal-head"><h3>Defina sua nova senha</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Você abriu um link de redefinição de senha. Escolha uma senha nova para continuar.</p>'+
+    '<form id="setNewPassForm">'+
+      '<div class="field"><label for="snp-new">Nova senha</label><input type="password" id="snp-new" required minlength="6" autocomplete="new-password" /></div>'+
+      '<div class="field"><label for="snp-confirm">Confirmar nova senha</label><input type="password" id="snp-confirm" required minlength="6" autocomplete="new-password" /></div>'+
+      '<div class="login-err" id="snpErr"></div>'+
+      '<div class="modal-actions"><button type="submit" class="btn btn-gold btn-sm" id="snpSubmitBtn">Salvar e continuar</button></div>'+
+    '</form>';
+}
+function openSetNewPasswordModal(){
+  openModal(setNewPasswordModalHTML());
+  var form = $('setNewPassForm');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('snpErr'); errEl.textContent = '';
+    var novaSenha = $('snp-new').value;
+    var confirmar = $('snp-confirm').value;
+    if(novaSenha.length < 6){ errEl.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
+    if(novaSenha !== confirmar){ errEl.textContent = 'As senhas não coincidem.'; return; }
+    var btn = $('snpSubmitBtn'); btn.disabled = true;
+    sb.auth.updateUser({ password: novaSenha }).then(function(res){
+      btn.disabled = false;
+      if(res.error){ errEl.textContent = 'Não foi possível salvar a senha agora. Tente novamente.'; return; }
+      closeModal();
+      showToast('Senha definida. Você já está conectado.');
+    }).catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Não foi possível salvar a senha agora. Tente novamente.';
     });
   });
 }
@@ -3722,6 +4033,15 @@ function initStore(){
   sb.auth.onAuthStateChange(function(_event, session){
     authUser = session ? session.user : null;
     updateAuthUI();
+    if(_event === 'PASSWORD_RECOVERY'){
+      /* A pessoa abriu o link de "esqueci minha senha" recebido por
+         e-mail — o supabase-js já detectou o token na URL sozinho e
+         montou a sessão; só falta pedir a senha nova. Limpa o hash da
+         URL (onde vêm os tokens do link) pra não deixá-los expostos na
+         barra de endereço nem reaproveitáveis se a página for recarregada. */
+      try{ history.replaceState(null, '', window.location.pathname + window.location.search); }catch(e){}
+      openSetNewPasswordModal();
+    }
   });
   subscribeEvents();
   subscribeConfig();
@@ -3765,8 +4085,8 @@ function tickClock(){
 }
 
 /* ---------------- time selects ---------------- */
-function populateTimeSelect(sel){
-  var html = '';
+function populateTimeSelect(sel, allowBlank){
+  var html = allowBlank ? '<option value="">&mdash; (opcional) &mdash;</option>' : '';
   for(var h=0; h<24; h++){
     for(var m=0; m<60; m+=30){
       var hh = pad(h), mm = pad(m);
@@ -3945,7 +4265,7 @@ function cmtCardHTML(e){
         '<button class="icon-btn del" title="Excluir" data-act="cmt-del" data-id="'+esc(e.id)+'">&#10005;</button>'+
       '</div>' : '')+
     '</div>'+
-    '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLong(e.data, e.dataFim)+'</span></div>'+
+    '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLong(e.data, e.dataFim)+'</span>'+(e.horaInicio ? '<span class="ec-time mono">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>' : '')+'</div>'+
     (e.assunto ? '<div class="ec-row"><span class="k">Detalhe</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (e.visivelCalendario===false ? '<div class="ec-row"><span class="k">Calendário</span><span style="color:var(--ink-3);">Oculto (só nesta aba)</span></div>' : '')+
   '</article>';
@@ -3994,6 +4314,10 @@ function cmtFormModalHTML(ev){
         '<div class="field"><label for="cmt-f-data">Data</label><input type="date" id="cmt-f-data" value="'+esc(ev.data||'')+'" required /></div>'+
         '<div class="field"><label for="cmt-f-data-fim">Até (opcional — ex.: férias)</label><input type="date" id="cmt-f-data-fim" value="'+esc(ev.dataFim||'')+'" /></div>'+
       '</div>'+
+      '<div class="grid grid-2" style="margin-top:10px;">'+
+        '<div class="field"><label for="cmt-f-hi">Hora início (opcional)</label><select id="cmt-f-hi"></select></div>'+
+        '<div class="field"><label for="cmt-f-ht">Hora término (opcional)</label><select id="cmt-f-ht"></select></div>'+
+      '</div>'+
       '<div class="field" style="margin-top:10px;"><label for="cmt-f-assunto">Detalhe / observação (opcional)</label><textarea id="cmt-f-assunto" rows="3" placeholder="Ex.: Cardiologista — Dr. Fulano, 14h">'+esc(ev.assunto||'')+'</textarea></div>'+
       '<label class="field-check" style="margin-top:12px;display:flex;align-items:flex-start;gap:8px;">'+
         '<input type="checkbox" id="cmt-f-visivel-cal"'+(ev.visivelCalendario===false ? '' : ' checked')+' style="margin-top:3px;" />'+
@@ -4011,6 +4335,10 @@ function openCmtAgendaForm(id){
   if(!canManageCmtAgenda()){ showToast('Você não tem permissão para lançar na Agenda do Cmt.'); return; }
   var ev = id ? state.events.find(function(x){ return x.id===id && x.tipo==='pessoal'; }) : null;
   openModal(cmtFormModalHTML(ev||{}));
+  populateTimeSelect($('cmt-f-hi'), true);
+  populateTimeSelect($('cmt-f-ht'), true);
+  $('cmt-f-hi').value = (ev && ev.horaInicio) || '';
+  $('cmt-f-ht').value = (ev && ev.horaTermino) || '';
   var form = $('cmtAgendaForm');
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -4018,11 +4346,15 @@ function openCmtAgendaForm(id){
     var categoria = $('cmt-f-categoria').value;
     var data = $('cmt-f-data').value;
     var dataFim = $('cmt-f-data-fim').value;
+    var horaInicio = $('cmt-f-hi').value;
+    var horaTermino = $('cmt-f-ht').value;
     var assunto = $('cmt-f-assunto').value.trim();
     var visivelCalendario = $('cmt-f-visivel-cal').checked;
     if(!categoria || !data){ errEl.textContent = 'Selecione a categoria e a data.'; return; }
     if(dataFim && dataFim < data){ errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return; }
-    var payload = {tipo:'pessoal', data:data, dataFim:(dataFim && dataFim!==data ? dataFim : null), modalidade:categoria, assunto:(assunto||null), visivelCalendario:visivelCalendario};
+    if(horaTermino && !horaInicio){ errEl.textContent = 'Informe também a hora início.'; return; }
+    if(horaInicio && horaTermino && horaTermino < horaInicio){ errEl.textContent = 'A hora término não pode ser anterior à hora início.'; return; }
+    var payload = {tipo:'pessoal', data:data, dataFim:(dataFim && dataFim!==data ? dataFim : null), horaInicio:(horaInicio||null), horaTermino:(horaTermino||null), modalidade:categoria, assunto:(assunto||null), visivelCalendario:visivelCalendario};
     var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
     var task = (ev && ev.id) ? updateEvent(ev.id, payload) : addEvent(Object.assign({createdAt:new Date().toISOString()}, payload));
     task.then(function(){
@@ -5234,6 +5566,7 @@ var EVENTOS_REL_FIELDS = [
 ];
 var CMT_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
+  {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return e.horaInicio ? '<td class="tbl-time">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>' : '<td class="tbl-time">&mdash;</td>'; }},
   {key:'categoria', label:'Categoria', th:'<th>Categoria</th>', td:function(e){ return '<td>'+esc(e.modalidade||'—')+'</td>'; }},
   {key:'detalhe', label:'Detalhe', th:'<th>Detalhe</th>', td:function(e){ return '<td>'+(e.assunto ? esc(e.assunto) : '<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'calendario', label:'Status no Calendário', th:'<th>Calendário</th>', td:function(e){ return '<td>'+(e.visivelCalendario===false ? 'Oculto (só nesta aba)' : 'Visível')+'</td>'; }}
@@ -5753,6 +6086,19 @@ function goToCfgPane(name){
 function $_onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
 
 $_onReady(function(){
+  /* v4.3-follow-up (blindagem): initStore() — que conecta ao Supabase,
+     restaura a sessão de login e carrega os dados — roda ANTES de toda
+     a fiação de UI abaixo (centenas de linhas, a maioria sem try/catch
+     próprio, historicamente). Motivo: uma exceção em qualquer trecho de
+     fiação futuro (um wiring de um botão que não existe mais, por
+     exemplo) interromperia tudo o que vem depois dela nesta mesma
+     função — inclusive initStore(), se ela estivesse no fim como antes.
+     Com initStore() primeiro, o essencial (login, dados, sincronização)
+     fica garantido mesmo que algum trecho de wiring mais abaixo quebre;
+     na pior hipótese, um botão específico fica sem reagir a clique, em
+     vez do painel inteiro parecer travado. */
+  initStore();
+
   document.body.setAttribute('data-screen', 'agenda');
   populateTimeSelect($('f-hi'));
   populateTimeSelect($('f-ht'));
@@ -5797,11 +6143,34 @@ $_onReady(function(){
   try{
     $('authBtn').addEventListener('click', handleAuthBtnClick);
   }catch(e){ console.error('wiring authBtn', e); }
+  try{
+    /* v4.3-follow-up: clicar no e-mail logado (canto superior direito)
+       abre "Trocar senha" — só ativo quando a pessoa está logada (o
+       elemento fica hidden quando deslogada, ver updateAuthUI()). */
+    var authLabelEl = $('authUserLabel');
+    authLabelEl.addEventListener('click', function(){ if(authUser) openChangePasswordModal(); });
+    authLabelEl.addEventListener('keydown', function(e){
+      if((e.key==='Enter' || e.key===' ') && authUser){ e.preventDefault(); openChangePasswordModal(); }
+    });
+  }catch(e){ console.error('wiring authUserLabel', e); }
+  try{
+    /* Mesma ação de "Trocar senha", só que a partir de Configurações →
+       Sobre — caminho que funciona em qualquer largura de tela, inclusive
+       celular (onde o e-mail no header some). */
+    $('btnChangePasswordCfg').addEventListener('click', function(){ if(authUser) openChangePasswordModal(); });
+  }catch(e){ console.error('wiring btnChangePasswordCfg', e); }
+  try{
+    /* Botão dedicado "Trocar senha" no header (v4.3-follow-up) — caminho
+       principal em desktop, sempre visível ao lado de "Sair". */
+    $('btnChangePasswordHeader').addEventListener('click', function(){ if(authUser) openChangePasswordModal(); });
+  }catch(e){ console.error('wiring btnChangePasswordHeader', e); }
 
   document.querySelectorAll('[data-goto]').forEach(function(b){ b.addEventListener('click', newEventFlow); });
 
-  $('btnVersionLog').addEventListener('click', function(){ openModal(versionModalHTML()); });
-  $('aboutVersionLink').addEventListener('click', function(e){ e.preventDefault(); openModal(versionModalHTML()); });
+  try{
+    $('btnVersionLog').addEventListener('click', function(){ openModal(versionModalHTML()); });
+    $('aboutVersionLink').addEventListener('click', function(e){ e.preventDefault(); openModal(versionModalHTML()); });
+  }catch(e){ console.error('wiring btnVersionLog/aboutVersionLink', e); }
   try{
     $('legalDocsLink').addEventListener('click', function(e){ e.preventDefault(); openModal(legalModalHTML()); });
   }catch(e){ console.error('wiring legalDocsLink', e); }
@@ -6351,14 +6720,6 @@ $_onReady(function(){
     });
   }catch(e){ console.error('wiring Perfis de Acesso', e); }
 
-  $('btnClearExemplos').addEventListener('click', function(){
-    var exemplos = state.events.filter(function(e){ return e.exemplo; });
-    if(!exemplos.length){ showToast('Nenhum evento de exemplo encontrado.'); return; }
-    Promise.all(exemplos.map(function(ev){ return deleteEvent(ev.id); })).then(function(){
-      showToast('Eventos de exemplo removidos.');
-    }).catch(function(){});
-  });
-
   /* ---------------- backup: wiring ---------------- */
   try{
     $('btnBackupExport').addEventListener('click', function(){
@@ -6387,8 +6748,11 @@ $_onReady(function(){
           var nLocais = Array.isArray(cfg.localRefs) ? cfg.localRefs.length : 0;
           var nRecursos = Array.isArray(cfg.resourceTypes) ? cfg.resourceTypes.length : 0;
           var nGestao = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra.length : 0;
+          var nLogistica = Array.isArray(payload.logistica) ? payload.logistica.length : 0;
+          var nLicitacoes = Array.isArray(payload.licitacoes) ? payload.licitacoes.length : 0;
+          var loglicInfo = (nLogistica || nLicitacoes) ? (', '+nLogistica+' registro(s) de Logística, '+nLicitacoes+' processo(s) de Licitação') : '';
           var exportedInfo = payload.exportedAt ? (' — exportado em '+new Date(payload.exportedAt).toLocaleString('pt-BR')) : '';
-          summaryEl.innerHTML = 'Arquivo lido: <strong>'+payload.events.length+' evento(s)</strong>, '+nLocais+' referência(s) de local, '+nRecursos+' tipo(s) de recurso, '+nGestao+' integrante(s) de gestão extra'+exportedInfo+'.';
+          summaryEl.innerHTML = 'Arquivo lido: <strong>'+payload.events.length+' evento(s)</strong>, '+nLocais+' referência(s) de local, '+nRecursos+' tipo(s) de recurso, '+nGestao+' integrante(s) de gestão extra'+loglicInfo+exportedInfo+'.';
           summaryEl.hidden = false;
           importBtn.hidden = false;
         }catch(err){
@@ -6409,7 +6773,7 @@ $_onReady(function(){
         btn.textContent = 'Importando…';
         var payload = pendingBackupPayload;
         importBackupPayload(payload).then(function(){
-          showToast('Backup importado: '+(payload.events||[]).length+' evento(s) restaurado(s).');
+          showToast('Backup importado: '+(payload.events||[]).length+' evento(s), '+(payload.logistica||[]).length+' registro(s) de Logística, '+(payload.licitacoes||[]).length+' processo(s) de Licitação restaurado(s).');
           pendingBackupPayload = null;
           btn.hidden = true; btn.disabled = false; btn.classList.remove('confirm'); btn.textContent = 'Substituir dados atuais';
           $('backupSummary').hidden = true;
@@ -6433,8 +6797,6 @@ $_onReady(function(){
       }
     });
   }catch(e){ console.error('wiring backup', e); }
-
-  initStore();
 });
 
 })();
