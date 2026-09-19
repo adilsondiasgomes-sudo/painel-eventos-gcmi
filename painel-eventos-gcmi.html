@@ -1431,7 +1431,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   <button class="tab-btn" data-view="cmtagenda" hidden>Agenda do Cmt</button>
   <button class="tab-btn" data-view="logistica" hidden>Logística</button>
   <button class="tab-btn" data-view="licitacoes" hidden>Licitações</button>
-  <button class="tab-btn" data-view="viaturas" hidden>Viaturas</button>
   <button class="tab-btn" data-view="loglicagenda" hidden>Calendário</button>
   <button class="tab-btn" data-view="loglicrelatorio" hidden>Relatório</button>
   <button class="tab-btn" data-view="relatorios">Relatórios</button>
@@ -1763,7 +1762,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="chips" id="accessLicitacoesChips" style="margin-top:8px;"></div>
           </div>
           <div>
-            <div class="field-hint"><strong>Gestores de Frota (Viaturas)</strong> — único perfil que ainda enxerga a aba Viaturas: cadastro, baixa/alta e histórico de status da frota.</div>
+            <div class="field-hint"><strong>Gestores de Frota (Viaturas)</strong> — único perfil que enxerga a sub-área Viaturas dentro de Logística: cadastro, baixa/alta e histórico de status da frota.</div>
             <div class="cfg-add"><input type="email" id="accessViaturasInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessViaturasAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessViaturasChips" style="margin-top:8px;"></div>
           </div>
@@ -1778,7 +1777,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
           <p id="aboutSyncNote"></p>
-          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções), Licitações (acompanhamento de processos) e, desde a v4.5, Viaturas (cadastro da frota e controle de baixa/alta). Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística, Editor de Licitações e Gestor de Frota — geríveis em Configurações → Perfis de Acesso. A visualização das abas continua aberta a qualquer conta logada, exceto a de Viaturas, restrita a Administradores e Gestores de Frota.</p>
+          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções) e Licitações (acompanhamento de processos). Desde a v4.5, dentro da própria aba Logística existe também a sub-área Viaturas (cadastro da frota e controle de baixa/alta com histórico), visível só para Administradores e Gestores de Frota. Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística, Editor de Licitações e Gestor de Frota — geríveis em Configurações → Perfis de Acesso; a visualização das demais abas continua aberta a qualquer conta logada.</p>
           <p>A evolução completa de versões e ampliações fica registrada no <a href="#" id="aboutVersionLink">Relatório Técnico</a>, acessível pelo selo ao lado deste título.</p>
           <p>Termo de cessão de uso, direitos autorais e conformidade com a LGPD: <a href="#" id="legalDocsLink">consultar documentação institucional</a>.</p>
           <div class="about-account" id="aboutAccountBox" hidden style="margin:14px 0 2px;padding-top:12px;border-top:1px solid var(--line);">
@@ -1879,31 +1878,52 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <h2>Logística</h2>
       </div>
       <button class="btn btn-gold" id="btnNewLogistica" type="button" hidden>＋ Nova Ocorrência</button>
+      <button class="btn btn-gold" id="btnNewViatura" type="button" hidden>＋ Nova Viatura</button>
     </div>
 
-    <details class="nominal-details" id="logisticaMgmt" hidden>
-      <summary>Gerenciar categorias e status</summary>
-      <div class="body">
-        <div class="grid grid-2">
-          <div>
-            <div class="field-hint">Categorias:</div>
-            <div class="cfg-add"><input type="text" id="logisticaCatInput" placeholder="Nova categoria (ex.: Combustível)" /><button class="btn btn-sm" id="logisticaCatAdd" type="button">Adicionar</button></div>
-            <div class="chips" id="logisticaCatChips" style="margin-top:8px;"></div>
-          </div>
-          <div>
-            <div class="field-hint">Etapas possíveis (usadas em cada movimento):</div>
-            <div class="cfg-add"><input type="text" id="logisticaStatusInput" placeholder="Nova etapa" /><button class="btn btn-sm" id="logisticaStatusAdd" type="button">Adicionar</button></div>
-            <div class="chips" id="logisticaStatusChips" style="margin-top:8px;"></div>
-          </div>
-        </div>
-        <p class="field-hint" style="margin-top:10px;">A etapa atual de cada ocorrência é sempre a do último movimento lançado — veja "Movimentações" dentro de cada card. Quem pode editar a Logística é gerenciado em Configurações → Perfis de Acesso.</p>
-      </div>
-    </details>
+    <!-- v4.5: cadastro/status de Viaturas passa a viver DENTRO da aba
+         Logística (não é mais uma aba própria) — alterna com "Ocorrências"
+         por este segmentado. A sub-aba Viaturas só aparece pra quem tem o
+         perfil de Gestor de Frota (ou admin); ver updateViaturasAccessUI(). -->
+    <div class="seg" id="logisticaSubSeg" style="margin-bottom:16px;">
+      <button class="active" data-logsub="ocorrencias" type="button">Ocorrências</button>
+      <button data-logsub="viaturas" type="button" hidden>Viaturas — Cadastro/Status</button>
+    </div>
 
-    <div class="event-grid" id="logisticaList" style="margin-top:16px;"></div>
-    <div class="empty-state" id="logisticaEmpty" style="display:none;">
-      <h3>Nenhuma ocorrência lançada</h3>
-      <p>Use o botão "＋ Nova Ocorrência" para lançar a primeira.</p>
+    <div id="logisticaOcorrenciasBlock">
+      <details class="nominal-details" id="logisticaMgmt" hidden>
+        <summary>Gerenciar categorias e status</summary>
+        <div class="body">
+          <div class="grid grid-2">
+            <div>
+              <div class="field-hint">Categorias:</div>
+              <div class="cfg-add"><input type="text" id="logisticaCatInput" placeholder="Nova categoria (ex.: Combustível)" /><button class="btn btn-sm" id="logisticaCatAdd" type="button">Adicionar</button></div>
+              <div class="chips" id="logisticaCatChips" style="margin-top:8px;"></div>
+            </div>
+            <div>
+              <div class="field-hint">Etapas possíveis (usadas em cada movimento):</div>
+              <div class="cfg-add"><input type="text" id="logisticaStatusInput" placeholder="Nova etapa" /><button class="btn btn-sm" id="logisticaStatusAdd" type="button">Adicionar</button></div>
+              <div class="chips" id="logisticaStatusChips" style="margin-top:8px;"></div>
+            </div>
+          </div>
+          <p class="field-hint" style="margin-top:10px;">A etapa atual de cada ocorrência é sempre a do último movimento lançado — veja "Movimentações" dentro de cada card. Quem pode editar a Logística é gerenciado em Configurações → Perfis de Acesso.</p>
+        </div>
+      </details>
+
+      <div class="event-grid" id="logisticaList" style="margin-top:16px;"></div>
+      <div class="empty-state" id="logisticaEmpty" style="display:none;">
+        <h3>Nenhuma ocorrência lançada</h3>
+        <p>Use o botão "＋ Nova Ocorrência" para lançar a primeira.</p>
+      </div>
+    </div>
+
+    <div id="logisticaViaturasBlock" style="display:none;">
+      <p class="field-hint" style="margin:0 0 14px;">Cadastro da frota e controle de baixa/alta, com histórico de todas as alterações de status. Visível só para Administradores e Gestores de Frota (Configurações → Perfis de Acesso).</p>
+      <div class="event-grid" id="viaturasList"></div>
+      <div class="empty-state" id="viaturasEmpty" style="display:none;">
+        <h3>Nenhuma viatura cadastrada</h3>
+        <p>Use o botão "＋ Nova Viatura" para cadastrar a primeira.</p>
+      </div>
     </div>
   </section>
 
@@ -1939,23 +1959,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="empty-state" id="licitacoesEmpty" style="display:none;">
       <h3>Nenhuma licitação cadastrada</h3>
       <p>Use o botão "＋ Nova Licitação" para lançar a primeira.</p>
-    </div>
-  </section>
-
-  <!-- ================= VIATURAS (v4.5) ================= -->
-  <section class="view" id="view-viaturas">
-    <div class="view-head">
-      <div>
-        <h2>Viaturas</h2>
-        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Cadastro da frota e controle de baixa/alta, com histórico de todas as alterações de status. Aba visível só para Administradores e Gestores de Frota (Configurações → Perfis de Acesso).</p>
-      </div>
-      <button class="btn btn-gold" id="btnNewViatura" type="button" hidden>＋ Nova Viatura</button>
-    </div>
-
-    <div class="event-grid" id="viaturasList" style="margin-top:16px;"></div>
-    <div class="empty-state" id="viaturasEmpty" style="display:none;">
-      <h3>Nenhuma viatura cadastrada</h3>
-      <p>Use o botão "＋ Nova Viatura" para cadastrar a primeira.</p>
     </div>
   </section>
 
@@ -2279,7 +2282,10 @@ var DEFAULT_LICITACOES_MODALIDADES = ["Pregão Eletrônico","Pregão Presencial"
    um vocabulário operacional definido junto com a Gestão de Frota, não uma
    categoria livre por processo. */
 var VIATURA_TIPOS = [{v:'SIMPLES', l:'Carro simples'}, {v:'MOTO', l:'Moto'}, {v:'C_COFRE', l:'Carro-forte/cofre'}];
-var VIATURA_ORIGENS = [{v:'PROPRIA', l:'Própria'}, {v:'ALUGADA', l:'Alugada'}];
+/* Nomenclatura correta a pedido do DG: "Orgânica" (frota própria) e
+   "Terceirizada" (frota locada) — os valores internos (PROPRIA/ALUGADA)
+   seguem os mesmos de antes pra não exigir migração no banco. */
+var VIATURA_ORIGENS = [{v:'PROPRIA', l:'Orgânica'}, {v:'ALUGADA', l:'Terceirizada'}];
 var VIATURA_STATUS = [{v:'DISPONIVEL', l:'Disponível'}, {v:'BAIXADA', l:'Baixada'}, {v:'SUBSTITUIDO', l:'Substituído'}];
 function viaturaTipoLabel(v){ var f = VIATURA_TIPOS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||''); }
 function viaturaOrigemLabel(v){ var f = VIATURA_ORIGENS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||''); }
@@ -2623,6 +2629,10 @@ var state = {
   viaturas: [],
   viaturasHistorico: [],
   viaturasGestores: [],
+  /* v4.5-follow-up: a pedido do DG, Viaturas deixou de ser uma aba própria
+     e passou a ser uma sub-área DENTRO de Logística — logisticaSubView
+     controla qual bloco aparece ('ocorrencias' é o padrão). */
+  logisticaSubView: 'ocorrencias',
   filterTipo: 'todos',
   search: '',
   ord: 'asc',
@@ -4065,11 +4075,23 @@ function updateLicitacoesAccessUI(){
   if(restricted && document.body.getAttribute('data-screen')==='licitacoes'){ goToView('agenda'); }
   if(typeof renderLicitacoes === 'function' && $('licitacoesList')) renderLicitacoes();
 }
-/* ---------------- Viaturas: acesso (v4.5) ---------------- */
+/* ---------------- Viaturas: acesso (v4.5) ----------------
+   Segue a mesma lógica de antes (aba inteira restrita a admin + Gestores
+   de Frota), só que agora o que se esconde é o botão do segmentado
+   "Viaturas — Cadastro/Status" dentro da própria aba Logística, não uma
+   aba própria no menu principal (ver setLogisticaSubView()). */
 function updateViaturasAccessUI(){
   var restricted = isPublicRestricted() || !canViewViaturasTab();
-  document.querySelectorAll('[data-view="viaturas"]').forEach(function(b){ b.hidden = restricted; });
-  if(restricted && document.body.getAttribute('data-screen')==='viaturas'){ goToView('agenda'); }
+  document.querySelectorAll('[data-logsub="viaturas"]').forEach(function(b){ b.hidden = restricted; });
+  if(restricted && state.logisticaSubView==='viaturas'){ state.logisticaSubView = 'ocorrencias'; }
+  if(typeof setLogisticaSubView === 'function' && $('logisticaSubSeg')){
+    document.querySelectorAll('#logisticaSubSeg button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.logsub===state.logisticaSubView);
+    });
+    var ocBlock = $('logisticaOcorrenciasBlock'), vtrBlock = $('logisticaViaturasBlock');
+    if(ocBlock) ocBlock.style.display = (state.logisticaSubView==='ocorrencias') ? '' : 'none';
+    if(vtrBlock) vtrBlock.style.display = (state.logisticaSubView==='viaturas') ? '' : 'none';
+  }
   if(typeof renderViaturas === 'function' && $('viaturasList')) renderViaturas();
 }
 function updateAuthUI(){
@@ -4783,11 +4805,23 @@ function renderLogisticaStatusChips(){
     return '<span class="chip">'+esc(s)+(canEdit?'<button type="button" data-i="'+i+'" data-act="log-status-del">&#10005;</button>':'')+'</span>';
   }).join('');
 }
+function setLogisticaSubView(view){
+  state.logisticaSubView = (view==='viaturas' && canViewViaturasTab()) ? 'viaturas' : 'ocorrencias';
+  document.querySelectorAll('#logisticaSubSeg button').forEach(function(b){
+    b.classList.toggle('active', b.dataset.logsub===state.logisticaSubView);
+  });
+  var ocBlock = $('logisticaOcorrenciasBlock'), vtrBlock = $('logisticaViaturasBlock');
+  if(ocBlock) ocBlock.style.display = (state.logisticaSubView==='ocorrencias') ? '' : 'none';
+  if(vtrBlock) vtrBlock.style.display = (state.logisticaSubView==='viaturas') ? '' : 'none';
+  renderLogistica();
+  renderViaturas();
+}
 function renderLogistica(){
   var btn = $('btnNewLogistica'), mgmt = $('logisticaMgmt');
   var canEdit = canManageLogistica();
-  if(btn) btn.hidden = !canEdit;
-  if(mgmt) mgmt.hidden = !canEdit;
+  var onOcorrencias = state.logisticaSubView!=='viaturas';
+  if(btn) btn.hidden = !canEdit || !onOcorrencias;
+  if(mgmt) mgmt.hidden = !canEdit || !onOcorrencias;
   renderLogisticaCategoriaChips();
   renderLogisticaStatusChips();
   var grid = $('logisticaList'), empty = $('logisticaEmpty');
@@ -5235,7 +5269,7 @@ function viaturaCardHTML(v){
 function renderViaturas(){
   var btn = $('btnNewViatura');
   var canEdit = canManageViaturas();
-  if(btn) btn.hidden = !canEdit;
+  if(btn) btn.hidden = !canEdit || state.logisticaSubView!=='viaturas';
   var grid = $('viaturasList'), empty = $('viaturasEmpty');
   if(!grid) return;
   var list = (state.viaturas||[]).slice().sort(function(a,b){ return (a.prefixo||'') < (b.prefixo||'') ? -1 : 1; });
@@ -5244,7 +5278,7 @@ function renderViaturas(){
   grid.innerHTML = list.map(viaturaCardHTML).join('');
 }
 function maybeRefreshViaturas(){
-  if(document.body.getAttribute('data-screen')==='viaturas') renderViaturas();
+  if(document.body.getAttribute('data-screen')==='logistica') renderViaturas();
 }
 function viaturaFormModalHTML(v){
   v = v || {};
@@ -6513,7 +6547,7 @@ function updateAuditoriaAccessUI(){
 }
 
 /* ---------------- view switching ---------------- */
-var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria', viaturas: 'Viaturas'};
+var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria'};
 function goToView(name){
   document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id==='view-'+name); });
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.view===name); });
@@ -6523,12 +6557,11 @@ function goToView(name){
   if(name==='config'){ goToCfgPane((isPublicRestricted() || !isAdmin()) ? 'sobre' : 'locais'); }
   if(name==='relatorios'){ initRelFilters(); renderRelatorio(); }
   if(name==='cmtagenda'){ renderCmtAgenda(); }
-  if(name==='logistica'){ renderLogistica(); }
+  if(name==='logistica'){ setLogisticaSubView(state.logisticaSubView); }
   if(name==='licitacoes'){ renderLicitacoes(); }
   if(name==='loglicagenda'){ initLoglicCal(); renderLoglicCal(); }
   if(name==='loglicrelatorio'){ initLoglicRelFilters(); renderLoglicRelatorio(); }
   if(name==='auditoria'){ fetchAuditLog(); }
-  if(name==='viaturas'){ renderViaturas(); }
   window.scrollTo({top:0, behavior:'auto'});
 }
 
@@ -7106,6 +7139,12 @@ $_onReady(function(){
     $('modalOverlay').addEventListener('click', function(e){
       var btn = e.target.closest('[data-act="vtr-status-new"]'); if(!btn) return;
       openViaturaStatusForm(btn.dataset.id);
+    });
+    /* v4.5-follow-up: segmentado Ocorrências/Viaturas dentro da própria aba
+       Logística — substitui a navegação por aba própria que existia antes. */
+    $('logisticaSubSeg').addEventListener('click', function(e){
+      var btn = e.target.closest('[data-logsub]'); if(!btn || btn.hidden) return;
+      setLogisticaSubView(btn.dataset.logsub);
     });
   }catch(e){ console.error('wiring Viaturas', e); }
 
