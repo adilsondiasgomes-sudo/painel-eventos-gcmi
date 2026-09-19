@@ -1431,6 +1431,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   <button class="tab-btn" data-view="cmtagenda" hidden>Agenda do Cmt</button>
   <button class="tab-btn" data-view="logistica" hidden>Logística</button>
   <button class="tab-btn" data-view="licitacoes" hidden>Licitações</button>
+  <button class="tab-btn" data-view="viaturas" hidden>Viaturas</button>
   <button class="tab-btn" data-view="loglicagenda" hidden>Calendário</button>
   <button class="tab-btn" data-view="loglicrelatorio" hidden>Relatório</button>
   <button class="tab-btn" data-view="relatorios">Relatórios</button>
@@ -1718,12 +1719,12 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <div class="backup-box">
           <div class="backup-block">
             <h4>Exportar</h4>
-            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança.</p>
+            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações), as Viaturas (com o histórico de status) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança.</p>
             <button class="btn btn-sm btn-gold" id="btnBackupExport" type="button">Exportar backup (.json)</button>
           </div>
           <div class="backup-block">
             <h4>Importar</h4>
-            <p>Restaura os dados a partir de um arquivo de backup exportado anteriormente. <strong>Isso substitui todos os eventos, Logística, Licitações e configurações atuais do painel</strong> — use com cuidado. As listas de quem pode editar cada área (Perfis de Acesso) nunca são alteradas pela importação.</p>
+            <p>Restaura os dados a partir de um arquivo de backup exportado anteriormente. <strong>Isso substitui todos os eventos, Logística, Licitações, Viaturas e configurações atuais do painel</strong> — use com cuidado. As listas de quem pode editar cada área (Perfis de Acesso) nunca são alteradas pela importação.</p>
             <input type="file" id="backupFileInput" accept="application/json,.json" hidden />
             <div class="backup-import-row">
               <button class="btn btn-sm" id="btnBackupChooseFile" type="button">Selecionar arquivo…</button>
@@ -1761,18 +1762,23 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="cfg-add"><input type="email" id="accessLicitacoesInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessLicitacoesAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessLicitacoesChips" style="margin-top:8px;"></div>
           </div>
+          <div>
+            <div class="field-hint"><strong>Gestores de Frota (Viaturas)</strong> — único perfil que ainda enxerga a aba Viaturas: cadastro, baixa/alta e histórico de status da frota.</div>
+            <div class="cfg-add"><input type="email" id="accessViaturasInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessViaturasAdd" type="button">Adicionar</button></div>
+            <div class="chips" id="accessViaturasChips" style="margin-top:8px;"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.4 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.5 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
           <p id="aboutSyncNote"></p>
-          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções) e Licitações (acompanhamento de processos). Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística e Editor de Licitações — geríveis em Configurações → Perfis de Acesso; a visualização das abas continua aberta a qualquer conta logada.</p>
+          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções), Licitações (acompanhamento de processos) e, desde a v4.5, Viaturas (cadastro da frota e controle de baixa/alta). Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística, Editor de Licitações e Gestor de Frota — geríveis em Configurações → Perfis de Acesso. A visualização das abas continua aberta a qualquer conta logada, exceto a de Viaturas, restrita a Administradores e Gestores de Frota.</p>
           <p>A evolução completa de versões e ampliações fica registrada no <a href="#" id="aboutVersionLink">Relatório Técnico</a>, acessível pelo selo ao lado deste título.</p>
           <p>Termo de cessão de uso, direitos autorais e conformidade com a LGPD: <a href="#" id="legalDocsLink">consultar documentação institucional</a>.</p>
           <div class="about-account" id="aboutAccountBox" hidden style="margin:14px 0 2px;padding-top:12px;border-top:1px solid var(--line);">
@@ -1933,6 +1939,23 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="empty-state" id="licitacoesEmpty" style="display:none;">
       <h3>Nenhuma licitação cadastrada</h3>
       <p>Use o botão "＋ Nova Licitação" para lançar a primeira.</p>
+    </div>
+  </section>
+
+  <!-- ================= VIATURAS (v4.5) ================= -->
+  <section class="view" id="view-viaturas">
+    <div class="view-head">
+      <div>
+        <h2>Viaturas</h2>
+        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Cadastro da frota e controle de baixa/alta, com histórico de todas as alterações de status. Aba visível só para Administradores e Gestores de Frota (Configurações → Perfis de Acesso).</p>
+      </div>
+      <button class="btn btn-gold" id="btnNewViatura" type="button" hidden>＋ Nova Viatura</button>
+    </div>
+
+    <div class="event-grid" id="viaturasList" style="margin-top:16px;"></div>
+    <div class="empty-state" id="viaturasEmpty" style="display:none;">
+      <h3>Nenhuma viatura cadastrada</h3>
+      <p>Use o botão "＋ Nova Viatura" para cadastrar a primeira.</p>
     </div>
   </section>
 
@@ -2251,6 +2274,20 @@ var DEFAULT_LOGISTICA_CATEGORIAS = ["VTR","Motos","Equipamentos","Armamentos","M
 var DEFAULT_LOGISTICA_STATUS = ["Aberto","Em Andamento","Concluído"];
 var DEFAULT_LICITACOES_FASES = ["Planejamento / Elaboração do Termo de Referência","Publicada / Aguardando Propostas","Em Análise / Julgamento de Propostas","Habilitação / Recursos","Homologada / Adjudicada","Contrato em Execução","Concluída","Cancelada / Revogada / Deserta / Fracassada"];
 var DEFAULT_LICITACOES_MODALIDADES = ["Pregão Eletrônico","Pregão Presencial","Dispensa de Licitação","Inexigibilidade","Concorrência","Tomada de Preços","Adesão a Ata (Carona)"];
+/* v4.5: módulo de Viaturas (VTR) — tipo/origem/status são taxonomias FIXAS
+   (não listas configuráveis como as de Logística/Licitações), pois refletem
+   um vocabulário operacional definido junto com a Gestão de Frota, não uma
+   categoria livre por processo. */
+var VIATURA_TIPOS = [{v:'SIMPLES', l:'Carro simples'}, {v:'MOTO', l:'Moto'}, {v:'C_COFRE', l:'Carro-forte/cofre'}];
+var VIATURA_ORIGENS = [{v:'PROPRIA', l:'Própria'}, {v:'ALUGADA', l:'Alugada'}];
+var VIATURA_STATUS = [{v:'DISPONIVEL', l:'Disponível'}, {v:'BAIXADA', l:'Baixada'}, {v:'SUBSTITUIDO', l:'Substituído'}];
+function viaturaTipoLabel(v){ var f = VIATURA_TIPOS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||''); }
+function viaturaOrigemLabel(v){ var f = VIATURA_ORIGENS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||''); }
+function viaturaStatusLabel(v){ var f = VIATURA_STATUS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||''); }
+function viaturaStatusClass(v){ return v==='DISPONIVEL' ? 'ok' : (v==='BAIXADA' ? 'danger' : 'warn'); }
+function viaturaOptionsHTML(list, sel){
+  return list.map(function(x){ return '<option value="'+esc(x.v)+'"'+(x.v===sel?' selected':'')+'>'+esc(x.l)+'</option>'; }).join('');
+}
 var MODALIDADES = {
   operacional: ["Ponto Base","Passagem Periódica","Início ao Término"],
   administrativo: ["Curso (EQP)","Palestra","Diligência","Reunião","Ponto Base","Passagem Periódica","Início ao Término","Outro"]
@@ -2260,13 +2297,22 @@ var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_ges
   logisticaMovimentos:'gcmi_ev_logistica_movimentos', licitacoesMovimentos:'gcmi_ev_licitacoes_movimentos',
   eventosEditors:'gcmi_ev_eventos_editors', logisticaEditors:'gcmi_ev_logistica_editors', licitacoesEditors:'gcmi_ev_licitacoes_editors',
   logisticaCat:'gcmi_ev_logistica_cat', logisticaStatus:'gcmi_ev_logistica_status',
-  licitacoesFases:'gcmi_ev_licitacoes_fases', licitacoesModalidades:'gcmi_ev_licitacoes_modalidades'};
+  licitacoesFases:'gcmi_ev_licitacoes_fases', licitacoesModalidades:'gcmi_ev_licitacoes_modalidades',
+  viaturas:'gcmi_ev_viaturas', viaturasHistorico:'gcmi_ev_viaturas_historico', viaturasGestores:'gcmi_ev_viaturas_gestores'};
 
 /* ---------------- Supabase ---------------- */
 var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.5', date: '19/09/2026',
+    changes: [
+      'Nova aba "Viaturas": cadastro da frota (prefixo, placa, tipo, origem, ano, observações) com controle de status — Disponível / Baixada / Substituído — e histórico completo de cada alteração de status (data, motivo e autor), no mesmo padrão de trilha de auditoria já usado em Logística/Licitações.',
+      'Novo perfil de acesso "Gestores de Frota (Viaturas)" em Configurações → Perfis de Acesso — só quem está nessa lista (ou é administrador) enxerga e edita a aba Viaturas; é a primeira etapa do módulo de controle de baixas/altas de VTR, com a parte de checklist de vistoria por vir numa próxima entrega.',
+      'Backup (exportar/importar) passa a incluir também Viaturas, com todo o histórico de status — seguindo a mesma regra de segurança já usada para as demais áreas: a lista de quem é Gestor de Frota nunca é alterada ao importar um backup.'
+    ]
+  },
   {
     version: 'v4.4', date: '18/09/2026',
     changes: [
@@ -2571,6 +2617,12 @@ var state = {
   licitacoesFases: DEFAULT_LICITACOES_FASES.slice(),
   licitacoesModalidades: DEFAULT_LICITACOES_MODALIDADES.slice(),
   licitacoesMovimentos: [],
+  /* v4.5: módulo de Viaturas (VTR) — etapa 1 (cadastro + baixa/alta com
+     histórico). viaturasGestores é um perfil de acesso à parte (não um dos
+     3 perfis de domínio existentes), ver isViaturasGestor()/canViewViaturasTab(). */
+  viaturas: [],
+  viaturasHistorico: [],
+  viaturasGestores: [],
   filterTipo: 'todos',
   search: '',
   ord: 'asc',
@@ -2863,6 +2915,63 @@ function subscribeLicitacoesMovimentos(){
     .subscribe();
 }
 
+/* ---------------- store: live (Supabase) — Viaturas (v4.5) ---------------- */
+function viaturaToDbRow(v){
+  var row = {
+    prefixo: v.prefixo, placa: v.placa||null, tipo: v.tipo, descricao: v.descricao||null,
+    ano: (v.ano===''||v.ano==null) ? null : Number(v.ano), origem: v.origem||null,
+    observacoes: v.observacoes||null
+  };
+  if(v.status) row.status = v.status;
+  return row;
+}
+function viaturaFromDbRow(r){
+  return {
+    id:r.id, prefixo:r.prefixo, placa:r.placa||null, tipo:r.tipo, descricao:r.descricao||null,
+    ano:(r.ano==null?null:Number(r.ano)), origem:r.origem||null, status:r.status,
+    observacoes:r.observacoes||null, createdAt:r.created_at, updatedAt:r.updated_at
+  };
+}
+function fetchViaturas(){
+  return sb.from('viaturas').select('*').then(function(res){
+    if(res.error){ console.error('fetchViaturas', res.error); return; }
+    state.viaturas = res.data.map(viaturaFromDbRow);
+    maybeRefreshViaturas();
+  });
+}
+function subscribeViaturas(){
+  fetchViaturas();
+  sb.channel('viaturas-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'viaturas'}, function(){ fetchViaturas(); })
+    .subscribe();
+}
+function viaturaHistoricoToDbRow(h){
+  var row = { status_anterior: h.statusAnterior||null, status_novo: h.statusNovo, motivo: h.motivo||null, autor: h.autor||null };
+  if(h.viaturaId) row.viatura_id = h.viaturaId;
+  return row;
+}
+function viaturaHistoricoFromDbRow(r){
+  return { id:r.id, viaturaId:r.viatura_id, statusAnterior:r.status_anterior||null, statusNovo:r.status_novo, motivo:r.motivo||null, autor:r.autor||null, createdAt:r.created_at };
+}
+function fetchViaturasHistorico(){
+  return sb.from('viaturas_status_historico').select('*').then(function(res){
+    if(res.error){ console.error('fetchViaturasHistorico', res.error); return; }
+    state.viaturasHistorico = res.data.map(viaturaHistoricoFromDbRow);
+    maybeRefreshViaturas();
+  });
+}
+function subscribeViaturasHistorico(){
+  fetchViaturasHistorico();
+  sb.channel('viaturas-historico-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'viaturas_status_historico'}, function(){ fetchViaturasHistorico(); })
+    .subscribe();
+}
+function viaturasHistoricoFor(viaturaId){
+  return (state.viaturasHistorico||[]).filter(function(h){ return h.viaturaId===viaturaId; }).slice().sort(function(a,b){
+    var ca=a.createdAt||'', cb=b.createdAt||''; return ca<cb ? 1 : (ca>cb ? -1 : 0);
+  });
+}
+
 /* ---------------- Movimentos: helpers (etapa atual/prazo/vencido ao vivo) ---------------- */
 function movimentosOrdenados(list, parentId, parentKey){
   return (list||[]).filter(function(m){ return m[parentKey]===parentId; }).slice().sort(function(a,b){
@@ -2922,6 +3031,8 @@ function fetchConfigAll(){
     if(!map['licitacoes-fases']) upsertConfig('licitacoes-fases', {items: state.licitacoesFases}).catch(function(){});
     state.licitacoesModalidades = (map['licitacoes-modalidades'] && Array.isArray(map['licitacoes-modalidades'].items) && map['licitacoes-modalidades'].items.length) ? map['licitacoes-modalidades'].items : DEFAULT_LICITACOES_MODALIDADES.slice();
     if(!map['licitacoes-modalidades']) upsertConfig('licitacoes-modalidades', {items: state.licitacoesModalidades}).catch(function(){});
+    state.viaturasGestores = (map['viaturas-gestores'] && Array.isArray(map['viaturas-gestores'].items)) ? map['viaturas-gestores'].items : [];
+    if(!map['viaturas-gestores']) upsertConfig('viaturas-gestores', {items: state.viaturasGestores}).catch(function(){});
     renderRefSelect(); renderCfgRefs();
     renderResourceSelect(); renderCfgResources();
     renderParticipantSelect(); renderCfgParticipants();
@@ -2935,6 +3046,7 @@ function fetchConfigAll(){
     updateLicitacoesAccessUI();
     updateDomainAccessUI();
     updateAuditoriaAccessUI();
+    updateViaturasAccessUI();
   });
 }
 function subscribeConfig(){
@@ -2966,6 +3078,9 @@ function loadLocalAll(){
   state.licitacoesFases = loadLS(LS_KEYS.licitacoesFases, null) || DEFAULT_LICITACOES_FASES.slice();
   state.licitacoesModalidades = loadLS(LS_KEYS.licitacoesModalidades, null) || DEFAULT_LICITACOES_MODALIDADES.slice();
   state.licitacoesMovimentos = loadLS(LS_KEYS.licitacoesMovimentos, []);
+  state.viaturas = loadLS(LS_KEYS.viaturas, []);
+  state.viaturasHistorico = loadLS(LS_KEYS.viaturasHistorico, []);
+  state.viaturasGestores = loadLS(LS_KEYS.viaturasGestores, []);
   renderMain(); renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources(); renderParticipantSelect(); renderCfgParticipants(); renderEfetivoList(); renderCfgGestao(); renderRosterGrid();
   renderAccessChips();
   updateCmtAgendaAccessUI();
@@ -2975,6 +3090,7 @@ function loadLocalAll(){
   updateLicitacoesAccessUI();
   updateDomainAccessUI();
   updateAuditoriaAccessUI();
+  updateViaturasAccessUI();
 }
 function maybeSeedLocal(){
   var meta = loadLS(LS_KEYS.meta, {});
@@ -3251,6 +3367,95 @@ function deleteLicitacaoMovimento(id){
   return Promise.resolve();
 }
 
+/* ---------------- store: unified CRUD — Viaturas (v4.5) ---------------- */
+function requireViaturasAuth(){
+  if(!requireAuth()) return false;
+  if(mode==='live' && !canManageViaturas()){
+    showToast('Você não tem permissão para editar Viaturas.');
+    return false;
+  }
+  return true;
+}
+function addViatura(data){
+  if(!requireViaturasAuth()) return Promise.reject(new Error('not-authorized'));
+  var payload = Object.assign({status:'DISPONIVEL'}, data);
+  if(mode==='live'){
+    return sb.from('viaturas').insert(viaturaToDbRow(payload)).then(function(res){
+      if(res.error) throw res.error;
+      return fetchViaturas();
+    });
+  }
+  var id = 'vtr_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  var list = loadLS(LS_KEYS.viaturas, []);
+  list.push(Object.assign({id:id, createdAt:new Date().toISOString()}, payload));
+  saveLS(LS_KEYS.viaturas, list);
+  state.viaturas = list;
+  maybeRefreshViaturas();
+  return Promise.resolve();
+}
+function updateViatura(id, data){
+  if(!requireViaturasAuth()) return Promise.reject(new Error('not-authorized'));
+  /* Edição de cadastro não mexe em status — isso é feito só por
+     changeViaturaStatus(), que também grava o histórico. */
+  var cadastro = Object.assign({}, data); delete cadastro.status;
+  if(mode==='live'){
+    return sb.from('viaturas').update(viaturaToDbRow(cadastro)).eq('id', id).then(function(res){
+      if(res.error) throw res.error;
+      return fetchViaturas();
+    });
+  }
+  var list = loadLS(LS_KEYS.viaturas, []);
+  var idx = list.findIndex(function(e){ return e.id===id; });
+  if(idx>-1){ list[idx] = Object.assign({}, list[idx], cadastro); saveLS(LS_KEYS.viaturas, list); state.viaturas=list; maybeRefreshViaturas(); }
+  return Promise.resolve();
+}
+function deleteViatura(id){
+  if(!requireViaturasAuth()) return Promise.reject(new Error('not-authorized'));
+  if(mode==='live'){
+    return sb.from('viaturas').delete().eq('id', id).then(function(res){
+      if(res.error) throw res.error;
+      return fetchViaturas();
+    });
+  }
+  saveLS(LS_KEYS.viaturas, loadLS(LS_KEYS.viaturas, []).filter(function(e){ return e.id!==id; }));
+  saveLS(LS_KEYS.viaturasHistorico, loadLS(LS_KEYS.viaturasHistorico, []).filter(function(h){ return h.viaturaId!==id; }));
+  state.viaturas = loadLS(LS_KEYS.viaturas, []);
+  state.viaturasHistorico = loadLS(LS_KEYS.viaturasHistorico, []);
+  maybeRefreshViaturas();
+  return Promise.resolve();
+}
+/* Baixa/alta: grava o novo status no cadastro da viatura E uma linha no
+   histórico (status anterior, novo, motivo, autor) — mesma ideia da
+   linha do tempo de movimentos de Logística/Licitações, só que aqui o
+   pai também guarda o "estado atual" (status), porque é isso que decide
+   se a viatura está disponível pro uso, não algo só derivado ao vivo. */
+function changeViaturaStatus(id, novoStatus, motivo){
+  if(!requireViaturasAuth()) return Promise.reject(new Error('not-authorized'));
+  var viatura = (state.viaturas||[]).find(function(v){ return v.id===id; });
+  var statusAnterior = viatura ? viatura.status : null;
+  var autorEmail = (authUser && authUser.email) || null;
+  if(mode==='live'){
+    return sb.from('viaturas').update({status:novoStatus}).eq('id', id).then(function(res){
+      if(res.error) throw res.error;
+      return sb.from('viaturas_status_historico').insert(viaturaHistoricoToDbRow({
+        viaturaId:id, statusAnterior:statusAnterior, statusNovo:novoStatus, motivo:motivo||null, autor:autorEmail
+      }));
+    }).then(function(res){
+      if(res && res.error) throw res.error;
+      return Promise.all([fetchViaturas(), fetchViaturasHistorico()]);
+    });
+  }
+  var list = loadLS(LS_KEYS.viaturas, []);
+  var idx = list.findIndex(function(e){ return e.id===id; });
+  if(idx>-1){ list[idx] = Object.assign({}, list[idx], {status:novoStatus}); saveLS(LS_KEYS.viaturas, list); state.viaturas=list; }
+  var hist = loadLS(LS_KEYS.viaturasHistorico, []);
+  hist.push({ id:'vtrh_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), viaturaId:id, statusAnterior:statusAnterior, statusNovo:novoStatus, motivo:motivo||null, autor:autorEmail, createdAt:new Date().toISOString() });
+  saveLS(LS_KEYS.viaturasHistorico, hist);
+  state.viaturasHistorico = hist;
+  maybeRefreshViaturas();
+  return Promise.resolve();
+}
+
 function saveRefs(items){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   state.localRefs = items;
@@ -3314,6 +3519,14 @@ function saveLicitacoesEditors(items){
   state.licitacoesEditors = items;
   if(mode==='live'){ return upsertConfig('licitacoes-editors', {items:items}).then(function(){ return fetchConfigAll(); }); }
   saveLS(LS_KEYS.licitacoesEditors, items);
+  renderAccessChips();
+  return Promise.resolve();
+}
+function saveViaturasGestores(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  state.viaturasGestores = items;
+  if(mode==='live'){ return upsertConfig('viaturas-gestores', {items:items}).then(function(){ return fetchConfigAll(); }); }
+  saveLS(LS_KEYS.viaturasGestores, items);
   renderAccessChips();
   return Promise.resolve();
 }
@@ -3412,6 +3625,15 @@ function backupExportPayload(){
         })
       };
     }),
+    viaturas: (state.viaturas||[]).map(function(v){
+      return {
+        prefixo:v.prefixo, placa:v.placa||null, tipo:v.tipo, origem:v.origem||null, ano:(v.ano==null?null:v.ano),
+        descricao:v.descricao||null, observacoes:v.observacoes||null, status:v.status, createdAt:v.createdAt||null,
+        historico: viaturasHistoricoFor(v.id).map(function(h){
+          return { statusAnterior:h.statusAnterior||null, statusNovo:h.statusNovo, motivo:h.motivo||null, autor:h.autor||null, createdAt:h.createdAt||null };
+        })
+      };
+    }),
     config: {
       localRefs: state.localRefs||[],
       resourceTypes: state.resourceTypes||[],
@@ -3424,14 +3646,15 @@ function backupExportPayload(){
       logisticaStatusList: state.logisticaStatusList||[],
       licitacoesFases: state.licitacoesFases||[],
       licitacoesModalidades: state.licitacoesModalidades||[],
-      /* As três listas abaixo (e cmtAgendaEmails) SÓ entram na exportação —
+      /* As quatro listas abaixo (e cmtAgendaEmails) SÓ entram na exportação —
          nunca são restauradas na importação (ver replaceConfigAll): um
          backup antigo/de terceiros nunca deve poder alterar quem tem
          permissão de edição/comando. */
       cmtAgendaEmails: state.cmtAgendaEmails||[],
       eventosEditors: state.eventosEditors||[],
       logisticaEditors: state.logisticaEditors||[],
-      licitacoesEditors: state.licitacoesEditors||[]
+      licitacoesEditors: state.licitacoesEditors||[],
+      viaturasGestores: state.viaturasGestores||[]
     }
   };
 }
@@ -3446,7 +3669,7 @@ function downloadBackupFile(){
   a.href = url; a.download = 'painel-eventos-gcmi-backup-'+stamp+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-  showToast('Backup exportado: '+payload.events.length+' evento(s), '+payload.logistica.length+' registro(s) de Logística, '+payload.licitacoes.length+' processo(s) de Licitação.');
+  showToast('Backup exportado: '+payload.events.length+' evento(s), '+payload.logistica.length+' registro(s) de Logística, '+payload.licitacoes.length+' processo(s) de Licitação, '+payload.viaturas.length+' viatura(s).');
 }
 function parseBackupFile(text){
   var data;
@@ -3617,12 +3840,56 @@ function replaceAllLicitacoes(items){
   maybeRefreshLicitacoes();
   return Promise.resolve();
 }
+function replaceAllViaturas(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  items = Array.isArray(items) ? items : [];
+  if(mode==='live'){
+    return sb.from('viaturas_status_historico').delete().neq('id', _NIL_UUID).then(function(delHistRes){
+      if(delHistRes.error) throw delHistRes.error;
+      return sb.from('viaturas').delete().neq('id', _NIL_UUID);
+    }).then(function(delRes){
+      if(delRes.error) throw delRes.error;
+      return items.reduce(function(chain, item){
+        return chain.then(function(){
+          var row = viaturaToDbRow(item);
+          return sb.from('viaturas').insert(row).select().then(function(insRes){
+            if(insRes.error) throw insRes.error;
+            var newId = insRes.data && insRes.data[0] && insRes.data[0].id;
+            var hist = Array.isArray(item.historico) ? item.historico : [];
+            if(!newId || !hist.length) return;
+            var histRows = hist.map(function(h){ return viaturaHistoricoToDbRow(Object.assign({}, h, {viaturaId:newId})); });
+            return sb.from('viaturas_status_historico').insert(histRows).then(function(hRes){
+              if(hRes.error) throw hRes.error;
+            });
+          });
+        });
+      }, Promise.resolve());
+    }).then(function(){ return fetchViaturas().then(function(){ return fetchViaturasHistorico(); }); });
+  }
+  var parentList = [], histList = [];
+  items.forEach(function(item, i){
+    var id = 'vtr_imp_'+Date.now()+'_'+i;
+    var parent = Object.assign({}, item); delete parent.historico;
+    parentList.push(Object.assign({}, parent, {id:id, createdAt: item.createdAt || new Date().toISOString()}));
+    (Array.isArray(item.historico) ? item.historico : []).forEach(function(h, hi){
+      histList.push(Object.assign({}, h, {id:'vtrh_imp_'+Date.now()+'_'+i+'_'+hi, viaturaId:id, createdAt: h.createdAt || new Date().toISOString()}));
+    });
+  });
+  saveLS(LS_KEYS.viaturas, parentList);
+  saveLS(LS_KEYS.viaturasHistorico, histList);
+  state.viaturas = parentList;
+  state.viaturasHistorico = histList;
+  maybeRefreshViaturas();
+  return Promise.resolve();
+}
 function importBackupPayload(payload){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   return replaceAllEvents(payload.events||[]).then(function(){
     return replaceAllLogistica(payload.logistica||[]);
   }).then(function(){
     return replaceAllLicitacoes(payload.licitacoes||[]);
+  }).then(function(){
+    return replaceAllViaturas(payload.viaturas||[]);
   }).then(function(){
     return replaceConfigAll(payload.config||{});
   });
@@ -3666,6 +3933,20 @@ function canManageLicitacoes(){
   if(mode!=='live') return true;
   return isAdmin() || _emailIsIn(state.licitacoesEditors);
 }
+/* ---------------- v4.5: Viaturas — perfil à parte ----------------
+   Diferente de Eventos/Logística/Licitações (onde qualquer logado VÊ a aba
+   e só a edição é restrita), Viaturas nasce com a aba inteira restrita a
+   admin + lista 'viaturas-gestores' — decisão explícita da primeira etapa
+   do módulo (cadastro/baixa-alta em teste fechado antes de abrir leitura
+   pro efetivo geral). isViaturasGestor()/canManageViaturas() são a mesma
+   checagem (não existe "ver sem editar" aqui, ao contrário das outras
+   áreas); canViewViaturasTab() é usada tanto pra aba quanto pra edição. */
+function isViaturasGestor(){
+  if(mode!=='live') return true;
+  return isAdmin() || _emailIsIn(state.viaturasGestores);
+}
+function canManageViaturas(){ return isViaturasGestor(); }
+function canViewViaturasTab(){ return isViaturasGestor(); }
 /* ---------------- v4.0: navegação compartimentada por domínio ----------------
    Antes da v4.0, a visibilidade das abas era ampla pra qualquer logado —
    só a edição era restrita por perfil. Agora quem tem um perfil de edição
@@ -3784,6 +4065,13 @@ function updateLicitacoesAccessUI(){
   if(restricted && document.body.getAttribute('data-screen')==='licitacoes'){ goToView('agenda'); }
   if(typeof renderLicitacoes === 'function' && $('licitacoesList')) renderLicitacoes();
 }
+/* ---------------- Viaturas: acesso (v4.5) ---------------- */
+function updateViaturasAccessUI(){
+  var restricted = isPublicRestricted() || !canViewViaturasTab();
+  document.querySelectorAll('[data-view="viaturas"]').forEach(function(b){ b.hidden = restricted; });
+  if(restricted && document.body.getAttribute('data-screen')==='viaturas'){ goToView('agenda'); }
+  if(typeof renderViaturas === 'function' && $('viaturasList')) renderViaturas();
+}
 function updateAuthUI(){
   var btn = $('authBtn'), label = $('authUserLabel');
   if(!btn) return;
@@ -3816,7 +4104,7 @@ function updateAuthUI(){
      nenhum, deixando partes inteiras do painel travadas no estado
      antigo — por isso cada uma agora roda isolada; uma falha aparece só
      no console (com o nome da função), sem travar as outras. */
-  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI].forEach(function(fn){
+  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI, updateViaturasAccessUI].forEach(function(fn){
     try{ fn(); }catch(e){ console.error('updateAuthUI: '+fn.name, e); }
   });
 }
@@ -4049,6 +4337,8 @@ function initStore(){
   subscribeLogisticaMovimentos();
   subscribeLicitacoes();
   subscribeLicitacoesMovimentos();
+  subscribeViaturas();
+  subscribeViaturasHistorico();
 }
 
 /* ---------------- sync status / toast ---------------- */
@@ -4922,6 +5212,170 @@ function openLicitacaoMovimentoForm(licitacaoId, movId){
   });
 }
 
+/* ---------------- Viaturas (VTR) — v4.5, etapa 1 ---------------- */
+function viaturaCardHTML(v){
+  var canEdit = canManageViaturas();
+  return ''+
+  '<article class="event-card logistica" data-id="'+esc(v.id)+'">'+
+    '<div class="ec-top">'+
+      '<span class="ec-badge">'+esc(v.prefixo||'Viatura')+'</span>'+
+      (canEdit ? '<div class="ec-actions">'+
+        '<button class="icon-btn" title="Editar cadastro" data-act="vtr-edit" data-id="'+esc(v.id)+'">&#9998;</button>'+
+        '<button class="icon-btn del" title="Excluir" data-act="vtr-del" data-id="'+esc(v.id)+'">&#10005;</button>'+
+      '</div>' : '')+
+    '</div>'+
+    '<div class="ec-row"><span class="k">Tipo</span><span>'+esc(viaturaTipoLabel(v.tipo))+(v.placa?' · '+esc(v.placa):'')+'</span></div>'+
+    '<div class="ec-row"><span class="k">Status</span><span><span class="status-pill '+viaturaStatusClass(v.status)+'">'+esc(viaturaStatusLabel(v.status))+'</span></span></div>'+
+    (v.origem ? '<div class="ec-row"><span class="k">Origem</span><span>'+esc(viaturaOrigemLabel(v.origem))+'</span></div>' : '')+
+    (v.ano ? '<div class="ec-row"><span class="k">Ano</span><span>'+esc(String(v.ano))+'</span></div>' : '')+
+    (v.descricao ? '<div class="ec-row"><span class="k">Descrição</span><span>'+esc(v.descricao)+'</span></div>' : '')+
+    '<div class="ec-hint-click">Clique no card para ver o histórico de status</div>'+
+  '</article>';
+}
+function renderViaturas(){
+  var btn = $('btnNewViatura');
+  var canEdit = canManageViaturas();
+  if(btn) btn.hidden = !canEdit;
+  var grid = $('viaturasList'), empty = $('viaturasEmpty');
+  if(!grid) return;
+  var list = (state.viaturas||[]).slice().sort(function(a,b){ return (a.prefixo||'') < (b.prefixo||'') ? -1 : 1; });
+  if(!list.length){ grid.innerHTML = ''; if(empty) empty.style.display = 'block'; return; }
+  if(empty) empty.style.display = 'none';
+  grid.innerHTML = list.map(viaturaCardHTML).join('');
+}
+function maybeRefreshViaturas(){
+  if(document.body.getAttribute('data-screen')==='viaturas') renderViaturas();
+}
+function viaturaFormModalHTML(v){
+  v = v || {};
+  var isNew = !v.id;
+  return '<div class="modal-head"><h3>'+(isNew?'Nova Viatura':'Editar Viatura')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<form id="viaturaForm" novalidate>'+
+      '<div class="grid grid-2">'+
+        '<div class="field"><label for="vtr-f-prefixo">Prefixo</label><input type="text" id="vtr-f-prefixo" value="'+esc(v.prefixo||'')+'" placeholder="Ex.: VTR-07" required /></div>'+
+        '<div class="field"><label for="vtr-f-placa">Placa (opcional)</label><input type="text" id="vtr-f-placa" value="'+esc(v.placa||'')+'" /></div>'+
+      '</div>'+
+      '<div class="grid grid-2" style="margin-top:10px;">'+
+        '<div class="field"><label for="vtr-f-tipo">Tipo</label><select id="vtr-f-tipo" required>'+viaturaOptionsHTML(VIATURA_TIPOS, v.tipo||'SIMPLES')+'</select></div>'+
+        '<div class="field"><label for="vtr-f-origem">Origem (opcional)</label><select id="vtr-f-origem"><option value="">—</option>'+viaturaOptionsHTML(VIATURA_ORIGENS, v.origem||'')+'</select></div>'+
+      '</div>'+
+      '<div class="field" style="margin-top:10px;"><label for="vtr-f-ano">Ano (opcional)</label><input type="number" id="vtr-f-ano" value="'+(v.ano!=null?esc(String(v.ano)):'')+'" /></div>'+
+      '<div class="field" style="margin-top:10px;"><label for="vtr-f-descricao">Descrição (opcional)</label><input type="text" id="vtr-f-descricao" value="'+esc(v.descricao||'')+'" placeholder="Ex.: Fiat Strada branca" /></div>'+
+      '<div class="field" style="margin-top:10px;"><label for="vtr-f-obs">Observações (opcional)</label><textarea id="vtr-f-obs" rows="2">'+esc(v.observacoes||'')+'</textarea></div>'+
+      '<div class="login-err" id="viaturaFormErr"></div>'+
+      '<div class="modal-actions">'+
+        (v.id ? '<button type="button" class="btn btn-danger btn-sm" id="viaturaFormDelBtn">Excluir</button>' : '')+
+        '<button type="submit" class="btn btn-gold btn-sm">'+(v.id?'Salvar Alterações':'Cadastrar')+'</button>'+
+      '</div>'+
+    '</form>';
+}
+function openViaturaForm(id){
+  if(!canManageViaturas()){ showToast('Você não tem permissão para editar Viaturas.'); return; }
+  var v = id ? (state.viaturas||[]).find(function(x){ return x.id===id; }) : null;
+  openModal(viaturaFormModalHTML(v||{}));
+  $('modalBox').classList.remove('mov-modal');
+  $('modalOverlay').classList.remove('mov-modal-overlay');
+  var form = $('viaturaForm');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('viaturaFormErr'); errEl.textContent = '';
+    var prefixo = $('vtr-f-prefixo').value.trim();
+    if(!prefixo){ errEl.textContent = 'Informe o prefixo da viatura.'; return; }
+    var anoRaw = $('vtr-f-ano').value;
+    var payload = {
+      prefixo:prefixo, placa:($('vtr-f-placa').value.trim()||null), tipo:$('vtr-f-tipo').value,
+      origem:($('vtr-f-origem').value||null), ano:(anoRaw===''?null:Number(anoRaw)),
+      descricao:($('vtr-f-descricao').value.trim()||null), observacoes:($('vtr-f-obs').value.trim()||null)
+    };
+    var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
+    var task = (v && v.id) ? updateViatura(v.id, payload) : addViatura(payload);
+    task.then(function(){
+      closeModal();
+      showToast((v && v.id) ? 'Cadastro atualizado.' : 'Viatura cadastrada.');
+    }).catch(function(){
+      errEl.textContent = 'Erro ao salvar. Tente novamente.';
+    }).finally(function(){ if(btnSubmit) btnSubmit.disabled = false; });
+  });
+  var delBtn = $('viaturaFormDelBtn');
+  if(delBtn && v && v.id){
+    delBtn.addEventListener('click', function(){
+      var vId = v.id;
+      closeModal();
+      deleteViatura(vId).then(function(){ showToast('Viatura excluída.'); }).catch(function(){});
+    });
+  }
+}
+function viaturaHistoricoTableHTML(hist){
+  if(!hist.length) return '<p class="field-hint">Nenhuma alteração de status registrada ainda — a viatura segue com o status do cadastro.</p>';
+  var rows = hist.map(function(h){
+    return '<tr>'+
+      '<td>'+esc(h.createdAt ? new Date(h.createdAt).toLocaleString('pt-BR') : '')+'</td>'+
+      '<td>'+(h.statusAnterior ? esc(viaturaStatusLabel(h.statusAnterior)) : '—')+' &rarr; <strong>'+esc(viaturaStatusLabel(h.statusNovo))+'</strong></td>'+
+      '<td>'+esc(h.motivo||'—')+'</td>'+
+      '<td>'+esc(h.autor||'—')+'</td>'+
+    '</tr>';
+  }).join('');
+  return '<div class="mov-modal-table-wrap"><table class="mov-table"><thead><tr><th>Quando</th><th>Status</th><th>Motivo</th><th>Autor</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function viaturaDetailModalHTML(v){
+  var canEdit = canManageViaturas();
+  var hist = viaturasHistoricoFor(v.id);
+  return '<div class="modal-head"><h3>'+esc(v.prefixo||'Viatura')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<div class="mov-modal-meta">'+
+      '<div class="ec-row"><span class="k">Tipo</span><span>'+esc(viaturaTipoLabel(v.tipo))+(v.placa?' · '+esc(v.placa):'')+'</span></div>'+
+      '<div class="ec-row"><span class="k">Status atual</span><span><span class="status-pill '+viaturaStatusClass(v.status)+'">'+esc(viaturaStatusLabel(v.status))+'</span></span></div>'+
+      (v.origem ? '<div class="ec-row"><span class="k">Origem</span><span>'+esc(viaturaOrigemLabel(v.origem))+'</span></div>' : '')+
+      (v.ano ? '<div class="ec-row"><span class="k">Ano</span><span>'+esc(String(v.ano))+'</span></div>' : '')+
+      (v.descricao ? '<div class="ec-row"><span class="k">Descrição</span><span>'+esc(v.descricao)+'</span></div>' : '')+
+      (v.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(v.observacoes)+'</span></div>' : '')+
+      '<h4 class="mov-modal-subtitle">Histórico de status ('+hist.length+')</h4>'+
+    '</div>'+
+    viaturaHistoricoTableHTML(hist)+
+    (canEdit ? '<div class="modal-actions"><button class="btn btn-sm btn-gold" type="button" data-act="vtr-status-new" data-id="'+esc(v.id)+'">Alterar Status</button></div>' : '')+
+  '';
+}
+function openViaturaDetailModal(id){
+  var v = (state.viaturas||[]).find(function(x){ return x.id===id; });
+  if(!v) return;
+  openModal(viaturaDetailModalHTML(v));
+  $('modalBox').classList.add('mov-modal');
+  $('modalOverlay').classList.add('mov-modal-overlay');
+}
+function viaturaStatusFormModalHTML(v){
+  var opts = VIATURA_STATUS.filter(function(s){ return s.v!==v.status; });
+  return '<div class="modal-head"><h3>Alterar Status — '+esc(v.prefixo||'')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<form id="viaturaStatusForm">'+
+      '<p class="field-hint" style="margin-bottom:8px;">Status atual: <strong>'+esc(viaturaStatusLabel(v.status))+'</strong></p>'+
+      '<div class="field"><label for="vtrst-f-status">Novo status</label><select id="vtrst-f-status" required>'+viaturaOptionsHTML(opts, opts[0] && opts[0].v)+'</select></div>'+
+      '<div class="field" style="margin-top:10px;"><label for="vtrst-f-motivo">Motivo (opcional)</label><textarea id="vtrst-f-motivo" rows="3" placeholder="Ex.: colisão leve, sinistro, fim de contrato de locação..."></textarea></div>'+
+      '<div class="login-err" id="viaturaStatusFormErr"></div>'+
+      '<div class="modal-actions"><button type="submit" class="btn btn-gold btn-sm">Salvar</button></div>'+
+    '</form>';
+}
+function openViaturaStatusForm(id){
+  if(!canManageViaturas()){ showToast('Você não tem permissão para editar Viaturas.'); return; }
+  var v = (state.viaturas||[]).find(function(x){ return x.id===id; });
+  if(!v) return;
+  openModal(viaturaStatusFormModalHTML(v));
+  $('modalBox').classList.remove('mov-modal');
+  $('modalOverlay').classList.remove('mov-modal-overlay');
+  var form = $('viaturaStatusForm');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('viaturaStatusFormErr'); errEl.textContent = '';
+    var novoStatus = $('vtrst-f-status').value;
+    var motivo = $('vtrst-f-motivo').value.trim();
+    if(!novoStatus){ errEl.textContent = 'Selecione o novo status.'; return; }
+    var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
+    changeViaturaStatus(v.id, novoStatus, motivo||null).then(function(){
+      openViaturaDetailModal(v.id);
+      showToast('Status atualizado.');
+    }).catch(function(){
+      errEl.textContent = 'Erro ao salvar. Tente novamente.';
+    }).finally(function(){ if(btnSubmit) btnSubmit.disabled = false; });
+  });
+}
+
 /* ---------------- Configurações: Perfis de Acesso (painel consolidado) ---------------- */
 function accessChipsHTML(items, delAct){
   var canEdit = isAdmin();
@@ -4934,6 +5388,7 @@ function renderAccessChips(){
   if($('accessEventosChips')) $('accessEventosChips').innerHTML = accessChipsHTML(state.eventosEditors, 'access-eventos-del');
   if($('accessLogisticaChips')) $('accessLogisticaChips').innerHTML = accessChipsHTML(state.logisticaEditors, 'access-logistica-del');
   if($('accessLicitacoesChips')) $('accessLicitacoesChips').innerHTML = accessChipsHTML(state.licitacoesEditors, 'access-licitacoes-del');
+  if($('accessViaturasChips')) $('accessViaturasChips').innerHTML = accessChipsHTML(state.viaturasGestores, 'access-viaturas-del');
 }
 
 function eventsForTipoSearch(includePessoal){
@@ -6058,7 +6513,7 @@ function updateAuditoriaAccessUI(){
 }
 
 /* ---------------- view switching ---------------- */
-var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria'};
+var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria', viaturas: 'Viaturas'};
 function goToView(name){
   document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id==='view-'+name); });
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.view===name); });
@@ -6073,6 +6528,7 @@ function goToView(name){
   if(name==='loglicagenda'){ initLoglicCal(); renderLoglicCal(); }
   if(name==='loglicrelatorio'){ initLoglicRelFilters(); renderLoglicRelatorio(); }
   if(name==='auditoria'){ fetchAuditLog(); }
+  if(name==='viaturas'){ renderViaturas(); }
   window.scrollTo({top:0, behavior:'auto'});
 }
 
@@ -6620,6 +7076,39 @@ $_onReady(function(){
     });
   }catch(e){ console.error('wiring Licitações', e); }
 
+  /* ---------------- Viaturas: wiring (v4.5) ---------------- */
+  try{
+    $('btnNewViatura').addEventListener('click', function(){ openViaturaForm(null); });
+    $('viaturasList').addEventListener('click', function(e){
+      var btn = e.target.closest('[data-act]');
+      if(btn){
+        var id = btn.dataset.id, act = btn.dataset.act;
+        if(act==='vtr-edit'){ openViaturaForm(id); return; }
+        if(act==='vtr-del'){
+          if(pendingDelete===id){
+            pendingDelete = null;
+            deleteViatura(id).then(function(){ showToast('Viatura excluída.'); }).catch(function(){});
+          } else {
+            pendingDelete = id;
+            btn.innerHTML = '&#10003;';
+            btn.classList.add('confirm');
+            setTimeout(function(){ if(pendingDelete===id){ pendingDelete=null; renderViaturas(); } }, 3000);
+          }
+        }
+        return;
+      }
+      var card = e.target.closest('.event-card.logistica');
+      if(card) openViaturaDetailModal(card.dataset.id);
+    });
+    /* O botão "Alterar Status" fica dentro do modal de detalhamento (não da
+       lista), então é ouvido por delegação no próprio overlay do modal —
+       mesmo padrão já usado pro "+ Novo Movimento" de Logística/Licitações. */
+    $('modalOverlay').addEventListener('click', function(e){
+      var btn = e.target.closest('[data-act="vtr-status-new"]'); if(!btn) return;
+      openViaturaStatusForm(btn.dataset.id);
+    });
+  }catch(e){ console.error('wiring Viaturas', e); }
+
   /* ---------------- Calendário/Relatório combinado (Logística/Licitações) — wiring ---------------- */
   try{
     $('loglicCalWrap').addEventListener('click', function(e){
@@ -6697,7 +7186,8 @@ $_onReady(function(){
       admin: {state:'cmtAgendaEmails', save:saveCmtAgendaEmails, chips:'accessAdminChips', input:'accessAdminInput', add:'accessAdminAdd', del:'access-admin-del'},
       eventos: {state:'eventosEditors', save:saveEventosEditors, chips:'accessEventosChips', input:'accessEventosInput', add:'accessEventosAdd', del:'access-eventos-del'},
       logistica: {state:'logisticaEditors', save:saveLogisticaEditors, chips:'accessLogisticaChips', input:'accessLogisticaInput', add:'accessLogisticaAdd', del:'access-logistica-del'},
-      licitacoes: {state:'licitacoesEditors', save:saveLicitacoesEditors, chips:'accessLicitacoesChips', input:'accessLicitacoesInput', add:'accessLicitacoesAdd', del:'access-licitacoes-del'}
+      licitacoes: {state:'licitacoesEditors', save:saveLicitacoesEditors, chips:'accessLicitacoesChips', input:'accessLicitacoesInput', add:'accessLicitacoesAdd', del:'access-licitacoes-del'},
+      viaturas: {state:'viaturasGestores', save:saveViaturasGestores, chips:'accessViaturasChips', input:'accessViaturasInput', add:'accessViaturasAdd', del:'access-viaturas-del'}
     };
     Object.keys(ACCESS_LISTS).forEach(function(key){
       var cfg = ACCESS_LISTS[key];
@@ -6750,7 +7240,8 @@ $_onReady(function(){
           var nGestao = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra.length : 0;
           var nLogistica = Array.isArray(payload.logistica) ? payload.logistica.length : 0;
           var nLicitacoes = Array.isArray(payload.licitacoes) ? payload.licitacoes.length : 0;
-          var loglicInfo = (nLogistica || nLicitacoes) ? (', '+nLogistica+' registro(s) de Logística, '+nLicitacoes+' processo(s) de Licitação') : '';
+          var nViaturas = Array.isArray(payload.viaturas) ? payload.viaturas.length : 0;
+          var loglicInfo = (nLogistica || nLicitacoes || nViaturas) ? (', '+nLogistica+' registro(s) de Logística, '+nLicitacoes+' processo(s) de Licitação, '+nViaturas+' viatura(s)') : '';
           var exportedInfo = payload.exportedAt ? (' — exportado em '+new Date(payload.exportedAt).toLocaleString('pt-BR')) : '';
           summaryEl.innerHTML = 'Arquivo lido: <strong>'+payload.events.length+' evento(s)</strong>, '+nLocais+' referência(s) de local, '+nRecursos+' tipo(s) de recurso, '+nGestao+' integrante(s) de gestão extra'+loglicInfo+exportedInfo+'.';
           summaryEl.hidden = false;
@@ -6773,7 +7264,7 @@ $_onReady(function(){
         btn.textContent = 'Importando…';
         var payload = pendingBackupPayload;
         importBackupPayload(payload).then(function(){
-          showToast('Backup importado: '+(payload.events||[]).length+' evento(s), '+(payload.logistica||[]).length+' registro(s) de Logística, '+(payload.licitacoes||[]).length+' processo(s) de Licitação restaurado(s).');
+          showToast('Backup importado: '+(payload.events||[]).length+' evento(s), '+(payload.logistica||[]).length+' registro(s) de Logística, '+(payload.licitacoes||[]).length+' processo(s) de Licitação, '+(payload.viaturas||[]).length+' viatura(s) restaurado(s).');
           pendingBackupPayload = null;
           btn.hidden = true; btn.disabled = false; btn.classList.remove('confirm'); btn.textContent = 'Substituir dados atuais';
           $('backupSummary').hidden = true;
