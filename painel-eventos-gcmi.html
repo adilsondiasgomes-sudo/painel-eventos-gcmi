@@ -472,15 +472,34 @@ body[data-screen="vistoria"] #vistoriaForm{
   display:flex;flex-direction:column;
 }
 body[data-screen="vistoria"] #vistoriaForm > .grid,
-body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle,
-body[data-screen="vistoria"] #vistoriaForm > .form-modal-tabs{flex:none;}
-/* a moldura do checklist (aba ativa) tem prioridade sobre o espaço
-   disponível e nunca é espremida a zero (piso mínimo); o rodapé
-   (observações/fotos/enviar) não cresce além do necessário mas PODE
-   encolher e rolar por conta própria se a tela for muito baixa — assim,
-   se algo tiver que ceder espaço, nunca é uma sobreposição visual, é um
-   rolamento contido dentro da própria caixa (nunca a página inteira). */
-body[data-screen="vistoria"] .form-modal-pane.active{flex:1 1 auto;min-height:110px;}
+body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle{flex:none;}
+/* v4.9: abas do checklist empilhadas na lateral esquerda, logo abaixo do
+   título "Checklist", liberando toda a largura à direita pra rolagem dos
+   itens — .vst-checklist-shell é uma linha flex (sidebar + conteúdo) que
+   ocupa o espaço vertical restante do formulário; tem prioridade sobre o
+   espaço disponível e nunca é espremida a zero (piso mínimo); o rodapé
+   (só erro de validação + botão enviar, já que observações/fotos viraram
+   a 4ª aba) não cresce além do necessário mas PODE encolher e rolar por
+   conta própria se a tela for muito baixa — assim, se algo tiver que
+   ceder espaço, nunca é uma sobreposição visual, é um rolamento contido
+   dentro da própria caixa (nunca a página inteira). */
+body[data-screen="vistoria"] .vst-checklist-shell{
+  flex:1 1 auto;min-height:110px;
+  display:flex;flex-direction:row;gap:10px;
+  overflow:hidden;
+}
+body[data-screen="vistoria"] .vst-checklist-shell .form-modal-tabs{
+  flex:0 0 140px;min-width:0;
+  flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  margin-bottom:0;
+  -webkit-overflow-scrolling:touch;
+}
+body[data-screen="vistoria"] .vst-checklist-shell .form-modal-tabs .form-modal-tab{
+  white-space:normal;text-align:left;
+  border-right:none;border-bottom:1px solid var(--line);
+}
+body[data-screen="vistoria"] .vst-checklist-shell .form-modal-tabs .form-modal-tab:last-child{border-bottom:none;}
+body[data-screen="vistoria"] .form-modal-pane.active{flex:1 1 auto;min-width:0;min-height:0;}
 body[data-screen="vistoria"] .vst-form-footer{flex:0 1 auto;min-height:0;overflow-y:auto;}
 /* campos de identificação mais compactos aqui (cabem vários numa tela
    baixa) — não mexe no restante do app, só dentro do formulário de
@@ -489,7 +508,6 @@ body[data-screen="vistoria"] #vistoriaForm .field{margin-bottom:6px;}
 body[data-screen="vistoria"] #vistoriaForm label{margin-bottom:3px;}
 body[data-screen="vistoria"] #vistoriaForm > .grid{gap:8px;}
 body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle{margin:8px 0 6px;}
-body[data-screen="vistoria"] .form-modal-tabs{margin-bottom:8px;}
 body[data-screen="vistoria"] .vst-form-footer .field{margin-top:6px !important;margin-bottom:0;}
 @media (max-width:640px){
   /* no celular, viatura/km atual/combustível (linha 1) e responsável/km
@@ -497,6 +515,12 @@ body[data-screen="vistoria"] .vst-form-footer .field{margin-top:6px !important;m
      — evita que a identificação sozinha já tome a tela toda de altura. */
   body[data-screen="vistoria"] #vistoriaForm .grid-3,
   body[data-screen="vistoria"] #vistoriaForm .grid-2{grid-template-columns:1fr 1fr;}
+  /* abas mais estreitas ainda no celular, pra sobrar mais espaço pro
+     conteúdo do item à direita. */
+  body[data-screen="vistoria"] .vst-checklist-shell .form-modal-tabs{flex-basis:104px;}
+  body[data-screen="vistoria"] .vst-checklist-shell .form-modal-tabs .form-modal-tab{
+    padding:8px 8px;font-size:11px;
+  }
 }
 
 /* ---------- config: sub-screens ---------- */
@@ -1859,7 +1883,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.9 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.10 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2450,6 +2474,13 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.10', date: '20/09/2026',
+    changes: [
+      'Quarta rodada de ajustes no formulário de Vistoria de Viatura: o campo "Fotos (opcional)", que ainda restava no rodapé fixo, foi para dentro da 4ª aba (Observações), junto do campo de observações gerais — o rodapé passa a ter só a mensagem de erro de validação e o botão "Enviar Vistoria".',
+      'As abas do checklist (Mecânica/Elétrica-Segurança/Documentação/Observações) deixaram de ficar em linha horizontal acima dos itens e passaram a ficar empilhadas verticalmente numa coluna à esquerda, logo abaixo do título "Checklist" — o espaço à direita, antes dividido com a barra de abas, fica todo disponível pra rolagem dos itens do checklist.'
+    ]
+  },
   {
     version: 'v4.9', date: '20/09/2026',
     changes: [
@@ -5837,9 +5868,8 @@ function vistoriaFormHTML(){
       '<div class="field"><label for="vst-f-km-final">Km final (fechamento do turno)</label><input type="number" id="vst-f-km-final" min="0" inputmode="numeric" /></div>'+
     '</div>'+
     '<h4 class="mov-modal-subtitle" style="margin-top:16px;">Checklist</h4>'+
-    formModalSectionsHTML(vistoriaChecklistSecoes())+
+    '<div class="vst-checklist-shell">'+formModalSectionsHTML(vistoriaChecklistSecoes())+'</div>'+
     '<div class="vst-form-footer">'+
-      '<div class="field" style="margin-top:14px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
       '<div class="login-err" id="vistoriaFormErr"></div>'+
       '<div class="modal-actions" style="justify-content:flex-end;padding:10px 0 0;">'+
         '<button type="submit" class="btn btn-gold btn-sm">Enviar Vistoria</button>'+
@@ -5847,10 +5877,12 @@ function vistoriaFormHTML(){
     '</div>'+
   '</form>';
 }
-/* v4.9: "Observações gerais" virou a 4ª aba (Mecânica/Elétrica-Seg./
-   Documentação/Observações) em vez de ficar fixa no rodapé — libera altura
-   pra moldura dos itens em telas baixas. Só Fotos + enviar continuam fixos
-   no rodapé (não fazem sentido como aba própria). */
+/* v4.9: "Observações gerais" e "Fotos" viraram a 4ª aba (Mecânica/
+   Elétrica-Seg./Documentação/Observações) em vez de ficarem fixas no
+   rodapé — libera altura pra moldura dos itens em telas baixas; o rodapé
+   fica só com erro de validação + botão de enviar. As abas em si passaram
+   a ficar empilhadas na lateral esquerda (.vst-checklist-shell), com o
+   painel do item ativo rolando à direita. */
 function vistoriaChecklistSecoes(){
   /* v4.9: numeração sequencial contínua na ordem em que os itens realmente
      aparecem (aba por aba) — não na ordem de declaração de VISTORIA_ITENS,
@@ -5864,7 +5896,8 @@ function vistoriaChecklistSecoes(){
   });
   secoes.push({
     key:'obs', label:'Observações',
-    html:'<div class="field"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="8" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'
+    html:'<div class="field"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="8" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
+      '<div class="field" style="margin-top:14px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'
   });
   return secoes;
 }
