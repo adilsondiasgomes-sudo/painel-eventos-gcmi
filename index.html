@@ -950,7 +950,11 @@ body[data-screen="form"] .app{max-width:1360px;}
 }
 .modal-box.form-modal .modal-head{flex:none;}
 .modal-box.form-modal form{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
-.form-modal-tabs{flex:none;margin-bottom:18px;}
+.form-modal-tabs{flex:none;margin-bottom:18px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+/* v4.9: com 4 abas (Vistoria de Viatura), nem sempre cabem lado a lado numa
+   tela de celular — em vez de cortar a última aba, o próprio carrossel de
+   abas rola na horizontal; cada botão mantém sua largura natural. */
+.form-modal-tabs .form-modal-tab{flex:none;white-space:nowrap;}
 .form-modal-pane{display:none;}
 .form-modal-pane.active{
   display:block;flex:1 1 auto;min-height:0;
@@ -1855,7 +1859,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.8 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.9 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2446,6 +2450,14 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.9', date: '20/09/2026',
+    changes: [
+      'Terceira rodada de ajustes no formulário de Vistoria de Viatura: "Observações gerais" saiu do rodapé fixo e virou a 4ª aba do checklist (Mecânica · Elétrica/Segurança · Documentação · Observações) — libera mais altura de tela para os itens do checklist, já que o rodapé agora tem só Fotos e o botão de enviar.',
+      'Cada item do checklist passou a mostrar sua numeração sequencial (1 a 11) no início do rótulo, contínua pelas 3 abas de itens (ex.: a aba Mecânica mostra 1-4, Elétrica/Seg. mostra 5-7, Documentação mostra 8-11) — facilita conferir que nenhum item ficou sem preencher.',
+      'Corrigida a barra de abas do formulário (agora com 4 abas) para rolar horizontalmente em telas estreitas em vez de cortar a última aba.'
+    ]
+  },
   {
     version: 'v4.8', date: '20/09/2026',
     changes: [
@@ -5785,9 +5797,12 @@ function abrirFotosVistoria(vistoriaId){
    usa um segmentado (mesmo componente .seg já usado em filtros do app) em
    vez de <select>, porque é mais rápido de tocar num celular; começa em
    "OK" pra o guarda só precisar mexer no que estiver fora do normal. */
-function vistoriaItemSegHTML(item){
+function vistoriaItemSegHTML(item, num){
+  /* v4.9: numeração sequencial do item dentro do checklist inteiro (não só
+     dentro da aba) — com os itens divididos em 3 abas, sem isso não dava
+     pra saber "quantos faltam" olhando só a aba atual. */
   return '<div class="field vst-item" data-item-field="'+esc(item.v)+'" style="margin-top:14px;">'+
-    '<label>'+esc(item.l)+'</label>'+
+    '<label>'+(num!=null?num+'. ':'')+esc(item.l)+'</label>'+
     '<div class="seg vst-item-seg" data-item="'+esc(item.v)+'">'+
       VISTORIA_ITEM_STATUS.map(function(s){ return '<button type="button" class="'+(s.v==='OK'?'active':'')+'" data-val="'+esc(s.v)+'">'+esc(s.l)+'</button>'; }).join('')+
     '</div>'+
@@ -5822,19 +5837,36 @@ function vistoriaFormHTML(){
       '<div class="field"><label for="vst-f-km-final">Km final (fechamento do turno)</label><input type="number" id="vst-f-km-final" min="0" inputmode="numeric" /></div>'+
     '</div>'+
     '<h4 class="mov-modal-subtitle" style="margin-top:16px;">Checklist</h4>'+
-    formModalSectionsHTML(VISTORIA_GRUPOS.map(function(g){
-      var itensDoGrupo = VISTORIA_ITENS.filter(function(it){ return g.itens.indexOf(it.v)!==-1; });
-      return {key:g.key, label:g.label, html:'<div class="vst-itens-frame">'+itensDoGrupo.map(vistoriaItemSegHTML).join('')+'</div>'};
-    }))+
+    formModalSectionsHTML(vistoriaChecklistSecoes())+
     '<div class="vst-form-footer">'+
-      '<div class="field" style="margin-top:14px;"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="2" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
-      '<div class="field" style="margin-top:8px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
+      '<div class="field" style="margin-top:14px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
       '<div class="login-err" id="vistoriaFormErr"></div>'+
       '<div class="modal-actions" style="justify-content:flex-end;padding:10px 0 0;">'+
         '<button type="submit" class="btn btn-gold btn-sm">Enviar Vistoria</button>'+
       '</div>'+
     '</div>'+
   '</form>';
+}
+/* v4.9: "Observações gerais" virou a 4ª aba (Mecânica/Elétrica-Seg./
+   Documentação/Observações) em vez de ficar fixa no rodapé — libera altura
+   pra moldura dos itens em telas baixas. Só Fotos + enviar continuam fixos
+   no rodapé (não fazem sentido como aba própria). */
+function vistoriaChecklistSecoes(){
+  /* v4.9: numeração sequencial contínua na ordem em que os itens realmente
+     aparecem (aba por aba) — não na ordem de declaração de VISTORIA_ITENS,
+     que intercala itens de abas diferentes e geraria números com "buracos"
+     dentro de uma mesma aba (ex.: 1, 2, 5, 6 na aba Mecânica). */
+  var contador = 0;
+  var secoes = VISTORIA_GRUPOS.map(function(g){
+    var itensDoGrupo = VISTORIA_ITENS.filter(function(it){ return g.itens.indexOf(it.v)!==-1; });
+    var html = itensDoGrupo.map(function(it){ contador++; return vistoriaItemSegHTML(it, contador); }).join('');
+    return {key:g.key, label:g.label, html:'<div class="vst-itens-frame">'+html+'</div>'};
+  });
+  secoes.push({
+    key:'obs', label:'Observações',
+    html:'<div class="field"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="8" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'
+  });
+  return secoes;
 }
 function resetVistoriaForm(){
   var wrap = $('vistoriaFormWrap');
