@@ -545,7 +545,7 @@ label{
   color:var(--ink-3);
   margin-bottom:6px;
 }
-input[type=text],input[type=date],input[type=tel],select,textarea{
+input[type=text],input[type=date],input[type=tel],input[type=number],input[type=email],select,textarea{
   width:100%;
   background:var(--bg-deep);
   border:1px solid var(--line);
@@ -567,6 +567,12 @@ input:focus,select:focus,textarea:focus{
 }
 .field{margin-bottom:11px;}
 .field-hint{font-size:11px;color:var(--ink-3);margin-top:5px;}
+/* v4.7: valor só-leitura dentro de um .field (ex.: "Km atual" no formulário
+   de Vistoria) — mesma moldura visual de um input, sem ser editável. */
+.field-static{
+  background:var(--bg-deep);border:1px solid var(--line);color:var(--ink-2);
+  padding:10px 12px;border-radius:8px;font-size:14px;font-family:var(--font-mono);
+}
 .grid{display:grid;gap:14px;}
 .grid-2{grid-template-columns:1fr 1fr;}
 .grid-3{grid-template-columns:1fr 1fr 1fr;}
@@ -865,6 +871,23 @@ body[data-screen="form"] .app{max-width:1360px;}
 .mov-list{display:flex;flex-direction:column;gap:10px;max-height:48vh;overflow-y:auto;}
 .mov-item{border:1px solid var(--line-soft);border-radius:var(--radius-md);padding:12px;background:var(--bg-card-hi);}
 .mov-item .ec-row:last-child{margin-bottom:0;}
+
+/* v4.7: formulário de Vistoria de Viatura — os campos de identificação
+   (viatura/km/combustível/responsável) ficam fixos acima; só o checklist
+   rola dentro de uma moldura com altura limitada, pra caber na tela do
+   celular sem perder de vista quem/qual viatura está sendo vistoriada. */
+.vst-itens-frame{
+  max-height:52vh;overflow-y:auto;margin-top:10px;padding:2px 10px 6px 2px;
+  border:1px solid var(--line-soft);border-radius:var(--radius-md);background:var(--bg-card-hi);
+}
+.vst-itens-frame .vst-item:first-child{margin-top:10px !important;}
+/* cor distinta por status na aba ativa do segmentado de cada item — reforça
+   visualmente o que está fora do OK sem precisar ler o texto do botão. */
+.vst-item-seg button.active[data-val="OK"]{background:rgba(63,221,140,.16);color:var(--green-live);}
+.vst-item-seg button.active[data-val="ATENCAO"]{background:rgba(255,171,46,.16);color:var(--amber);}
+.vst-item-seg button.active[data-val="RUIM"]{background:rgba(213,66,76,.18);color:var(--red-crest);}
+.vst-item-seg button.active[data-val="NA"]{background:rgba(255,255,255,.08);color:var(--ink-2);}
+.vst-item-obs{margin-top:8px;width:100%;}
 
 /* v4.2: modal de formulário (Nova/Editar Licitação, Nova/Editar Ocorrência
    de Logística) em tela cheia, sem rolagem — mesma mecânica de tela cheia
@@ -1785,7 +1808,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.6 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.7 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2087,12 +2110,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   </section>
 
   <section class="view" id="view-vistoria">
-    <div class="view-head">
-      <div>
-        <h2>Vistoria de Viatura</h2>
-        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Checklist rápido de vistoria — pensado pra ser preenchido no celular, no pátio. Visível para Administradores, Gestores de Frota e quem usa o login de Vistoria (Configurações → Perfis de Acesso).</p>
-      </div>
-    </div>
     <div id="vistoriaFormWrap"></div>
   </section>
 
@@ -2344,9 +2361,12 @@ function vistoriaCombustivelLabel(v){ var f = VISTORIA_COMBUSTIVEL.filter(functi
 function vistoriaPiorStatus(itens){
   var ordem = {RUIM:3, ATENCAO:2, OK:1, NA:0};
   var pior = null;
-  Object.keys(itens||{}).forEach(function(k){
-    if(k==='combustivel') return;
-    var v = itens[k];
+  /* v4.7: itera só as chaves conhecidas do checklist (VISTORIA_ITENS), nunca
+     todas as chaves do objeto — desde que passou a existir a observação por
+     item (chaves tipo "pneus_obs"), varrer tudo indiscriminadamente leria
+     essas observações como se fossem status. */
+  VISTORIA_ITENS.forEach(function(it){
+    var v = (itens||{})[it.v];
     if(v && (pior===null || (ordem[v]||0) > (ordem[pior]||0))) pior = v;
   });
   return pior;
@@ -2369,6 +2389,16 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.7', date: '20/09/2026',
+    changes: [
+      'Ajustes no formulário de Vistoria de Viatura pedidos pelo DG após o primeiro teste em campo: título e texto de apresentação duplicados foram removidos (o nome do módulo já está na aba); Viatura, Km atual e Nível de combustível passaram a dividir a mesma linha, e Responsável, Km Inicial e Km Final (fechamento do turno) a linha seguinte.',
+      '"Seu nome" virou "Responsável pelo Checklist/Vistoria", escolhido em dropdown a partir do efetivo já cadastrado — não é mais texto digitado livremente.',
+      'Km passou a ter três campos: Km atual (informativo, mostra a última leitura do cadastro da viatura ao escolher a VTR), Km Inicial e Km Final (fechamento do turno) — os dois últimos são o que fica registrado na vistoria; o cadastro da viatura continua só subindo, nunca regredindo, com base no maior valor informado.',
+      'Layout do formulário passou a travar os campos de identificação (viatura/km/combustível/responsável) fixos na tela — só a lista de itens do checklist rola, dentro de uma moldura própria, o que facilita preencher no celular sem perder a referência de qual viatura está sendo vistoriada.',
+      'Cada item do checklist agora mostra uma cor diferente por status (verde=OK, âmbar=Atenção, vermelho=Ruim) na aba marcada, e abre uma caixa de observação específica daquele item sempre que o status for diferente de OK.'
+    ]
+  },
   {
     version: 'v4.6', date: '19/09/2026',
     changes: [
@@ -3070,13 +3100,18 @@ function vistoriaToDbRow(vs){
   return {
     viatura_id: vs.viaturaId, informante: vs.informante||null,
     km_atual: (vs.kmAtual===''||vs.kmAtual==null) ? null : Number(vs.kmAtual),
+    km_inicial: (vs.kmInicial===''||vs.kmInicial==null) ? null : Number(vs.kmInicial),
+    km_final: (vs.kmFinal===''||vs.kmFinal==null) ? null : Number(vs.kmFinal),
     itens: vs.itens||{}, observacoes: vs.observacoes||null, fotos: vs.fotos||[]
   };
 }
 function vistoriaFromDbRow(r){
   return {
     id:r.id, viaturaId:r.viatura_id, dataHora:r.data_hora, informante:r.informante||null,
-    kmAtual:(r.km_atual==null?null:Number(r.km_atual)), itens:r.itens||{}, observacoes:r.observacoes||null,
+    kmAtual:(r.km_atual==null?null:Number(r.km_atual)),
+    kmInicial:(r.km_inicial==null?null:Number(r.km_inicial)),
+    kmFinal:(r.km_final==null?null:Number(r.km_final)),
+    itens:r.itens||{}, observacoes:r.observacoes||null,
     fotos:r.fotos||[], createdAt:r.created_at
   };
 }
@@ -3621,9 +3656,17 @@ function submitVistoria(data){
   var autorEmail = (authUser && authUser.email) || null;
   var informante = (data.informante||'').trim() || autorEmail || 'não identificado';
   var viaturaId = data.viaturaId;
-  var kmAtual = (data.kmAtual===''||data.kmAtual==null) ? null : Number(data.kmAtual);
+  var kmInicial = (data.kmInicial===''||data.kmInicial==null) ? null : Number(data.kmInicial);
+  var kmFinal = (data.kmFinal===''||data.kmFinal==null) ? null : Number(data.kmFinal);
+  /* v4.7: "km atual" da vistoria passa a ser derivado — a maior leitura
+     informada entre início e fechamento de turno — é esse valor (se maior
+     que o cadastro) que atualiza o km do cadastro da viatura; início e
+     fechamento continuam gravados separadamente no histórico. */
+  var kmAtual = null;
+  if(kmInicial!=null) kmAtual = kmInicial;
+  if(kmFinal!=null && (kmAtual==null || kmFinal > kmAtual)) kmAtual = kmFinal;
   return uploadVistoriaFotos(viaturaId, data.fotosFiles||[]).then(function(fotoPaths){
-    var payload = { viaturaId:viaturaId, informante:informante, kmAtual:kmAtual, itens:data.itens||{}, observacoes:data.observacoes||null, fotos:fotoPaths };
+    var payload = { viaturaId:viaturaId, informante:informante, kmAtual:kmAtual, kmInicial:kmInicial, kmFinal:kmFinal, itens:data.itens||{}, observacoes:data.observacoes||null, fotos:fotoPaths };
     if(mode==='live'){
       return sb.from('viaturas_vistorias').insert(vistoriaToDbRow(payload)).then(function(res){
         if(res.error) throw res.error;
@@ -5602,14 +5645,25 @@ function vistoriaItensResumoHTML(itens){
   if(counts.RUIM) parts.push('<span class="status-pill danger">'+counts.RUIM+' ruim</span>');
   return parts.join(' ') || '<span class="field-hint">sem itens preenchidos</span>';
 }
+function viaturaItemObsListHTML(itens){
+  var linhas = VISTORIA_ITENS.filter(function(it){
+    var v = (itens||{})[it.v];
+    return v && v!=='OK' && (itens||{})[it.v+'_obs'];
+  }).map(function(it){
+    return '<div class="ec-row"><span class="k">'+esc(it.l)+'</span><span>'+esc((itens||{})[it.v+'_obs'])+'</span></div>';
+  });
+  return linhas.join('');
+}
 function viaturaVistoriaCardHTML(vs){
   var combustivel = (vs.itens||{}).combustivel;
   return '<div class="mov-item">'+
     '<div class="ec-row"><span class="k">Quando</span><span>'+esc(vs.dataHora ? new Date(vs.dataHora).toLocaleString('pt-BR') : '')+'</span></div>'+
-    '<div class="ec-row"><span class="k">Informante</span><span>'+esc(vs.informante||'—')+'</span></div>'+
-    (vs.kmAtual!=null ? '<div class="ec-row"><span class="k">Km informado</span><span>'+esc(Number(vs.kmAtual).toLocaleString('pt-BR'))+'</span></div>' : '')+
+    '<div class="ec-row"><span class="k">Responsável</span><span>'+esc(vs.informante||'—')+'</span></div>'+
+    (vs.kmInicial!=null ? '<div class="ec-row"><span class="k">Km inicial</span><span>'+esc(Number(vs.kmInicial).toLocaleString('pt-BR'))+'</span></div>' : '')+
+    (vs.kmFinal!=null ? '<div class="ec-row"><span class="k">Km final (fechamento)</span><span>'+esc(Number(vs.kmFinal).toLocaleString('pt-BR'))+'</span></div>' : '')+
     (combustivel ? '<div class="ec-row"><span class="k">Combustível</span><span>'+esc(vistoriaCombustivelLabel(combustivel))+'</span></div>' : '')+
     '<div class="ec-row"><span class="k">Checklist</span><span>'+vistoriaItensResumoHTML(vs.itens)+'</span></div>'+
+    viaturaItemObsListHTML(vs.itens)+
     (vs.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(vs.observacoes)+'</span></div>' : '')+
     (vs.fotos && vs.fotos.length ? '<div class="ec-row"><span class="k">Fotos</span><span><button type="button" class="btn btn-sm" data-act="vtr-vistoria-fotos" data-id="'+esc(vs.id)+'">Ver fotos ('+vs.fotos.length+')</button></span></div>' : '')+
   '</div>';
@@ -5667,27 +5721,43 @@ function abrirFotosVistoria(vistoriaId){
    vez de <select>, porque é mais rápido de tocar num celular; começa em
    "OK" pra o guarda só precisar mexer no que estiver fora do normal. */
 function vistoriaItemSegHTML(item){
-  return '<div class="field vst-item" style="margin-top:14px;">'+
+  return '<div class="field vst-item" data-item-field="'+esc(item.v)+'" style="margin-top:14px;">'+
     '<label>'+esc(item.l)+'</label>'+
     '<div class="seg vst-item-seg" data-item="'+esc(item.v)+'">'+
       VISTORIA_ITEM_STATUS.map(function(s){ return '<button type="button" class="'+(s.v==='OK'?'active':'')+'" data-val="'+esc(s.v)+'">'+esc(s.l)+'</button>'; }).join('')+
     '</div>'+
+    '<textarea class="vst-item-obs" data-item-obs="'+esc(item.v)+'" rows="2" placeholder="Observação sobre: '+esc(item.l)+'" hidden></textarea>'+
   '</div>';
+}
+/* v4.7: "Responsável pelo Checklist/Vistoria" deixa de ser texto livre e
+   passa a ser escolhido no efetivo já cadastrado (mesma base usada em
+   Novo Evento → Efetivo), pra evitar nome digitado errado/incompleto. */
+function vistoriaResponsavelOptionsHTML(){
+  var pessoas = fullRoster().slice().sort(function(a,b){ return (a.n||'') < (b.n||'') ? -1 : 1; });
+  return '<option value="">Selecione...</option>'+pessoas.map(function(p){
+    return '<option value="'+esc(p.n)+'">'+esc(p.n)+(p.f?' ('+esc(p.f)+')':'')+'</option>';
+  }).join('');
 }
 function vistoriaFormHTML(){
   var ativas = (state.viaturas||[]).slice().sort(function(a,b){ return (a.prefixo||'') < (b.prefixo||'') ? -1 : 1; });
   var options = '<option value="">Selecione a viatura...</option>'+ativas.map(function(v){
-    return '<option value="'+esc(v.id)+'">'+esc(v.prefixo||'')+(v.placa?' — '+esc(v.placa):'')+'</option>';
+    return '<option value="'+esc(v.id)+'" data-km="'+(v.kmAtual!=null?esc(String(v.kmAtual)):'')+'">'+esc(v.prefixo||'')+(v.placa?' — '+esc(v.placa):'')+'</option>';
   }).join('');
   return '<form id="vistoriaForm" novalidate>'+
-    '<div class="field"><label for="vst-f-viatura">Viatura</label><select id="vst-f-viatura" required>'+options+'</select></div>'+
-    '<div class="grid grid-2" style="margin-top:10px;">'+
-      '<div class="field"><label for="vst-f-informante">Seu nome</label><input type="text" id="vst-f-informante" placeholder="Nome de quem está vistoriando" required /></div>'+
-      '<div class="field"><label for="vst-f-km">Km atual (odômetro)</label><input type="number" id="vst-f-km" min="0" inputmode="numeric" /></div>'+
+    '<div class="grid grid-3">'+
+      '<div class="field"><label for="vst-f-viatura">Viatura</label><select id="vst-f-viatura" required>'+options+'</select></div>'+
+      '<div class="field"><label>Km atual</label><div class="field-static" id="vst-f-km-atual">—</div></div>'+
+      '<div class="field"><label for="vst-f-combustivel">Nível de combustível</label><select id="vst-f-combustivel"><option value="">—</option>'+viaturaOptionsHTML(VISTORIA_COMBUSTIVEL, '')+'</select></div>'+
     '</div>'+
-    '<div class="field" style="margin-top:10px;"><label for="vst-f-combustivel">Nível de combustível</label><select id="vst-f-combustivel"><option value="">—</option>'+viaturaOptionsHTML(VISTORIA_COMBUSTIVEL, '')+'</select></div>'+
-    '<h4 class="mov-modal-subtitle">Checklist</h4>'+
-    VISTORIA_ITENS.map(vistoriaItemSegHTML).join('')+
+    '<div class="grid grid-3" style="margin-top:10px;">'+
+      '<div class="field"><label for="vst-f-informante">Responsável pelo Checklist/Vistoria</label><select id="vst-f-informante" required>'+vistoriaResponsavelOptionsHTML()+'</select></div>'+
+      '<div class="field"><label for="vst-f-km-inicial">Km inicial</label><input type="number" id="vst-f-km-inicial" min="0" inputmode="numeric" /></div>'+
+      '<div class="field"><label for="vst-f-km-final">Km final (fechamento do turno)</label><input type="number" id="vst-f-km-final" min="0" inputmode="numeric" /></div>'+
+    '</div>'+
+    '<h4 class="mov-modal-subtitle" style="margin-top:16px;">Checklist</h4>'+
+    '<div class="vst-itens-frame">'+
+      VISTORIA_ITENS.map(vistoriaItemSegHTML).join('')+
+    '</div>'+
     '<div class="field" style="margin-top:14px;"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="3" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
     '<div class="field" style="margin-top:10px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
     '<div class="login-err" id="vistoriaFormErr"></div>'+
@@ -5700,10 +5770,28 @@ function resetVistoriaForm(){
   var wrap = $('vistoriaFormWrap');
   if(!wrap) return;
   wrap.innerHTML = vistoriaFormHTML();
+  var kmAtualDisplay = $('vst-f-km-atual');
+  var viaturaSel = $('vst-f-viatura');
+  if(viaturaSel && kmAtualDisplay){
+    viaturaSel.addEventListener('change', function(){
+      var opt = viaturaSel.options[viaturaSel.selectedIndex];
+      var km = opt ? opt.getAttribute('data-km') : '';
+      kmAtualDisplay.textContent = km ? Number(km).toLocaleString('pt-BR') : '—';
+    });
+  }
   wrap.querySelectorAll('.vst-item-seg').forEach(function(seg){
     seg.addEventListener('click', function(e){
       var btn = e.target.closest('button'); if(!btn) return;
       seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      /* item marcado com algo diferente de OK revela uma caixa de observação
+         específica daquele item; volta a ficar oculta (e é limpa) se o
+         guarda corrigir de volta pra OK. */
+      var obsBox = seg.parentElement ? seg.parentElement.querySelector('.vst-item-obs') : null;
+      if(obsBox){
+        var mostrar = btn.dataset.val !== 'OK';
+        obsBox.hidden = !mostrar;
+        if(!mostrar) obsBox.value = '';
+      }
     });
   });
   var form = $('vistoriaForm');
@@ -5713,19 +5801,30 @@ function resetVistoriaForm(){
     var viaturaId = $('vst-f-viatura').value;
     var informante = $('vst-f-informante').value.trim();
     if(!viaturaId){ errEl.textContent = 'Selecione a viatura.'; return; }
-    if(!informante){ errEl.textContent = 'Informe seu nome.'; return; }
+    if(!informante){ errEl.textContent = 'Selecione o responsável pelo checklist/vistoria.'; return; }
     var itens = {};
     wrap.querySelectorAll('.vst-item-seg').forEach(function(seg){
       var ativo = seg.querySelector('button.active');
-      itens[seg.dataset.item] = ativo ? ativo.dataset.val : 'OK';
+      var val = ativo ? ativo.dataset.val : 'OK';
+      itens[seg.dataset.item] = val;
+      /* observação por item só é gravada quando a caixa está visível (ou
+         seja, status diferente de OK) e tem texto — evita salvar chaves
+         "_obs" vazias em item que voltou a ficar OK. */
+      var obsBox = seg.parentElement ? seg.parentElement.querySelector('.vst-item-obs') : null;
+      if(obsBox && !obsBox.hidden && obsBox.value.trim()){
+        itens[seg.dataset.item+'_obs'] = obsBox.value.trim();
+      }
     });
     var combustivel = $('vst-f-combustivel').value;
     if(combustivel) itens.combustivel = combustivel;
     var fotosInput = $('vst-f-fotos');
     var fotosFiles = fotosInput && fotosInput.files ? Array.prototype.slice.call(fotosInput.files) : [];
-    var kmRaw = $('vst-f-km').value;
+    var kmInicialRaw = $('vst-f-km-inicial').value;
+    var kmFinalRaw = $('vst-f-km-final').value;
     var payload = {
-      viaturaId: viaturaId, informante: informante, kmAtual: (kmRaw===''?null:Number(kmRaw)),
+      viaturaId: viaturaId, informante: informante,
+      kmInicial: (kmInicialRaw===''?null:Number(kmInicialRaw)),
+      kmFinal: (kmFinalRaw===''?null:Number(kmFinalRaw)),
       itens: itens, observacoes: ($('vst-f-obs').value.trim()||null), fotosFiles: fotosFiles
     };
     var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
