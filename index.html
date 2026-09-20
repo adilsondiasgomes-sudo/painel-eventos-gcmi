@@ -390,7 +390,8 @@ body[data-screen="logistica"],
 body[data-screen="licitacoes"],
 body[data-screen="loglicagenda"],
 body[data-screen="loglicrelatorio"],
-body[data-screen="auditoria"]{
+body[data-screen="auditoria"],
+body[data-screen="vistoria"]{
   height:100vh;overflow:hidden;
   display:flex;flex-direction:column;
 }
@@ -403,12 +404,15 @@ body[data-screen="loglicagenda"] nav.tabs,
 body[data-screen="loglicrelatorio"] header.topbar,
 body[data-screen="loglicrelatorio"] nav.tabs,
 body[data-screen="auditoria"] header.topbar,
-body[data-screen="auditoria"] nav.tabs{flex:none;}
+body[data-screen="auditoria"] nav.tabs,
+body[data-screen="vistoria"] header.topbar,
+body[data-screen="vistoria"] nav.tabs{flex:none;}
 body[data-screen="logistica"] .app,
 body[data-screen="licitacoes"] .app,
 body[data-screen="loglicagenda"] .app,
 body[data-screen="loglicrelatorio"] .app,
-body[data-screen="auditoria"] .app{
+body[data-screen="auditoria"] .app,
+body[data-screen="vistoria"] .app{
   flex:1 1 auto;min-height:0;min-width:0;width:100%;overflow:hidden;
   display:flex;flex-direction:column;
   padding-bottom:6px;
@@ -417,7 +421,8 @@ body[data-screen="logistica"] main,
 body[data-screen="licitacoes"] main,
 body[data-screen="loglicagenda"] main,
 body[data-screen="loglicrelatorio"] main,
-body[data-screen="auditoria"] main{
+body[data-screen="auditoria"] main,
+body[data-screen="vistoria"] main{
   flex:1 1 auto;min-height:0;overflow:hidden;
   display:flex;flex-direction:column;
 }
@@ -425,7 +430,8 @@ body[data-screen="logistica"] .view.active,
 body[data-screen="licitacoes"] .view.active,
 body[data-screen="loglicagenda"] .view.active,
 body[data-screen="loglicrelatorio"] .view.active,
-body[data-screen="auditoria"] .view.active{
+body[data-screen="auditoria"] .view.active,
+body[data-screen="vistoria"] .view.active{
   flex:1 1 auto;min-height:0;overflow:hidden;
   display:flex;flex-direction:column;
 }
@@ -453,7 +459,45 @@ body[data-screen="logistica"] footer.foot,
 body[data-screen="licitacoes"] footer.foot,
 body[data-screen="loglicagenda"] footer.foot,
 body[data-screen="loglicrelatorio"] footer.foot,
-body[data-screen="auditoria"] footer.foot{flex:none;padding:8px 0 0;}
+body[data-screen="auditoria"] footer.foot,
+body[data-screen="vistoria"] footer.foot{flex:none;padding:8px 0 0;}
+/* v4.8: trava de rolamento do formulário de Vistoria de Viatura — igual
+   pedido do DG, a página não rola de jeito nenhum; dentro do encaixe exato
+   de viewport acima, o próprio formulário vira uma coluna flex: campos de
+   identificação (linhas 1 e 2) e o rodapé (observações/fotos/enviar) ficam
+   fixos, só a moldura do checklist rola. */
+body[data-screen="vistoria"] #vistoriaFormWrap,
+body[data-screen="vistoria"] #vistoriaForm{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body[data-screen="vistoria"] #vistoriaForm > .grid,
+body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle,
+body[data-screen="vistoria"] #vistoriaForm > .form-modal-tabs{flex:none;}
+/* a moldura do checklist (aba ativa) tem prioridade sobre o espaço
+   disponível e nunca é espremida a zero (piso mínimo); o rodapé
+   (observações/fotos/enviar) não cresce além do necessário mas PODE
+   encolher e rolar por conta própria se a tela for muito baixa — assim,
+   se algo tiver que ceder espaço, nunca é uma sobreposição visual, é um
+   rolamento contido dentro da própria caixa (nunca a página inteira). */
+body[data-screen="vistoria"] .form-modal-pane.active{flex:1 1 auto;min-height:110px;}
+body[data-screen="vistoria"] .vst-form-footer{flex:0 1 auto;min-height:0;overflow-y:auto;}
+/* campos de identificação mais compactos aqui (cabem vários numa tela
+   baixa) — não mexe no restante do app, só dentro do formulário de
+   Vistoria. */
+body[data-screen="vistoria"] #vistoriaForm .field{margin-bottom:6px;}
+body[data-screen="vistoria"] #vistoriaForm label{margin-bottom:3px;}
+body[data-screen="vistoria"] #vistoriaForm > .grid{gap:8px;}
+body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle{margin:8px 0 6px;}
+body[data-screen="vistoria"] .form-modal-tabs{margin-bottom:8px;}
+body[data-screen="vistoria"] .vst-form-footer .field{margin-top:6px !important;margin-bottom:0;}
+@media (max-width:640px){
+  /* no celular, viatura/km atual/combustível (linha 1) e responsável/km
+     final (linha 2) continuam em 2 colunas em vez de empilhar 1 por linha
+     — evita que a identificação sozinha já tome a tela toda de altura. */
+  body[data-screen="vistoria"] #vistoriaForm .grid-3,
+  body[data-screen="vistoria"] #vistoriaForm .grid-2{grid-template-columns:1fr 1fr;}
+}
 
 /* ---------- config: sub-screens ---------- */
 .cfg-subnav{margin-bottom:14px;flex-wrap:wrap;flex:none;}
@@ -872,12 +916,15 @@ body[data-screen="form"] .app{max-width:1360px;}
 .mov-item{border:1px solid var(--line-soft);border-radius:var(--radius-md);padding:12px;background:var(--bg-card-hi);}
 .mov-item .ec-row:last-child{margin-bottom:0;}
 
-/* v4.7: formulário de Vistoria de Viatura — os campos de identificação
-   (viatura/km/combustível/responsável) ficam fixos acima; só o checklist
-   rola dentro de uma moldura com altura limitada, pra caber na tela do
-   celular sem perder de vista quem/qual viatura está sendo vistoriada. */
+/* v4.7/v4.8: formulário de Vistoria de Viatura — os campos de identificação
+   (viatura/km/combustível/responsável) e o rodapé (observações/fotos/enviar)
+   ficam fixos; só a área do checklist rola — como os 11 itens divididos em
+   3 abas (Mecânica/Elétrica-Segurança/Documentação-Geral) já cabem quase
+   sempre numa tela de celular sem precisar rolar, quem realmente rola (só
+   se necessário) é a própria aba ativa (.form-modal-pane), não mais uma
+   moldura com altura fixa em vh — a "moldura" abaixo é só a caixa visual. */
 .vst-itens-frame{
-  max-height:52vh;overflow-y:auto;margin-top:10px;padding:2px 10px 6px 2px;
+  margin-top:10px;padding:2px 10px 6px 2px;
   border:1px solid var(--line-soft);border-radius:var(--radius-md);background:var(--bg-card-hi);
 }
 .vst-itens-frame .vst-item:first-child{margin-top:10px !important;}
@@ -1808,7 +1855,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.7 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.8 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2351,6 +2398,16 @@ var VISTORIA_ITENS = [
   {v:'limpeza', l:'Limpeza interna e externa'},
   {v:'avarias', l:'Avarias / amassados visíveis'}
 ];
+/* v4.8: os 11 itens do checklist divididos em 3 abas temáticas — sem isso,
+   a lista inteira dentro da moldura fica baixa demais em telas de celular
+   (a identificação e o rodapé do formulário ficam fixos, então a moldura
+   tem só o espaço que sobra). Mesmo padrão de abas já usado nos formulários
+   de Logística/Licitações (form-modal-tabs/form-modal-pane). */
+var VISTORIA_GRUPOS = [
+  {key:'mecanica', label:'Mecânica', itens:['pneus','freios','oleo','bateria']},
+  {key:'eletrica', label:'Elétrica/Seg.', itens:['farois','buzina','cintoCapacete']},
+  {key:'doc', label:'Documentação', itens:['documentacao','equipamentos','limpeza','avarias']}
+];
 var VISTORIA_ITEM_STATUS = [{v:'OK', l:'OK'}, {v:'ATENCAO', l:'Atenção'}, {v:'RUIM', l:'Ruim'}, {v:'NA', l:'N/A'}];
 var VISTORIA_COMBUSTIVEL = [{v:'RESERVA', l:'Reserva'}, {v:'1_4', l:'1/4'}, {v:'2_4', l:'1/2'}, {v:'3_4', l:'3/4'}, {v:'CHEIO', l:'Cheio'}];
 function vistoriaItemStatusLabel(v){ var f = VISTORIA_ITEM_STATUS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||'—'); }
@@ -2389,6 +2446,14 @@ var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.8', date: '20/09/2026',
+    changes: [
+      'Segunda rodada de ajustes no formulário de Vistoria de Viatura, pedida pelo DG após reteste: o campo "Km Inicial" saiu (era redundante com "Km atual", que já mostra a última leitura ao lado) — o espaço liberado foi para o campo de Responsável, que agora também exibe a matrícula (não só o nome), tanto no dropdown quanto no que fica registrado na vistoria.',
+      'O travamento de rolagem da tela não estava completo (a página ainda rolava inteira) — corrigido: a tela de Vistoria de Viatura passa a usar o mesmo encaixe exato de viewport já usado em Logística/Licitações/Auditoria, então a página não rola de jeito nenhum.',
+      'Os 11 itens do checklist foram divididos em 3 abas (Mecânica · Elétrica/Segurança · Documentação), mesmo padrão de abas já usado nos formulários de Logística/Licitações — evita uma lista única rolável baixa demais numa tela de celular, com identificação e rodapé (observações/fotos/enviar) fixos.'
+    ]
+  },
   {
     version: 'v4.7', date: '20/09/2026',
     changes: [
@@ -5729,13 +5794,13 @@ function vistoriaItemSegHTML(item){
     '<textarea class="vst-item-obs" data-item-obs="'+esc(item.v)+'" rows="2" placeholder="Observação sobre: '+esc(item.l)+'" hidden></textarea>'+
   '</div>';
 }
-/* v4.7: "Responsável pelo Checklist/Vistoria" deixa de ser texto livre e
-   passa a ser escolhido no efetivo já cadastrado (mesma base usada em
-   Novo Evento → Efetivo), pra evitar nome digitado errado/incompleto. */
+/* v4.8: "Responsável pelo Checklist/Vistoria" passa a exibir a matrícula
+   junto do nome (não só o nome) — tanto no dropdown quanto no que fica
+   gravado na vistoria, pra identificação inequívoca de quem vistoriou. */
 function vistoriaResponsavelOptionsHTML(){
   var pessoas = fullRoster().slice().sort(function(a,b){ return (a.n||'') < (b.n||'') ? -1 : 1; });
   return '<option value="">Selecione...</option>'+pessoas.map(function(p){
-    return '<option value="'+esc(p.n)+'">'+esc(p.n)+(p.f?' ('+esc(p.f)+')':'')+'</option>';
+    return '<option value="'+esc(p.m+' — '+p.n)+'">'+esc(p.m)+' — '+esc(p.n)+(p.f?' ('+esc(p.f)+')':'')+'</option>';
   }).join('');
 }
 function vistoriaFormHTML(){
@@ -5749,20 +5814,25 @@ function vistoriaFormHTML(){
       '<div class="field"><label>Km atual</label><div class="field-static" id="vst-f-km-atual">—</div></div>'+
       '<div class="field"><label for="vst-f-combustivel">Nível de combustível</label><select id="vst-f-combustivel"><option value="">—</option>'+viaturaOptionsHTML(VISTORIA_COMBUSTIVEL, '')+'</select></div>'+
     '</div>'+
-    '<div class="grid grid-3" style="margin-top:10px;">'+
+    /* v4.8: "Km inicial" saiu (redundante com "Km atual", já mostrado ao
+       lado); o espaço liberado vai para o campo de Responsável, que agora
+       precisa de mais largura pra caber matrícula + nome + função. */
+    '<div class="grid grid-2" style="margin-top:10px;">'+
       '<div class="field"><label for="vst-f-informante">Responsável pelo Checklist/Vistoria</label><select id="vst-f-informante" required>'+vistoriaResponsavelOptionsHTML()+'</select></div>'+
-      '<div class="field"><label for="vst-f-km-inicial">Km inicial</label><input type="number" id="vst-f-km-inicial" min="0" inputmode="numeric" /></div>'+
       '<div class="field"><label for="vst-f-km-final">Km final (fechamento do turno)</label><input type="number" id="vst-f-km-final" min="0" inputmode="numeric" /></div>'+
     '</div>'+
     '<h4 class="mov-modal-subtitle" style="margin-top:16px;">Checklist</h4>'+
-    '<div class="vst-itens-frame">'+
-      VISTORIA_ITENS.map(vistoriaItemSegHTML).join('')+
-    '</div>'+
-    '<div class="field" style="margin-top:14px;"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="3" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
-    '<div class="field" style="margin-top:10px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
-    '<div class="login-err" id="vistoriaFormErr"></div>'+
-    '<div class="modal-actions" style="justify-content:flex-end;padding:16px 0 0;">'+
-      '<button type="submit" class="btn btn-gold btn-sm">Enviar Vistoria</button>'+
+    formModalSectionsHTML(VISTORIA_GRUPOS.map(function(g){
+      var itensDoGrupo = VISTORIA_ITENS.filter(function(it){ return g.itens.indexOf(it.v)!==-1; });
+      return {key:g.key, label:g.label, html:'<div class="vst-itens-frame">'+itensDoGrupo.map(vistoriaItemSegHTML).join('')+'</div>'};
+    }))+
+    '<div class="vst-form-footer">'+
+      '<div class="field" style="margin-top:14px;"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="2" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
+      '<div class="field" style="margin-top:8px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
+      '<div class="login-err" id="vistoriaFormErr"></div>'+
+      '<div class="modal-actions" style="justify-content:flex-end;padding:10px 0 0;">'+
+        '<button type="submit" class="btn btn-gold btn-sm">Enviar Vistoria</button>'+
+      '</div>'+
     '</div>'+
   '</form>';
 }
@@ -5770,6 +5840,15 @@ function resetVistoriaForm(){
   var wrap = $('vistoriaFormWrap');
   if(!wrap) return;
   wrap.innerHTML = vistoriaFormHTML();
+  var vistoriaFormEl = $('vistoriaForm');
+  /* fora de um modal (o form fica direto na view, não em #modalOverlay), a
+     delegação de clique nas abas do form-modal-tabs precisa ser própria —
+     reaproveita switchFormModalTab(), mesma função usada pelos formulários
+     de Logística/Licitações. */
+  vistoriaFormEl.addEventListener('click', function(e){
+    var tabBtn = e.target.closest('.form-modal-tab');
+    if(tabBtn) switchFormModalTab(vistoriaFormEl, tabBtn.dataset.formtab);
+  });
   var kmAtualDisplay = $('vst-f-km-atual');
   var viaturaSel = $('vst-f-viatura');
   if(viaturaSel && kmAtualDisplay){
@@ -5819,11 +5898,9 @@ function resetVistoriaForm(){
     if(combustivel) itens.combustivel = combustivel;
     var fotosInput = $('vst-f-fotos');
     var fotosFiles = fotosInput && fotosInput.files ? Array.prototype.slice.call(fotosInput.files) : [];
-    var kmInicialRaw = $('vst-f-km-inicial').value;
     var kmFinalRaw = $('vst-f-km-final').value;
     var payload = {
       viaturaId: viaturaId, informante: informante,
-      kmInicial: (kmInicialRaw===''?null:Number(kmInicialRaw)),
       kmFinal: (kmFinalRaw===''?null:Number(kmFinalRaw)),
       itens: itens, observacoes: ($('vst-f-obs').value.trim()||null), fotosFiles: fotosFiles
     };
