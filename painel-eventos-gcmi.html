@@ -859,6 +859,13 @@ body[data-screen="form"] .app{max-width:1360px;}
 .mov-table tbody tr:last-child td{border-bottom:none;}
 .mov-table .mov-data-cell{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap;}
 
+/* v4.6: lista de vistorias dentro do detalhe da viatura — cada vistoria é um
+   bloco próprio (não cabe bem numa linha de tabela, tem itens de checklist
+   e observação de tamanho variável), empilhados com um respiro entre eles. */
+.mov-list{display:flex;flex-direction:column;gap:10px;max-height:48vh;overflow-y:auto;}
+.mov-item{border:1px solid var(--line-soft);border-radius:var(--radius-md);padding:12px;background:var(--bg-card-hi);}
+.mov-item .ec-row:last-child{margin-bottom:0;}
+
 /* v4.2: modal de formulário (Nova/Editar Licitação, Nova/Editar Ocorrência
    de Logística) em tela cheia, sem rolagem — mesma mecânica de tela cheia
    do .mov-modal, mas o excesso de conteúdo é resolvido dividindo em abas
@@ -1436,6 +1443,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   <button class="tab-btn" data-view="relatorios">Relatórios</button>
   <button class="tab-btn" data-view="config">Configurações</button>
   <button class="tab-btn" data-view="auditoria" hidden>Auditoria</button>
+  <button class="tab-btn" data-view="vistoria" hidden>Vistoria de Viatura</button>
 </nav>
 
 <div class="subheader brushed" id="subHeader">
@@ -1766,18 +1774,23 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="cfg-add"><input type="email" id="accessViaturasInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessViaturasAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessViaturasChips" style="margin-top:8px;"></div>
           </div>
+          <div>
+            <div class="field-hint"><strong>Login de Vistoria de Viatura</strong> — e-mail do login compartilhado usado pelos guardas no pátio pra enviar o checklist de vistoria. Só consegue criar vistorias novas (não edita nem apaga as anteriores, nem vê o cadastro/histórico de status da frota).</div>
+            <div class="cfg-add"><input type="email" id="accessVistoriaInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessVistoriaAdd" type="button">Adicionar</button></div>
+            <div class="chips" id="accessVistoriaChips" style="margin-top:8px;"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.5 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.6 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
           <p id="aboutSyncNote"></p>
-          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções) e Licitações (acompanhamento de processos). Desde a v4.5, dentro da própria aba Logística existe também a sub-área Viaturas (cadastro da frota e controle de baixa/alta com histórico), visível só para Administradores e Gestores de Frota. Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística, Editor de Licitações e Gestor de Frota — geríveis em Configurações → Perfis de Acesso; a visualização das demais abas continua aberta a qualquer conta logada.</p>
+          <p>Além da Agenda de Eventos, o painel reúne a Agenda do Cmt (compromissos pessoais/institucionais do comando), Logística (VTR, motos, equipamentos, armamentos e manutenções) e Licitações (acompanhamento de processos). Desde a v4.5, dentro da própria aba Logística existe também a sub-área Viaturas (cadastro da frota e controle de baixa/alta com histórico), visível só para Administradores e Gestores de Frota. Na v4.6 entrou a Etapa 2 do módulo: a aba própria "Vistoria de Viatura", com o checklist de vistoria (pneus, freios, óleo, combustível, avarias etc., com fotos), pensada pra ser preenchida no celular por um login compartilhado usado pelos guardas no pátio — cada vistoria enviada fica visível a Administradores e Gestores de Frota dentro do detalhe de cada viatura. Cada área tem seu próprio perfil de edição — Administrador, Editor de Eventos, Editor de Logística, Editor de Licitações, Gestor de Frota e Login de Vistoria — geríveis em Configurações → Perfis de Acesso; a visualização das demais abas continua aberta a qualquer conta logada.</p>
           <p>A evolução completa de versões e ampliações fica registrada no <a href="#" id="aboutVersionLink">Relatório Técnico</a>, acessível pelo selo ao lado deste título.</p>
           <p>Termo de cessão de uso, direitos autorais e conformidade com a LGPD: <a href="#" id="legalDocsLink">consultar documentação institucional</a>.</p>
           <div class="about-account" id="aboutAccountBox" hidden style="margin:14px 0 2px;padding-top:12px;border-top:1px solid var(--line);">
@@ -2073,6 +2086,16 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <p class="field-hint" id="auditCapNote" style="margin-top:10px;"></p>
   </section>
 
+  <section class="view" id="view-vistoria">
+    <div class="view-head">
+      <div>
+        <h2>Vistoria de Viatura</h2>
+        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Checklist rápido de vistoria — pensado pra ser preenchido no celular, no pátio. Visível para Administradores, Gestores de Frota e quem usa o login de Vistoria (Configurações → Perfis de Acesso).</p>
+      </div>
+    </div>
+    <div id="vistoriaFormWrap"></div>
+  </section>
+
 </main>
 <footer class="foot">GCMI · Painel de Eventos — Guarda Municipal de Ipatinga</footer>
 </div>
@@ -2294,6 +2317,40 @@ function viaturaStatusClass(v){ return v==='DISPONIVEL' ? 'ok' : (v==='BAIXADA' 
 function viaturaOptionsHTML(list, sel){
   return list.map(function(x){ return '<option value="'+esc(x.v)+'"'+(x.v===sel?' selected':'')+'>'+esc(x.l)+'</option>'; }).join('');
 }
+/* v4.6: Etapa 2 — checklist de vistoria por viatura. Itens fixos (mesmo
+   raciocínio das taxonomias de Viaturas acima: vocabulário operacional
+   definido, não lista configurável). Cada item recebe um dos 4 status;
+   o nível de combustível é tratado à parte, com sua própria escala. */
+var VISTORIA_ITENS = [
+  {v:'pneus', l:'Pneus (estado e calibragem)'},
+  {v:'freios', l:'Freios'},
+  {v:'farois', l:'Faróis, lanternas e setas'},
+  {v:'buzina', l:'Buzina'},
+  {v:'oleo', l:'Nível de óleo'},
+  {v:'bateria', l:'Bateria'},
+  {v:'cintoCapacete', l:'Cinto de segurança / capacete'},
+  {v:'documentacao', l:'Documentação (CRLV) presente'},
+  {v:'equipamentos', l:'Equipamentos obrigatórios (triângulo, macaco, extintor)'},
+  {v:'limpeza', l:'Limpeza interna e externa'},
+  {v:'avarias', l:'Avarias / amassados visíveis'}
+];
+var VISTORIA_ITEM_STATUS = [{v:'OK', l:'OK'}, {v:'ATENCAO', l:'Atenção'}, {v:'RUIM', l:'Ruim'}, {v:'NA', l:'N/A'}];
+var VISTORIA_COMBUSTIVEL = [{v:'RESERVA', l:'Reserva'}, {v:'1_4', l:'1/4'}, {v:'2_4', l:'1/2'}, {v:'3_4', l:'3/4'}, {v:'CHEIO', l:'Cheio'}];
+function vistoriaItemStatusLabel(v){ var f = VISTORIA_ITEM_STATUS.filter(function(x){ return x.v===v; })[0]; return f ? f.l : (v||'—'); }
+function vistoriaItemStatusClass(v){ return v==='OK' ? 'ok' : (v==='ATENCAO' ? 'warn' : (v==='RUIM' ? 'danger' : '')); }
+function vistoriaCombustivelLabel(v){ var f = VISTORIA_COMBUSTIVEL.filter(function(x){ return x.v===v; })[0]; return f ? f.l : ''; }
+/* resumo rápido pra listar (ex: card/histórico): pior status entre os itens
+   preenchidos, prioridade RUIM > ATENCAO > OK > NA. */
+function vistoriaPiorStatus(itens){
+  var ordem = {RUIM:3, ATENCAO:2, OK:1, NA:0};
+  var pior = null;
+  Object.keys(itens||{}).forEach(function(k){
+    if(k==='combustivel') return;
+    var v = itens[k];
+    if(v && (pior===null || (ordem[v]||0) > (ordem[pior]||0))) pior = v;
+  });
+  return pior;
+}
 var MODALIDADES = {
   operacional: ["Ponto Base","Passagem Periódica","Início ao Término"],
   administrativo: ["Curso (EQP)","Palestra","Diligência","Reunião","Ponto Base","Passagem Periódica","Início ao Término","Outro"]
@@ -2304,13 +2361,24 @@ var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_ges
   eventosEditors:'gcmi_ev_eventos_editors', logisticaEditors:'gcmi_ev_logistica_editors', licitacoesEditors:'gcmi_ev_licitacoes_editors',
   logisticaCat:'gcmi_ev_logistica_cat', logisticaStatus:'gcmi_ev_logistica_status',
   licitacoesFases:'gcmi_ev_licitacoes_fases', licitacoesModalidades:'gcmi_ev_licitacoes_modalidades',
-  viaturas:'gcmi_ev_viaturas', viaturasHistorico:'gcmi_ev_viaturas_historico', viaturasGestores:'gcmi_ev_viaturas_gestores'};
+  viaturas:'gcmi_ev_viaturas', viaturasHistorico:'gcmi_ev_viaturas_historico', viaturasGestores:'gcmi_ev_viaturas_gestores',
+  viaturasVistorias:'gcmi_ev_viaturas_vistorias', viaturasVistoriaLogins:'gcmi_ev_viaturas_vistoria_logins'};
 
 /* ---------------- Supabase ---------------- */
 var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
 var VERSION_LOG = [
+  {
+    version: 'v4.6', date: '19/09/2026',
+    changes: [
+      'Reorganização pedida pelo DG: a sub-área Viaturas deixou de ser uma aba própria e passou a viver DENTRO da aba Logística, num segmentado "Ocorrências / Viaturas" — mesmo cadastro, baixa/alta e histórico de status da v4.5, só a navegação mudou.',
+      'Carga inicial da frota: 14 viaturas/motos importadas do Sistema de Abastecimento (prefixo, placa, marca/modelo, quilometragem) — a origem passou a se chamar "Orgânica"/"Terceirizada" no cadastro (antes "Própria"/"Alugada").',
+      'Nova aba "Vistoria de Viatura" (Etapa 2 do módulo): checklist de vistoria por viatura — pneus, freios, faróis, buzina, óleo, bateria, cinto/capacete, documentação, equipamentos obrigatórios, limpeza e avarias, mais nível de combustível, quilometragem e fotos — pensada pra ser preenchida no celular, no pátio.',
+      'Novo perfil de acesso "Login de Vistoria de Viatura" em Configurações → Perfis de Acesso: pensado pra um login compartilhado usado por qualquer guarda no pátio, que só consegue ENVIAR uma vistoria nova — não edita nem apaga vistorias já enviadas (registro é permanente, tipo caixa-preta), e não enxerga o cadastro/histórico de status da frota. Cada vistoria enviada fica visível a Administradores e Gestores de Frota dentro do detalhe de cada viatura, junto com as fotos anexadas.',
+      'Km atual da viatura passa a ser atualizado automaticamente pela vistoria mais recente (só sobe, nunca "regride" por uma leitura digitada menor por engano).'
+    ]
+  },
   {
     version: 'v4.5', date: '19/09/2026',
     changes: [
@@ -2633,6 +2701,13 @@ var state = {
      e passou a ser uma sub-área DENTRO de Logística — logisticaSubView
      controla qual bloco aparece ('ocorrencias' é o padrão). */
   logisticaSubView: 'ocorrencias',
+  /* v4.6: Etapa 2 do módulo de Viaturas — checklist/vistoria por viatura.
+     viaturasVistoriaLogins é outro perfil de acesso à parte: só quem está
+     nessa lista (ou é admin/Gestor de Frota) CONSEGUE ENVIAR uma vistoria —
+     pensado pra um login compartilhado usado pelos guardas no pátio, sem
+     conta individual. Ver isVistoriaLogin()/canSubmitVistoria(). */
+  viaturasVistorias: [],
+  viaturasVistoriaLogins: [],
   filterTipo: 'todos',
   search: '',
   ord: 'asc',
@@ -2939,6 +3014,9 @@ function viaturaFromDbRow(r){
   return {
     id:r.id, prefixo:r.prefixo, placa:r.placa||null, tipo:r.tipo, descricao:r.descricao||null,
     ano:(r.ano==null?null:Number(r.ano)), origem:r.origem||null, status:r.status,
+    /* km_atual não é editável no cadastro — só é atualizado quando uma
+       vistoria (Etapa 2) registra uma leitura de km maior que a atual. */
+    kmAtual:(r.km_atual==null?null:Number(r.km_atual)),
     observacoes:r.observacoes||null, createdAt:r.created_at, updatedAt:r.updated_at
   };
 }
@@ -2980,6 +3058,43 @@ function viaturasHistoricoFor(viaturaId){
   return (state.viaturasHistorico||[]).filter(function(h){ return h.viaturaId===viaturaId; }).slice().sort(function(a,b){
     var ca=a.createdAt||'', cb=b.createdAt||''; return ca<cb ? 1 : (ca>cb ? -1 : 0);
   });
+}
+
+/* ---------------- store: live (Supabase) — Vistoria de Viatura (v4.6) ----------------
+   Leitura (select) da tabela viaturas_vistorias é restrita a admin/Gestor de
+   Frota pela RLS — quem só tem o login compartilhado de vistoria NÃO
+   consegue listar vistorias antigas (só inserir a próxima), então
+   fetchViaturasVistorias() roda pra todo mundo mas volta vazio pra esse
+   perfil, sem erro (comportamento normal de RLS, não uma falha). */
+function vistoriaToDbRow(vs){
+  return {
+    viatura_id: vs.viaturaId, informante: vs.informante||null,
+    km_atual: (vs.kmAtual===''||vs.kmAtual==null) ? null : Number(vs.kmAtual),
+    itens: vs.itens||{}, observacoes: vs.observacoes||null, fotos: vs.fotos||[]
+  };
+}
+function vistoriaFromDbRow(r){
+  return {
+    id:r.id, viaturaId:r.viatura_id, dataHora:r.data_hora, informante:r.informante||null,
+    kmAtual:(r.km_atual==null?null:Number(r.km_atual)), itens:r.itens||{}, observacoes:r.observacoes||null,
+    fotos:r.fotos||[], createdAt:r.created_at
+  };
+}
+function fetchViaturasVistorias(){
+  return sb.from('viaturas_vistorias').select('*').order('data_hora', {ascending:false}).then(function(res){
+    if(res.error){ console.error('fetchViaturasVistorias', res.error); return; }
+    state.viaturasVistorias = res.data.map(vistoriaFromDbRow);
+    maybeRefreshViaturas();
+  });
+}
+function subscribeViaturasVistorias(){
+  fetchViaturasVistorias();
+  sb.channel('viaturas-vistorias-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'viaturas_vistorias'}, function(){ fetchViaturasVistorias(); })
+    .subscribe();
+}
+function viaturasVistoriasFor(viaturaId){
+  return (state.viaturasVistorias||[]).filter(function(h){ return h.viaturaId===viaturaId; });
 }
 
 /* ---------------- Movimentos: helpers (etapa atual/prazo/vencido ao vivo) ---------------- */
@@ -3043,6 +3158,8 @@ function fetchConfigAll(){
     if(!map['licitacoes-modalidades']) upsertConfig('licitacoes-modalidades', {items: state.licitacoesModalidades}).catch(function(){});
     state.viaturasGestores = (map['viaturas-gestores'] && Array.isArray(map['viaturas-gestores'].items)) ? map['viaturas-gestores'].items : [];
     if(!map['viaturas-gestores']) upsertConfig('viaturas-gestores', {items: state.viaturasGestores}).catch(function(){});
+    state.viaturasVistoriaLogins = (map['viaturas-vistoria-login'] && Array.isArray(map['viaturas-vistoria-login'].items)) ? map['viaturas-vistoria-login'].items : [];
+    if(!map['viaturas-vistoria-login']) upsertConfig('viaturas-vistoria-login', {items: state.viaturasVistoriaLogins}).catch(function(){});
     renderRefSelect(); renderCfgRefs();
     renderResourceSelect(); renderCfgResources();
     renderParticipantSelect(); renderCfgParticipants();
@@ -3057,6 +3174,8 @@ function fetchConfigAll(){
     updateDomainAccessUI();
     updateAuditoriaAccessUI();
     updateViaturasAccessUI();
+    updateVistoriaAccessUI();
+    applyVistoriaKioskMode();
   });
 }
 function subscribeConfig(){
@@ -3091,6 +3210,8 @@ function loadLocalAll(){
   state.viaturas = loadLS(LS_KEYS.viaturas, []);
   state.viaturasHistorico = loadLS(LS_KEYS.viaturasHistorico, []);
   state.viaturasGestores = loadLS(LS_KEYS.viaturasGestores, []);
+  state.viaturasVistorias = loadLS(LS_KEYS.viaturasVistorias, []);
+  state.viaturasVistoriaLogins = loadLS(LS_KEYS.viaturasVistoriaLogins, []);
   renderMain(); renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources(); renderParticipantSelect(); renderCfgParticipants(); renderEfetivoList(); renderCfgGestao(); renderRosterGrid();
   renderAccessChips();
   updateCmtAgendaAccessUI();
@@ -3101,6 +3222,8 @@ function loadLocalAll(){
   updateDomainAccessUI();
   updateAuditoriaAccessUI();
   updateViaturasAccessUI();
+  updateVistoriaAccessUI();
+  applyVistoriaKioskMode();
 }
 function maybeSeedLocal(){
   var meta = loadLS(LS_KEYS.meta, {});
@@ -3466,6 +3589,72 @@ function changeViaturaStatus(id, novoStatus, motivo){
   return Promise.resolve();
 }
 
+/* ---------------- Vistoria de Viatura: envio (v4.6) ----------------
+   Quem só tem o login compartilhado de vistoria não é Gestor de Frota, mas
+   ainda assim precisa conseguir enviar — daí requireVistoriaAuth() checa
+   canSubmitVistoria() (que inclui essa lista) em vez de canManageViaturas(). */
+function requireVistoriaAuth(){
+  if(!requireAuth()) return false;
+  if(mode==='live' && !canSubmitVistoria()){
+    showToast('Você não tem permissão para enviar vistorias.');
+    return false;
+  }
+  return true;
+}
+function uploadVistoriaFotos(viaturaId, files){
+  if(!files || !files.length) return Promise.resolve([]);
+  if(mode!=='live'){
+    return Promise.resolve(files.map(function(f, i){ return 'local/'+viaturaId+'/'+Date.now()+'_'+i+'_'+(f.name||'foto.jpg'); }));
+  }
+  var uploads = files.map(function(f, i){
+    var safeName = (f.name||'foto.jpg').replace(/[^a-zA-Z0-9_.-]/g, '_');
+    var path = viaturaId+'/'+Date.now()+'_'+i+'_'+safeName;
+    return sb.storage.from('viaturas-vistorias').upload(path, f).then(function(res){
+      if(res.error) throw res.error;
+      return path;
+    });
+  });
+  return Promise.all(uploads);
+}
+function submitVistoria(data){
+  if(!requireVistoriaAuth()) return Promise.reject(new Error('not-authorized'));
+  var autorEmail = (authUser && authUser.email) || null;
+  var informante = (data.informante||'').trim() || autorEmail || 'não identificado';
+  var viaturaId = data.viaturaId;
+  var kmAtual = (data.kmAtual===''||data.kmAtual==null) ? null : Number(data.kmAtual);
+  return uploadVistoriaFotos(viaturaId, data.fotosFiles||[]).then(function(fotoPaths){
+    var payload = { viaturaId:viaturaId, informante:informante, kmAtual:kmAtual, itens:data.itens||{}, observacoes:data.observacoes||null, fotos:fotoPaths };
+    if(mode==='live'){
+      return sb.from('viaturas_vistorias').insert(vistoriaToDbRow(payload)).then(function(res){
+        if(res.error) throw res.error;
+        var viatura = (state.viaturas||[]).find(function(v){ return v.id===viaturaId; });
+        var kmAnterior = viatura ? viatura.kmAtual : null;
+        /* só sobe o km do cadastro se a leitura nova for maior — evita que
+           uma vistoria com km digitado errado (menor) "regrida" o cadastro. */
+        if(kmAtual!=null && (kmAnterior==null || kmAtual > kmAnterior)){
+          return sb.from('viaturas').update({km_atual:kmAtual}).eq('id', viaturaId);
+        }
+      }).then(function(){
+        return Promise.all([fetchViaturasVistorias(), fetchViaturas()]);
+      });
+    }
+    var list = loadLS(LS_KEYS.viaturasVistorias, []);
+    list.push(Object.assign({
+      id:'vtrv_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      createdAt:new Date().toISOString(), dataHora:new Date().toISOString()
+    }, payload));
+    saveLS(LS_KEYS.viaturasVistorias, list);
+    state.viaturasVistorias = list;
+    var listV = loadLS(LS_KEYS.viaturas, []);
+    var idxV = listV.findIndex(function(e){ return e.id===viaturaId; });
+    if(idxV>-1 && kmAtual!=null && (listV[idxV].kmAtual==null || kmAtual > listV[idxV].kmAtual)){
+      listV[idxV] = Object.assign({}, listV[idxV], {kmAtual:kmAtual}); saveLS(LS_KEYS.viaturas, listV); state.viaturas=listV;
+    }
+    maybeRefreshViaturas();
+    return Promise.resolve();
+  });
+}
+
 function saveRefs(items){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   state.localRefs = items;
@@ -3537,6 +3726,14 @@ function saveViaturasGestores(items){
   state.viaturasGestores = items;
   if(mode==='live'){ return upsertConfig('viaturas-gestores', {items:items}).then(function(){ return fetchConfigAll(); }); }
   saveLS(LS_KEYS.viaturasGestores, items);
+  renderAccessChips();
+  return Promise.resolve();
+}
+function saveViaturasVistoriaLogins(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  state.viaturasVistoriaLogins = items;
+  if(mode==='live'){ return upsertConfig('viaturas-vistoria-login', {items:items}).then(function(){ return fetchConfigAll(); }); }
+  saveLS(LS_KEYS.viaturasVistoriaLogins, items);
   renderAccessChips();
   return Promise.resolve();
 }
@@ -3957,6 +4154,35 @@ function isViaturasGestor(){
 }
 function canManageViaturas(){ return isViaturasGestor(); }
 function canViewViaturasTab(){ return isViaturasGestor(); }
+/* v4.6: Etapa 2 — quem pode ENVIAR uma vistoria/checklist é um perfil à
+   parte de quem gerencia o cadastro: além de admin/Gestor de Frota (que
+   também enxergam pra fins de teste), a lista 'viaturas-vistoria-login'
+   guarda o e-mail do login compartilhado usado pelos guardas no pátio. Ver
+   a RLS espelhada is_vistoria_login() no banco. */
+function isVistoriaLogin(){
+  if(mode!=='live') return true;
+  return isViaturasGestor() || _emailIsIn(state.viaturasVistoriaLogins);
+}
+function canSubmitVistoria(){ return isVistoriaLogin(); }
+function canViewVistoriaTab(){ return isVistoriaLogin(); }
+/* v4.6-follow-up: a pedido do DG, quem só tem o login compartilhado de
+   vistoria (nenhum outro perfil — não é admin, não é editor de nada, não é
+   Gestor de Frota) entra em "modo quiosque": enxerga SÓ a aba Vistoria de
+   Viatura, nada mais — nem Agenda, nem Agenda do Cmt, nem Configurações.
+   Isso é diferente de canViewVistoriaTab(): aquela decide quem VÊ a aba
+   Vistoria (inclui admin/gestor, que devem continuar vendo todo o resto
+   normalmente); isVistoriaOnlyAccount() decide quem tem SÓ essa aba. */
+function isVistoriaOnlyAccount(){
+  if(mode!=='live') return false;
+  return !isAdmin() && !canManageEventos() && !canManageLogistica() && !canManageLicitacoes() && !isViaturasGestor() && _emailIsIn(state.viaturasVistoriaLogins);
+}
+function applyVistoriaKioskMode(){
+  var kiosk = !isPublicRestricted() && isVistoriaOnlyAccount();
+  ['agenda','cmtagenda','logistica','licitacoes','loglicagenda','loglicrelatorio','relatorios','config'].forEach(function(name){
+    document.querySelectorAll('[data-view="'+name+'"]').forEach(function(b){ if(kiosk) b.hidden = true; });
+  });
+  if(kiosk && document.body.getAttribute('data-screen')!=='vistoria'){ goToView('vistoria'); }
+}
 /* ---------------- v4.0: navegação compartimentada por domínio ----------------
    Antes da v4.0, a visibilidade das abas era ampla pra qualquer logado —
    só a edição era restrita por perfil. Agora quem tem um perfil de edição
@@ -4094,6 +4320,15 @@ function updateViaturasAccessUI(){
   }
   if(typeof renderViaturas === 'function' && $('viaturasList')) renderViaturas();
 }
+/* v4.6: "Vistoria de Viatura" é uma aba própria e independente de
+   Logística — pensada pra abrir direto no celular, sem precisar navegar
+   por Logística → Viaturas (que aliás quem usa o login compartilhado de
+   vistoria nem enxerga, porque não é Gestor de Frota). */
+function updateVistoriaAccessUI(){
+  var restricted = isPublicRestricted() || !canViewVistoriaTab();
+  document.querySelectorAll('[data-view="vistoria"]').forEach(function(b){ b.hidden = restricted; });
+  if(restricted && document.body.getAttribute('data-screen')==='vistoria'){ goToView('agenda'); }
+}
 function updateAuthUI(){
   var btn = $('authBtn'), label = $('authUserLabel');
   if(!btn) return;
@@ -4126,7 +4361,7 @@ function updateAuthUI(){
      nenhum, deixando partes inteiras do painel travadas no estado
      antigo — por isso cada uma agora roda isolada; uma falha aparece só
      no console (com o nome da função), sem travar as outras. */
-  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI, updateViaturasAccessUI].forEach(function(fn){
+  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI, updateViaturasAccessUI, updateVistoriaAccessUI, applyVistoriaKioskMode].forEach(function(fn){
     try{ fn(); }catch(e){ console.error('updateAuthUI: '+fn.name, e); }
   });
 }
@@ -4361,6 +4596,7 @@ function initStore(){
   subscribeLicitacoesMovimentos();
   subscribeViaturas();
   subscribeViaturasHistorico();
+  subscribeViaturasVistorias();
 }
 
 /* ---------------- sync status / toast ---------------- */
@@ -5263,7 +5499,8 @@ function viaturaCardHTML(v){
     (v.origem ? '<div class="ec-row"><span class="k">Origem</span><span>'+esc(viaturaOrigemLabel(v.origem))+'</span></div>' : '')+
     (v.ano ? '<div class="ec-row"><span class="k">Ano</span><span>'+esc(String(v.ano))+'</span></div>' : '')+
     (v.descricao ? '<div class="ec-row"><span class="k">Descrição</span><span>'+esc(v.descricao)+'</span></div>' : '')+
-    '<div class="ec-hint-click">Clique no card para ver o histórico de status</div>'+
+    (v.kmAtual!=null ? '<div class="ec-row"><span class="k">Km atual</span><span>'+esc(v.kmAtual.toLocaleString('pt-BR'))+'</span></div>' : '')+
+    '<div class="ec-hint-click">Clique no card para ver o histórico e as vistorias</div>'+
   '</article>';
 }
 function renderViaturas(){
@@ -5351,9 +5588,40 @@ function viaturaHistoricoTableHTML(hist){
   }).join('');
   return '<div class="mov-modal-table-wrap"><table class="mov-table"><thead><tr><th>Quando</th><th>Status</th><th>Motivo</th><th>Autor</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
+/* v4.6: cartão de uma vistoria dentro do detalhe da viatura — resume os
+   itens do checklist como "N ok · N atenção · N ruim" mais um badge do pior
+   status encontrado, sem precisar abrir mais um nível de modal. As fotos
+   ficam num bucket privado, então o link é gerado sob demanda (signed URL)
+   só quando alguém clica em "Ver fotos", em vez de gerar tudo antecipado. */
+function vistoriaItensResumoHTML(itens){
+  var counts = {OK:0, ATENCAO:0, RUIM:0};
+  VISTORIA_ITENS.forEach(function(it){ var v = (itens||{})[it.v]; if(v && counts.hasOwnProperty(v)) counts[v]++; });
+  var parts = [];
+  if(counts.OK) parts.push('<span class="status-pill ok">'+counts.OK+' ok</span>');
+  if(counts.ATENCAO) parts.push('<span class="status-pill warn">'+counts.ATENCAO+' atenção</span>');
+  if(counts.RUIM) parts.push('<span class="status-pill danger">'+counts.RUIM+' ruim</span>');
+  return parts.join(' ') || '<span class="field-hint">sem itens preenchidos</span>';
+}
+function viaturaVistoriaCardHTML(vs){
+  var combustivel = (vs.itens||{}).combustivel;
+  return '<div class="mov-item">'+
+    '<div class="ec-row"><span class="k">Quando</span><span>'+esc(vs.dataHora ? new Date(vs.dataHora).toLocaleString('pt-BR') : '')+'</span></div>'+
+    '<div class="ec-row"><span class="k">Informante</span><span>'+esc(vs.informante||'—')+'</span></div>'+
+    (vs.kmAtual!=null ? '<div class="ec-row"><span class="k">Km informado</span><span>'+esc(Number(vs.kmAtual).toLocaleString('pt-BR'))+'</span></div>' : '')+
+    (combustivel ? '<div class="ec-row"><span class="k">Combustível</span><span>'+esc(vistoriaCombustivelLabel(combustivel))+'</span></div>' : '')+
+    '<div class="ec-row"><span class="k">Checklist</span><span>'+vistoriaItensResumoHTML(vs.itens)+'</span></div>'+
+    (vs.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(vs.observacoes)+'</span></div>' : '')+
+    (vs.fotos && vs.fotos.length ? '<div class="ec-row"><span class="k">Fotos</span><span><button type="button" class="btn btn-sm" data-act="vtr-vistoria-fotos" data-id="'+esc(vs.id)+'">Ver fotos ('+vs.fotos.length+')</button></span></div>' : '')+
+  '</div>';
+}
+function viaturaVistoriasListHTML(vistorias){
+  if(!vistorias.length) return '<p class="field-hint">Nenhuma vistoria registrada ainda para esta viatura.</p>';
+  return '<div class="mov-list">'+vistorias.map(viaturaVistoriaCardHTML).join('')+'</div>';
+}
 function viaturaDetailModalHTML(v){
   var canEdit = canManageViaturas();
   var hist = viaturasHistoricoFor(v.id);
+  var vistorias = viaturasVistoriasFor(v.id);
   return '<div class="modal-head"><h3>'+esc(v.prefixo||'Viatura')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
     '<div class="mov-modal-meta">'+
       '<div class="ec-row"><span class="k">Tipo</span><span>'+esc(viaturaTipoLabel(v.tipo))+(v.placa?' · '+esc(v.placa):'')+'</span></div>'+
@@ -5361,11 +5629,14 @@ function viaturaDetailModalHTML(v){
       (v.origem ? '<div class="ec-row"><span class="k">Origem</span><span>'+esc(viaturaOrigemLabel(v.origem))+'</span></div>' : '')+
       (v.ano ? '<div class="ec-row"><span class="k">Ano</span><span>'+esc(String(v.ano))+'</span></div>' : '')+
       (v.descricao ? '<div class="ec-row"><span class="k">Descrição</span><span>'+esc(v.descricao)+'</span></div>' : '')+
+      (v.kmAtual!=null ? '<div class="ec-row"><span class="k">Km atual</span><span>'+esc(v.kmAtual.toLocaleString('pt-BR'))+' <span class="field-hint">(última leitura de vistoria)</span></span></div>' : '')+
       (v.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(v.observacoes)+'</span></div>' : '')+
       '<h4 class="mov-modal-subtitle">Histórico de status ('+hist.length+')</h4>'+
     '</div>'+
     viaturaHistoricoTableHTML(hist)+
     (canEdit ? '<div class="modal-actions"><button class="btn btn-sm btn-gold" type="button" data-act="vtr-status-new" data-id="'+esc(v.id)+'">Alterar Status</button></div>' : '')+
+    '<h4 class="mov-modal-subtitle">Vistorias ('+vistorias.length+')</h4>'+
+    viaturaVistoriasListHTML(vistorias)+
   '';
 }
 function openViaturaDetailModal(id){
@@ -5374,6 +5645,98 @@ function openViaturaDetailModal(id){
   openModal(viaturaDetailModalHTML(v));
   $('modalBox').classList.add('mov-modal');
   $('modalOverlay').classList.add('mov-modal-overlay');
+}
+function abrirFotosVistoria(vistoriaId){
+  var vs = (state.viaturasVistorias||[]).find(function(x){ return x.id===vistoriaId; });
+  if(!vs || !vs.fotos || !vs.fotos.length) return;
+  if(mode!=='live'){ showToast('Fotos ficam disponíveis quando conectado ao Supabase.'); return; }
+  Promise.all(vs.fotos.map(function(path){
+    return sb.storage.from('viaturas-vistorias').createSignedUrl(path, 3600).then(function(res){
+      return (res && res.data && res.data.signedUrl) ? res.data.signedUrl : null;
+    }).catch(function(){ return null; });
+  })).then(function(urls){
+    urls.filter(Boolean).forEach(function(url){ window.open(url, '_blank', 'noopener'); });
+  });
+}
+
+/* ---------------- Vistoria de Viatura: formulário de envio (v4.6) ----------------
+   Aba própria, pensada pra celular: sem cards, sem listagem — só o
+   formulário do checklist, porque quem usa o login compartilhado nem tem
+   permissão de leitura de vistorias antigas (RLS). Cada item do checklist
+   usa um segmentado (mesmo componente .seg já usado em filtros do app) em
+   vez de <select>, porque é mais rápido de tocar num celular; começa em
+   "OK" pra o guarda só precisar mexer no que estiver fora do normal. */
+function vistoriaItemSegHTML(item){
+  return '<div class="field vst-item" style="margin-top:14px;">'+
+    '<label>'+esc(item.l)+'</label>'+
+    '<div class="seg vst-item-seg" data-item="'+esc(item.v)+'">'+
+      VISTORIA_ITEM_STATUS.map(function(s){ return '<button type="button" class="'+(s.v==='OK'?'active':'')+'" data-val="'+esc(s.v)+'">'+esc(s.l)+'</button>'; }).join('')+
+    '</div>'+
+  '</div>';
+}
+function vistoriaFormHTML(){
+  var ativas = (state.viaturas||[]).slice().sort(function(a,b){ return (a.prefixo||'') < (b.prefixo||'') ? -1 : 1; });
+  var options = '<option value="">Selecione a viatura...</option>'+ativas.map(function(v){
+    return '<option value="'+esc(v.id)+'">'+esc(v.prefixo||'')+(v.placa?' — '+esc(v.placa):'')+'</option>';
+  }).join('');
+  return '<form id="vistoriaForm" novalidate>'+
+    '<div class="field"><label for="vst-f-viatura">Viatura</label><select id="vst-f-viatura" required>'+options+'</select></div>'+
+    '<div class="grid grid-2" style="margin-top:10px;">'+
+      '<div class="field"><label for="vst-f-informante">Seu nome</label><input type="text" id="vst-f-informante" placeholder="Nome de quem está vistoriando" required /></div>'+
+      '<div class="field"><label for="vst-f-km">Km atual (odômetro)</label><input type="number" id="vst-f-km" min="0" inputmode="numeric" /></div>'+
+    '</div>'+
+    '<div class="field" style="margin-top:10px;"><label for="vst-f-combustivel">Nível de combustível</label><select id="vst-f-combustivel"><option value="">—</option>'+viaturaOptionsHTML(VISTORIA_COMBUSTIVEL, '')+'</select></div>'+
+    '<h4 class="mov-modal-subtitle">Checklist</h4>'+
+    VISTORIA_ITENS.map(vistoriaItemSegHTML).join('')+
+    '<div class="field" style="margin-top:14px;"><label for="vst-f-obs">Observações gerais (opcional)</label><textarea id="vst-f-obs" rows="3" placeholder="Descreva avarias, problemas encontrados etc."></textarea></div>'+
+    '<div class="field" style="margin-top:10px;"><label for="vst-f-fotos">Fotos (opcional)</label><input type="file" id="vst-f-fotos" accept="image/*" capture="environment" multiple /></div>'+
+    '<div class="login-err" id="vistoriaFormErr"></div>'+
+    '<div class="modal-actions" style="justify-content:flex-end;padding:16px 0 0;">'+
+      '<button type="submit" class="btn btn-gold btn-sm">Enviar Vistoria</button>'+
+    '</div>'+
+  '</form>';
+}
+function resetVistoriaForm(){
+  var wrap = $('vistoriaFormWrap');
+  if(!wrap) return;
+  wrap.innerHTML = vistoriaFormHTML();
+  wrap.querySelectorAll('.vst-item-seg').forEach(function(seg){
+    seg.addEventListener('click', function(e){
+      var btn = e.target.closest('button'); if(!btn) return;
+      seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    });
+  });
+  var form = $('vistoriaForm');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('vistoriaFormErr'); errEl.textContent = '';
+    var viaturaId = $('vst-f-viatura').value;
+    var informante = $('vst-f-informante').value.trim();
+    if(!viaturaId){ errEl.textContent = 'Selecione a viatura.'; return; }
+    if(!informante){ errEl.textContent = 'Informe seu nome.'; return; }
+    var itens = {};
+    wrap.querySelectorAll('.vst-item-seg').forEach(function(seg){
+      var ativo = seg.querySelector('button.active');
+      itens[seg.dataset.item] = ativo ? ativo.dataset.val : 'OK';
+    });
+    var combustivel = $('vst-f-combustivel').value;
+    if(combustivel) itens.combustivel = combustivel;
+    var fotosInput = $('vst-f-fotos');
+    var fotosFiles = fotosInput && fotosInput.files ? Array.prototype.slice.call(fotosInput.files) : [];
+    var kmRaw = $('vst-f-km').value;
+    var payload = {
+      viaturaId: viaturaId, informante: informante, kmAtual: (kmRaw===''?null:Number(kmRaw)),
+      itens: itens, observacoes: ($('vst-f-obs').value.trim()||null), fotosFiles: fotosFiles
+    };
+    var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
+    submitVistoria(payload).then(function(){
+      showToast('Vistoria enviada. Obrigado!');
+      resetVistoriaForm();
+    }).catch(function(){
+      errEl.textContent = 'Erro ao enviar. Tente novamente.';
+      if(btnSubmit) btnSubmit.disabled = false;
+    });
+  });
 }
 function viaturaStatusFormModalHTML(v){
   var opts = VIATURA_STATUS.filter(function(s){ return s.v!==v.status; });
@@ -5423,6 +5786,7 @@ function renderAccessChips(){
   if($('accessLogisticaChips')) $('accessLogisticaChips').innerHTML = accessChipsHTML(state.logisticaEditors, 'access-logistica-del');
   if($('accessLicitacoesChips')) $('accessLicitacoesChips').innerHTML = accessChipsHTML(state.licitacoesEditors, 'access-licitacoes-del');
   if($('accessViaturasChips')) $('accessViaturasChips').innerHTML = accessChipsHTML(state.viaturasGestores, 'access-viaturas-del');
+  if($('accessVistoriaChips')) $('accessVistoriaChips').innerHTML = accessChipsHTML(state.viaturasVistoriaLogins, 'access-vistoria-del');
 }
 
 function eventsForTipoSearch(includePessoal){
@@ -6547,7 +6911,7 @@ function updateAuditoriaAccessUI(){
 }
 
 /* ---------------- view switching ---------------- */
-var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria'};
+var SUBHEADER_TITLES = {form: 'Novo Evento', config: 'Configurações', relatorios: 'Relatórios', cmtagenda: 'Agenda do Cmt', logistica: 'Logística', licitacoes: 'Licitações', loglicagenda: 'Calendário — Logística/Licitações', loglicrelatorio: 'Relatório — Logística/Licitações', auditoria: 'Auditoria', vistoria: 'Vistoria de Viatura'};
 function goToView(name){
   document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id==='view-'+name); });
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.view===name); });
@@ -6562,6 +6926,7 @@ function goToView(name){
   if(name==='loglicagenda'){ initLoglicCal(); renderLoglicCal(); }
   if(name==='loglicrelatorio'){ initLoglicRelFilters(); renderLoglicRelatorio(); }
   if(name==='auditoria'){ fetchAuditLog(); }
+  if(name==='vistoria'){ resetVistoriaForm(); }
   window.scrollTo({top:0, behavior:'auto'});
 }
 
@@ -7137,8 +7502,10 @@ $_onReady(function(){
        lista), então é ouvido por delegação no próprio overlay do modal —
        mesmo padrão já usado pro "+ Novo Movimento" de Logística/Licitações. */
     $('modalOverlay').addEventListener('click', function(e){
-      var btn = e.target.closest('[data-act="vtr-status-new"]'); if(!btn) return;
-      openViaturaStatusForm(btn.dataset.id);
+      var btn = e.target.closest('[data-act="vtr-status-new"]');
+      if(btn){ openViaturaStatusForm(btn.dataset.id); return; }
+      var fotosBtn = e.target.closest('[data-act="vtr-vistoria-fotos"]');
+      if(fotosBtn){ abrirFotosVistoria(fotosBtn.dataset.id); return; }
     });
     /* v4.5-follow-up: segmentado Ocorrências/Viaturas dentro da própria aba
        Logística — substitui a navegação por aba própria que existia antes. */
@@ -7226,7 +7593,8 @@ $_onReady(function(){
       eventos: {state:'eventosEditors', save:saveEventosEditors, chips:'accessEventosChips', input:'accessEventosInput', add:'accessEventosAdd', del:'access-eventos-del'},
       logistica: {state:'logisticaEditors', save:saveLogisticaEditors, chips:'accessLogisticaChips', input:'accessLogisticaInput', add:'accessLogisticaAdd', del:'access-logistica-del'},
       licitacoes: {state:'licitacoesEditors', save:saveLicitacoesEditors, chips:'accessLicitacoesChips', input:'accessLicitacoesInput', add:'accessLicitacoesAdd', del:'access-licitacoes-del'},
-      viaturas: {state:'viaturasGestores', save:saveViaturasGestores, chips:'accessViaturasChips', input:'accessViaturasInput', add:'accessViaturasAdd', del:'access-viaturas-del'}
+      viaturas: {state:'viaturasGestores', save:saveViaturasGestores, chips:'accessViaturasChips', input:'accessViaturasInput', add:'accessViaturasAdd', del:'access-viaturas-del'},
+      vistoria: {state:'viaturasVistoriaLogins', save:saveViaturasVistoriaLogins, chips:'accessVistoriaChips', input:'accessVistoriaInput', add:'accessVistoriaAdd', del:'access-vistoria-del'}
     };
     Object.keys(ACCESS_LISTS).forEach(function(key){
       var cfg = ACCESS_LISTS[key];
