@@ -373,25 +373,41 @@ body[data-screen="cmtagenda"] #cmtAgendaCatMgmt{
    categoria, mas com leve destaque dourado em repouso — sinaliza que é uma
    ação (abre o painel de gerenciamento), não um filtro como os demais. */
 body[data-screen="cmtagenda"] .seg button.cmt-edit-toggle{color:var(--gold-hi);}
-/* v5.8: mesmo efeito de retroiluminação dourada das abas principais (v5.4),
-   agora também nas sub-abas da Agenda do Cmt (Cards/Lista, filtro de
-   categoria e "Editar Eventos") — pedido do DG. Usa só box-shadow/gradiente
+/* v5.8/v5.9: mesmo efeito de retroiluminação dourada das abas principais
+   (v5.4), agora também nas sub-abas da Agenda do Cmt (Cards/Lista, filtro de
+   categoria e "Editar Eventos") e, desde a v5.9, nas sub-abas da própria
+   Agenda de Eventos (Todos/Operacional/Administrativo, Cards/Lista/
+   Calendário, período, Mais próximos/recentes, ★ Cmt participa) — pedido do
+   DG: "o efeito da aba aplicado às sub-abas elevou o sistema a outro
+   patamar", estender pra tela principal. Usa só box-shadow/gradiente
    internos (em vez do box-shadow externo das abas principais) porque .seg
    tem overflow:hidden e cortaria um brilho que vazasse pra fora do botão.
-   Escopado só a esta tela pra não alterar o visual dos demais .seg
-   (Todos/Operacional/Administrativo, filtros de Logística etc.). */
-body[data-screen="cmtagenda"] .seg button.active{
+   Escopado só a estas duas telas pra não alterar o visual dos demais .seg
+   (filtros de Logística, Licitações etc.). */
+body[data-screen="cmtagenda"] .seg button.active,
+body[data-screen="agenda"] .seg button.active{
   position:relative;
   color:var(--gold-hi);
   background:linear-gradient(180deg, rgba(227,180,81,.26), rgba(227,180,81,.04)), var(--bg-panel-2);
   text-shadow:0 0 12px rgba(227,180,81,.5);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 -4px 12px -3px rgba(227,180,81,.55);
 }
-body[data-screen="cmtagenda"] .seg button.active::after{
+body[data-screen="cmtagenda"] .seg button.active::after,
+body[data-screen="agenda"] .seg button.active::after{
   content:'';position:absolute;left:14%;right:14%;bottom:0;height:2px;
   background:linear-gradient(90deg, transparent, var(--gold-hi), transparent);
   box-shadow:0 0 8px 1px rgba(227,180,81,.85);
 }
+/* v5.9: no filtro Todos/Operacional/Administrativo da Agenda de Eventos, o
+   dourado do glow acima não deve apagar a cor de identificação já usada em
+   todo o painel (âmbar=Operacional, ciano=Administrativo) — só a especificidade
+   maior destas regras garante que a cor correta vença sobre o color:gold-hi
+   genérico logo acima. */
+body[data-screen="agenda"] .seg button[data-tipo=operacional].active{color:var(--amber);}
+body[data-screen="agenda"] .seg button[data-tipo=administrativo].active{color:var(--cyan);}
+/* v5.9: Agenda do Cmt — cantos do quadro da Lista estavam excessivamente
+   arredondados pro tamanho da moldura; deixados discretos. */
+body[data-screen="cmtagenda"] .table-wrap{border-radius:var(--radius-sm);}
 
 /* agenda: mesmo encaixe exato de viewport, mas é a única tela que mantém o
    brasão/cabeçalho e as abas visíveis, por ser a tela inicial */
@@ -650,6 +666,9 @@ body[data-screen="form"] .form-modal-pane.active{flex:1 1 auto;min-width:0;min-h
 }
 .view-head h2{font-size:22px;}
 .view-head p{margin:6px 0 0;color:var(--ink-3);font-size:13px;max-width:60ch;}
+/* v5.9: Agenda de Eventos — título suprimido, a busca livre ocupa o lugar
+   dele na linha de cabeçalho (antes espremida junto dos filtros). */
+.agenda-search{flex:1 1 auto;max-width:420px;min-width:200px;}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -1630,7 +1649,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <nav class="tabs" id="tabsNav">
-  <button class="tab-btn active" data-view="agenda">Agenda <span class="n" id="tabCountAll">0</span></button>
+  <button class="tab-btn active" data-view="agenda">Agenda de Eventos <span class="n" id="tabCountAll">0</span></button>
   <button class="tab-btn" data-view="cmtagenda" hidden>Agenda do Cmt</button>
   <button class="tab-btn" data-view="logistica" hidden>Logística</button>
   <button class="tab-btn" data-view="licitacoes" hidden>Licitações</button>
@@ -1653,10 +1672,11 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
   <!-- ================= AGENDA ================= -->
   <section class="view active" id="view-agenda">
+    <!-- v5.9: título "Agenda de Eventos" suprimido (o nome já passou pra própria
+         aba de navegação); a busca livre, antes espremida na linha de filtros,
+         ocupa o lugar do título — melhor destaque e mais espaço pros filtros. -->
     <div class="view-head">
-      <div>
-        <h2>Agenda de Eventos</h2>
-      </div>
+      <input type="text" id="searchInput" class="agenda-search" placeholder="Buscar por local, efetivo, solicitante…" />
       <button class="btn btn-gold" data-goto="form">＋ Lançar Evento</button>
     </div>
 
@@ -1666,7 +1686,6 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <button data-tipo="operacional">Operacional</button>
         <button data-tipo="administrativo">Administrativo</button>
       </div>
-      <input type="text" id="searchInput" placeholder="Buscar por local, efetivo, solicitante…" />
       <div class="seg" id="cmtParticipaFilterSeg">
         <button data-cpf="1" title="Mostrar só eventos em que o Cmt participa ou participou">★ Cmt participa</button>
       </div>
@@ -1995,7 +2014,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.8 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.9 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2611,6 +2630,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v5.9', date: '21/09/2026',
+    changes: [
+      'Polimento final da Agenda do Cmt: cantos do quadro da Lista, antes excessivamente arredondados, agora discretos. O efeito de retroiluminação dourada das sub-abas foi levado também pra Agenda de Eventos principal (Todos/Operacional/Administrativo, Cards/Lista/Calendário, período, Mais próximos/recentes, ★ Cmt participa), preservando as cores âmbar/ciano de Operacional/Administrativo. O título "Agenda de Eventos" foi suprimido — a aba de navegação já leva esse nome agora — e a busca livre, antes espremida na linha de filtros, passou a ocupar o espaço do título.'
+    ]
+  },
   {
     version: 'v5.8', date: '21/09/2026',
     changes: [
