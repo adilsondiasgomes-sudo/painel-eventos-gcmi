@@ -2045,7 +2045,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.1 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.2 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2079,6 +2079,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <div class="field"><label for="rel-modalidade">Modalidade</label><select id="rel-modalidade"><option value="">Todas</option></select></div>
       <div class="field"><label for="rel-solicitante">Solicitante</label><input type="text" id="rel-solicitante" placeholder="Buscar solicitante…" /></div>
       <div class="field"><label for="rel-integrante">Integrante</label><input type="text" id="rel-integrante" placeholder="Nome, funcional ou matrícula…" /></div>
+      <div class="field"><label for="rel-motivo">Motivo</label><input type="text" id="rel-motivo" placeholder="Buscar por assunto/motivo…" /></div>
       <button class="btn btn-sm btn-ghost" id="rel-clear" type="button">Limpar filtros</button>
       <button class="btn btn-gold btn-sm rel-print-btn" id="btnPrintReport" type="button">Imprimir / Exportar</button>
     </div>
@@ -2661,6 +2662,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.2', date: '21/09/2026',
+    changes: [
+      'Calendário (Agenda de Eventos) passa a abrir sempre a partir da data atual ao trocar para essa aba — antes podia herdar um mês/dia já navegado nos Cards ou na Lista. Na visão Mês, os eventos de cada dia agora aparecem em ordem cronológica de horário, igual já acontecia nas visões Semana e Dia.',
+      'Relatórios (Agenda de Eventos): novo campo "Motivo" — filtro de busca na tela de filtros e nova coluna na tabela em tela e no relatório impresso/exportado (selecionável, como as demais, na tela de campos aberta pelo botão Imprimir/Exportar).'
+    ]
+  },
   {
     version: 'v6.1', date: '21/09/2026',
     changes: [
@@ -6547,7 +6555,7 @@ function renderMonthGrid(container, anchor, filtered){
     var day = addDays(gridStart, i);
     var iso = toISODate(day);
     var inMonth = day.getMonth()===month;
-    var evs = filtered.filter(function(e){ return eventOccursOn(e, iso); });
+    var evs = filtered.filter(function(e){ return eventOccursOn(e, iso); }).sort(function(a,b){ return (a.horaInicio||'').localeCompare(b.horaInicio||''); });
     html += '<div class="cal-cell'+(inMonth?'':' out')+(isWeekend(day)?' weekend':'')+(iso===todayIso?' today':'')+'" data-act="daycell" data-date="'+iso+'">';
     html += '<div class="cal-daynum">'+day.getDate()+'</div>';
     html += '<div class="cal-pills">';
@@ -7062,6 +7070,7 @@ function relFilteredEvents(){
   var modalidade = $('rel-modalidade').value;
   var solic = ($('rel-solicitante').value||'').trim().toLowerCase();
   var integ = ($('rel-integrante').value||'').trim().toLowerCase();
+  var motivo = ($('rel-motivo').value||'').trim().toLowerCase();
   return state.events.filter(function(e){
     if(e.tipo==='pessoal') return false;
     var eDataFim = e.dataFim || e.data;
@@ -7075,6 +7084,7 @@ function relFilteredEvents(){
       var hay = (e.efetivo||[]).map(function(p){ return (p.nome||'')+' '+(p.funcional||'')+' '+(p.matricula||''); }).join(' ').toLowerCase();
       if(hay.indexOf(integ)===-1) return false;
     }
+    if(motivo && (e.assunto||'').toLowerCase().indexOf(motivo)===-1) return false;
     return true;
   }).sort(function(a,b){
     var ka=(a.data||'')+'T'+(a.horaInicio||'00:00'), kb=(b.data||'')+'T'+(b.horaInicio||'00:00');
@@ -7118,7 +7128,8 @@ var EVENTOS_REL_FIELDS = [
   {key:'recursos', label:'Recursos', th:'<th>Recursos</th>', td:function(e){ var recursoTags=(e.recursos||[]).map(function(r){return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+recursoTags+'</div></td>'; }},
   {key:'efetivo', label:'Efetivo', th:'<th>Efetivo</th>', td:function(e){ var efetivoTags=(e.efetivo||[]).map(function(p){return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'; }},
   {key:'atuacao', label:'Atuação/Modalidade', th:'<th>Atuação</th>', td:function(e){ return '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'; }},
-  {key:'solicitante', label:'Solicitante/Assunto', th:'<th>Solicitante</th>', td:function(e){ return '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'; }}
+  {key:'solicitante', label:'Solicitante/Assunto', th:'<th>Solicitante</th>', td:function(e){ return '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'; }},
+  {key:'motivo', label:'Motivo', th:'<th>Motivo</th>', td:function(e){ return '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }}
 ];
 var CMT_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
@@ -7188,6 +7199,7 @@ function relTableRowHTML(e){
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
     '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
     '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'+
+    '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
   '</tr>';
 }
 function renderRelatorio(){
@@ -7215,7 +7227,7 @@ function renderRelatorio(){
     return;
   }
   $('relTableWrap').innerHTML = '<div class="table-wrap"><table class="ev-table rel-ev-table"><thead><tr>'+
-    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th>Tipo</th><th class="th-local">Local</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th>'+
+    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th>Tipo</th><th class="th-local">Local</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th><th>Motivo</th>'+
     '</tr></thead><tbody>'+list.map(relTableRowHTML).join('')+'</tbody></table></div>';
 }
 /* Impressão/exportação: o painel roda dentro de um iframe restrito (o
@@ -7949,9 +7961,15 @@ $_onReady(function(){
     var b = e.target.closest('button'); if(!b) return;
     state.viewMode = b.dataset.vm;
     document.querySelectorAll('#viewModeSeg button').forEach(function(x){ x.classList.toggle('active', x===b); });
-    if(state.viewMode==='calendario' && state.period==='todos'){
-      state.period = 'mes';
-      document.querySelectorAll('#periodSeg button').forEach(function(x){ x.classList.toggle('active', x.dataset.period==='mes'); });
+    if(state.viewMode==='calendario'){
+      /* v6.2: a pedido do DG, o Calendário sempre abre a partir da data atual —
+         evita que ele herde uma âncora antiga deixada pela navegação de período
+         (prev/next) feita em Cards/Lista antes de trocar para esta aba. */
+      state.anchorDate = new Date();
+      if(state.period==='todos'){
+        state.period = 'mes';
+        document.querySelectorAll('#periodSeg button').forEach(function(x){ x.classList.toggle('active', x.dataset.period==='mes'); });
+      }
     }
     $('dateNav').style.display = state.period==='todos' ? 'none' : '';
     $('ordFilter').style.display = state.viewMode==='calendario' ? 'none' : '';
@@ -8053,9 +8071,11 @@ $_onReady(function(){
   });
   $('rel-solicitante').addEventListener('input', renderRelatorio);
   $('rel-integrante').addEventListener('input', renderRelatorio);
+  $('rel-motivo').addEventListener('input', renderRelatorio);
   $('rel-clear').addEventListener('click', function(){
     $('rel-data-ini').value = ''; $('rel-data-fim').value = ''; $('rel-tipo').value = 'todos';
     $('rel-local').value = ''; $('rel-modalidade').value = ''; $('rel-solicitante').value = ''; $('rel-integrante').value = '';
+    $('rel-motivo').value = '';
     renderRelatorio();
   });
 
