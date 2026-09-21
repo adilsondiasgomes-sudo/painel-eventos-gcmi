@@ -284,24 +284,26 @@ main{
 body[data-screen="form"] .subheader{max-width:1360px;padding-left:42px;padding-right:42px;}
 body[data-screen="config"] .subheader{max-width:1400px;padding-left:42px;padding-right:42px;}
 body[data-screen="relatorios"] .subheader{max-width:1400px;padding-left:40px;padding-right:40px;}
-body[data-screen="cmtagenda"] .subheader{max-width:1400px;padding-left:40px;padding-right:40px;}
 body[data-screen="agenda"] .subheader{display:none;}
 body[data-screen="form"] .subheader,
 body[data-screen="config"] .subheader,
-body[data-screen="relatorios"] .subheader,
-body[data-screen="cmtagenda"] .subheader{display:flex;flex:none;}
+body[data-screen="relatorios"] .subheader{display:flex;flex:none;}
 body[data-screen="form"] header.topbar,
 body[data-screen="form"] nav.tabs,
 body[data-screen="config"] header.topbar,
 body[data-screen="config"] nav.tabs,
 body[data-screen="relatorios"] header.topbar,
-body[data-screen="relatorios"] nav.tabs,
-body[data-screen="cmtagenda"] header.topbar,
-body[data-screen="cmtagenda"] nav.tabs{display:none;}
+body[data-screen="relatorios"] nav.tabs{display:none;}
 body[data-screen="form"] footer.foot,
 body[data-screen="config"] footer.foot,
-body[data-screen="relatorios"] footer.foot,
-body[data-screen="cmtagenda"] footer.foot{display:none;}
+body[data-screen="relatorios"] footer.foot{display:none;}
+/* v5.1: Agenda do Cmt deixou de trocar o cabeçalho pela barra "← Voltar" —
+   passou a manter o mesmo cabeçalho + abas persistentes das outras telas
+   "de trabalho" (Auditoria, Vistoria, Logística...), pro usuário sempre
+   ver qual aba está ativa (iluminada) e poder trocar de aba direto, sem
+   precisar voltar primeiro. */
+body[data-screen="cmtagenda"] header.topbar,
+body[data-screen="cmtagenda"] nav.tabs{flex:none;}
 
 /* form/config/relatórios: exact-viewport flex column so only the intended
    inner region scrolls, regardless of content amount — no magic vh numbers.
@@ -465,7 +467,7 @@ body[data-screen="vistoria"] footer.foot{flex:none;padding:8px 0 0;}
    pedido do DG, a página não rola de jeito nenhum; dentro do encaixe exato
    de viewport acima, o próprio formulário vira uma coluna flex: campos de
    identificação (linhas 1 e 2) ficam fixos, só a moldura do checklist rola
-   (desde a v4.11 não há mais rodapé fixo — observações/fotos/enviar são
+   (desde a v5.1 não há mais rodapé fixo — observações/fotos/enviar são
    parte da própria aba Observações, dentro da moldura). */
 body[data-screen="vistoria"] #vistoriaFormWrap,
 body[data-screen="vistoria"] #vistoriaForm{
@@ -477,7 +479,7 @@ body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle{flex:none;}
 /* v4.9: abas do checklist empilhadas na lateral esquerda, logo abaixo do
    título "Checklist", liberando toda a largura à direita pra rolagem dos
    itens — .vst-checklist-shell é uma linha flex (sidebar + conteúdo) que
-   ocupa TODO o espaço vertical restante do formulário (desde a v4.11 não
+   ocupa TODO o espaço vertical restante do formulário (desde a v5.1 não
    divide mais esse espaço com um rodapé fixo — erro de validação e botão
    "Enviar Vistoria" viraram parte da própria aba Observações). */
 body[data-screen="vistoria"] .vst-checklist-shell{
@@ -877,6 +879,14 @@ body[data-screen="form"] .app{max-width:1360px;}
 .event-card.pessoal .ec-badge{color:var(--gold-hi);background:rgba(227,180,81,.14);border:1px solid rgba(227,180,81,.4);}
 .event-card.logistica .ec-badge{color:#8fb2ff;background:rgba(63,111,214,.14);border:1px solid rgba(63,111,214,.4);}
 .event-card.licitacao .ec-badge{color:var(--green-live);background:rgba(63,221,140,.12);border:1px solid rgba(63,221,140,.4);}
+/* v5.3: selo "Cmt participa" — marcação manual do formulário (item 4 do
+   polimento da Agenda), pra identificar de relance quais eventos
+   operacionais/administrativos o Cmt participa ou participou. */
+.ec-cmt-badge{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;color:var(--gold-hi);background:rgba(227,180,81,.14);border:1px solid rgba(227,180,81,.4);
+}
+.tbl-cmt-badge{color:var(--gold-hi);font-size:13px;}
 .status-pill{
   display:inline-block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;
   padding:2px 8px;border-radius:999px;text-transform:uppercase;
@@ -1257,7 +1267,17 @@ footer.foot{
   margin-left:auto;
 }
 .date-nav-label{font-size:12.5px;color:var(--ink-2);min-width:150px;text-align:center;text-transform:uppercase;letter-spacing:.04em;}
-.seg button[data-vm].active{color:var(--gold-hi);}
+.seg button[data-vm].active,
+.seg button[data-cvm].active,
+.seg button[data-ccf].active,
+.seg button[data-cpf].active{color:var(--gold-hi);}
+/* v5.2: filtro de categoria da Agenda do Cmt é uma lista dinâmica
+   (configurável em "Gerenciar categorias") — ao contrário dos outros
+   .seg de tamanho fixo, este pode crescer além da largura da tela, então
+   permite quebrar linha em vez de vazar horizontalmente. */
+#cmtCategoriaFilterSeg{flex-wrap:wrap;border-radius:9px;}
+#cmtCategoriaFilterSeg button{border-bottom:1px solid var(--line);}
+#cmtCategoriaFilterSeg button:last-child{border-bottom:none;}
 @media (max-width:760px){
   .date-nav{margin-left:0;width:100%;justify-content:center;}
 }
@@ -1564,6 +1584,9 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <button data-tipo="administrativo">Administrativo</button>
       </div>
       <input type="text" id="searchInput" placeholder="Buscar por local, efetivo, solicitante…" />
+      <div class="seg" id="cmtParticipaFilterSeg">
+        <button data-cpf="1" title="Mostrar só eventos em que o Cmt participa ou participou">★ Cmt participa</button>
+      </div>
       <div class="seg" id="ordFilter">
         <button class="active" data-ord="asc">Mais próximos</button>
         <button data-ord="desc">Mais recentes</button>
@@ -1724,6 +1747,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 <label for="f-obs">Observações (opcional)</label>
                 <textarea id="f-obs" rows="3" placeholder="Ex.: acesso pelos fundos da escola, procurar a zeladoria, ponto de referência etc."></textarea>
               </div>
+              <div class="field" style="margin-top:10px;display:flex;align-items:flex-start;gap:8px;">
+                <input type="checkbox" id="f-cmt-participa" style="margin-top:3px;" />
+                <label for="f-cmt-participa" style="margin:0;font-weight:400;">O Cmt participa (ou participou) deste evento</label>
+              </div>
             </div>
           </div>
 
@@ -1878,7 +1905,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v4.11 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.3 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1944,6 +1971,14 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <button class="btn btn-gold" id="btnNewCmtAgenda" type="button" hidden>＋ Novo Compromisso</button>
     </div>
 
+    <div class="filters filters2" style="margin-bottom:0;">
+      <div class="seg" id="cmtViewModeSeg">
+        <button class="active" data-cvm="cards">Cards</button>
+        <button data-cvm="lista">Lista</button>
+      </div>
+      <div class="seg" id="cmtCategoriaFilterSeg"></div>
+    </div>
+
     <div class="rel-filters cmt-rel-filters">
       <div class="field"><label for="cmt-rel-data-ini">Período — de</label><input type="date" id="cmt-rel-data-ini" /></div>
       <div class="field"><label for="cmt-rel-data-fim">até</label><input type="date" id="cmt-rel-data-fim" /></div>
@@ -1970,7 +2005,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       </div>
     </details>
 
-    <div class="event-grid" id="cmtAgendaList" style="margin-top:16px;"></div>
+    <div id="cmtAgendaListWrap" style="margin-top:16px;">
+      <div class="event-grid" id="cmtAgendaList"></div>
+      <div id="cmtAgendaTableWrap" style="display:none;"></div>
+    </div>
     <div class="empty-state" id="cmtAgendaEmpty" style="display:none;">
       <h3>Nenhum compromisso lançado</h3>
       <p>Use o botão "＋ Novo Compromisso" para lançar o primeiro.</p>
@@ -2468,15 +2506,36 @@ var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_ges
 var SUPA_URL = 'https://fwlmpopjhbefctvnjqkp.supabase.co';
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bG1wb3BqaGJlZmN0dm5qcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTA2MDcsImV4cCI6MjEwNDYyNjYwN30.GOyrLobT5UHpx2Bq_HdiicecEBRcHAjAr-i7ML6zOYQ';
 
+/* Convenção de versão pedida pelo DG: o número depois do ponto vai só de 0
+   a 9 — ao chegar em x.9, a próxima entrega vira (x+1).0, nunca x.10 (senão
+   a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
+   Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
   {
-    version: 'v4.11', date: '20/09/2026',
+    version: 'v5.3', date: '21/09/2026',
+    changes: [
+      'Novo campo "O Cmt participa (ou participou) deste evento" no formulário de lançamento/edição de Evento Operacional/Administrativo — marcação manual (não há vínculo automático entre o efetivo e as contas de administrador, então quem lança precisa indicar quando o Cmt está envolvido).',
+      'Novo filtro "★ Cmt participa" na Agenda geral (Cards, Lista e Calendário) — mostra só os eventos marcados dessa forma. Os eventos marcados também ganham um selo dourado "★ Cmt" no card, na linha da Lista, na pílula do Calendário e no detalhe do evento.',
+      'Alteração de banco: nova coluna cmt_participa (boolean, padrão desmarcado) na tabela de eventos — não afeta eventos já lançados, que continuam desmarcados até serem editados.'
+    ]
+  },
+  {
+    version: 'v5.2', date: '21/09/2026',
+    changes: [
+      'Corrigido bug em que a aba "Configurações" podia sumir da barra de navegação depois que uma conta de login compartilhado de Vistoria de Viatura fazia logout e, em seguida (sem recarregar a página), outra conta (ex.: administrador) fazia login — a aba ficava presa oculta pelo resto da sessão do navegador.',
+      'A Agenda do Cmt passou a manter o mesmo cabeçalho e barra de abas persistentes das demais telas de trabalho (Auditoria, Vistoria, Logística...), com a aba ativa sempre iluminada — antes ela trocava o cabeçalho por uma barra "← Voltar" que escondia a navegação por completo.',
+      'Nova opção de exibição em Lista na Agenda do Cmt (além de Cards já existente), no mesmo padrão de alternância já usado na Agenda geral.',
+      'Novo filtro por categoria na Agenda do Cmt (Consulta médica, Férias, Licença, Curso/Seminário, Compromisso institucional, Outro, ou "Todas") — cobre o caso de filtrar só eventos pessoais como consultas, férias ou licenças médicas.'
+    ]
+  },
+  {
+    version: 'v5.1', date: '20/09/2026',
     changes: [
       'O botão "Enviar Vistoria" saiu de um rodapé fixo (visível em qualquer aba) e passou a existir só dentro da 4ª aba (Observações), logo depois do campo de Fotos — reforça que o envio é o último passo, depois de revisar observações/fotos, e evita que o botão fique competindo por espaço com os itens do checklist nas outras 3 abas.'
     ]
   },
   {
-    version: 'v4.10', date: '20/09/2026',
+    version: 'v5.0', date: '20/09/2026',
     changes: [
       'Quarta rodada de ajustes no formulário de Vistoria de Viatura: o campo "Fotos (opcional)", que ainda restava no rodapé fixo, foi para dentro da 4ª aba (Observações), junto do campo de observações gerais — o rodapé passa a ter só a mensagem de erro de validação e o botão "Enviar Vistoria".',
       'As abas do checklist (Mecânica/Elétrica-Segurança/Documentação/Observações) deixaram de ficar em linha horizontal acima dos itens e passaram a ficar empilhadas verticalmente numa coluna à esquerda, logo abaixo do título "Checklist" — o espaço à direita, antes dividido com a barra de abas, fica todo disponível pra rolagem dos itens do checklist.'
@@ -2851,6 +2910,9 @@ var state = {
   search: '',
   ord: 'asc',
   viewMode: 'cards',
+  cmtViewMode: 'cards',
+  cmtCategoriaFilter: '',
+  cmtParticipaFilter: false,
   period: 'todos',
   anchorDate: new Date(),
   formType: null,
@@ -2989,6 +3051,7 @@ function toDbRow(e){
     modalidade: e.modalidade||null, assunto: e.assunto||null, encerramento: e.encerramento||null, solicitante: e.solicitante||null, contato: e.contato||null,
     observacoes: e.observacoes||null,
     visivel_calendario: (e.visivelCalendario===false ? false : true),
+    cmt_participa: !!e.cmtParticipa,
     exemplo: !!e.exemplo
   };
   if(e.createdAt) row.created_at = e.createdAt;
@@ -3001,6 +3064,7 @@ function fromDbRow(r){
     modalidade:r.modalidade, assunto:r.assunto||null, encerramento:r.encerramento||null, solicitante:r.solicitante, contato:r.contato,
     observacoes:r.observacoes||null, exemplo:!!r.exemplo,
     visivelCalendario: (r.visivel_calendario===false ? false : true),
+    cmtParticipa: !!r.cmt_participa,
     createdAt:r.created_at
   };
 }
@@ -4330,9 +4394,20 @@ function isVistoriaOnlyAccount(){
 }
 function applyVistoriaKioskMode(){
   var kiosk = !isPublicRestricted() && isVistoriaOnlyAccount();
-  ['agenda','cmtagenda','logistica','licitacoes','loglicagenda','loglicrelatorio','relatorios','config'].forEach(function(name){
+  /* As outras 7 abas aqui já têm sua própria função de acesso (ex.:
+     updateDomainAccessUI, updateCmtAgendaAccessUI) que roda ANTES desta e
+     decide se ficam visíveis — esta função só entra pra SUPRIMIR por cima
+     quando é modo quiosque (por isso só mexe quando kiosk=true, nunca
+     "reabre" o que a função própria de cada uma já decidiu). "Configurações"
+     é a exceção: não tem função própria de mostrar/ocultar a aba (só o
+     conteúdo interno, via updateCfgAccessUI) — por isso precisa ser
+     simétrica aqui, senão ficava presa oculta pro resto da sessão do
+     navegador depois que uma conta de vistoria fazia logout e outra conta
+     (ex.: admin) logava em seguida, sem recarregar a página. */
+  ['agenda','cmtagenda','logistica','licitacoes','loglicagenda','loglicrelatorio','relatorios'].forEach(function(name){
     document.querySelectorAll('[data-view="'+name+'"]').forEach(function(b){ if(kiosk) b.hidden = true; });
   });
+  document.querySelectorAll('[data-view="config"]').forEach(function(b){ b.hidden = kiosk; });
   if(kiosk && document.body.getAttribute('data-screen')!=='vistoria'){ goToView('vistoria'); }
 }
 /* ---------------- v4.0: navegação compartimentada por domínio ----------------
@@ -4885,6 +4960,7 @@ function eventModalHTML(e){
   '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Responsável':'Solicitante')+'</span><span>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</span></div>'+
   '<div class="ec-row"><span class="k">Contato</span><span>'+(e.contato?esc(e.contato):'&mdash;')+'</span></div>'+
   (e.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(e.observacoes)+'</span></div>' : '')+
+  (e.cmtParticipa ? '<div class="ec-row"><span class="k">Cmt</span><span class="ec-cmt-badge">&#9733; Participa deste evento</span></div>' : '')+
   '<div class="modal-actions">'+
     '<button type="button" class="btn btn-danger btn-sm" data-modal-act="del" data-id="'+esc(e.id)+'">Excluir</button>'+
     '<button type="button" class="btn btn-ghost btn-sm" data-modal-act="dup" data-id="'+esc(e.id)+'">Duplicar</button>'+
@@ -4923,7 +4999,10 @@ function cardHTML(e){
   '<article class="event-card '+e.tipo+'" data-id="'+esc(e.id)+'">'+
     (e.exemplo ? '<span class="ec-exemplo">Exemplo</span>' : '')+
     '<div class="ec-top">'+
-      '<span class="ec-badge">'+(e.tipo==='operacional' ? 'Operacional Especial' : 'Administrativo')+'</span>'+
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+
+        '<span class="ec-badge">'+(e.tipo==='operacional' ? 'Operacional Especial' : 'Administrativo')+'</span>'+
+        (e.cmtParticipa ? '<span class="ec-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733; Cmt</span>' : '')+
+      '</div>'+
       (canManageEventos() ? '<div class="ec-actions">'+
         '<button class="icon-btn" title="Duplicar / reaproveitar" data-act="dup" data-id="'+esc(e.id)+'">&#10697;</button>'+
         '<button class="icon-btn" title="Editar" data-act="edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
@@ -4984,6 +5063,41 @@ function renderCmtEmailChips(){
     return '<span class="chip mono">'+esc(em)+(canEdit?'<button type="button" data-i="'+i+'" data-act="cmt-email-del">&#10005;</button>':'')+'</span>';
   }).join('') || '<span style="color:var(--ink-3);font-size:12px;">Nenhum e-mail autorizado ainda.</span>';
 }
+function cmtTableRowHTML(e){
+  var canEdit = canManageCmtAgenda();
+  return ''+
+  '<tr data-id="'+esc(e.id)+'">'+
+    '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
+    '<td class="tbl-time">'+(e.horaInicio ? esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--') : '&mdash;')+'</td>'+
+    '<td>'+esc(e.modalidade||'Compromisso')+'</td>'+
+    '<td>'+(e.assunto?esc(e.assunto):'&mdash;')+'</td>'+
+    '<td>'+(e.visivelCalendario===false ? '<span style="color:var(--ink-3);">Oculto</span>' : '<span style="color:var(--ink-3);">Visível</span>')+'</td>'+
+    '<td class="tbl-actions">'+
+      (canEdit ?
+        '<button class="icon-btn" title="Editar" data-act="cmt-edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
+        '<button class="icon-btn del" title="Excluir" data-act="cmt-del" data-id="'+esc(e.id)+'">&#10005;</button>'
+      : '')+
+    '</td>'+
+  '</tr>';
+}
+function renderCmtTable(container, list){
+  if(list.length===0){
+    container.innerHTML = '<div class="empty-state"><h3>Nenhum compromisso encontrado</h3><p>Ajuste o filtro ou lance um novo compromisso.</p></div>';
+    return;
+  }
+  container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
+    '<th>Data</th><th>Horário</th><th>Categoria</th><th>Detalhe</th><th>Calendário</th><th></th>'+
+    '</tr></thead><tbody>'+list.map(cmtTableRowHTML).join('')+'</tbody></table></div>';
+}
+function renderCmtCategoriaFilterSeg(){
+  var box = $('cmtCategoriaFilterSeg'); if(!box) return;
+  var cur = state.cmtCategoriaFilter||'';
+  var html = '<button data-ccf="" class="'+(cur===''?'active':'')+'">Todas</button>';
+  html += state.cmtCategorias.map(function(c){
+    return '<button data-ccf="'+esc(c)+'" class="'+(cur===c?'active':'')+'">'+esc(c)+'</button>';
+  }).join('');
+  box.innerHTML = html;
+}
 function renderCmtAgenda(){
   var btn = $('btnNewCmtAgenda'), mgmt = $('cmtAgendaMgmt');
   var canEdit = canManageCmtAgenda();
@@ -4991,15 +5105,25 @@ function renderCmtAgenda(){
   if(mgmt) mgmt.hidden = !canEdit;
   renderCmtCategoriaChips();
   renderCmtEmailChips();
-  var grid = $('cmtAgendaList'), empty = $('cmtAgendaEmpty');
+  renderCmtCategoriaFilterSeg();
+  var grid = $('cmtAgendaList'), tblWrap = $('cmtAgendaTableWrap'), empty = $('cmtAgendaEmpty');
   if(!grid) return;
-  var list = state.events.filter(function(e){ return e.tipo==='pessoal'; }).sort(function(a,b){
+  var list = state.events.filter(function(e){ return e.tipo==='pessoal'; }).filter(function(e){
+    return !state.cmtCategoriaFilter || e.modalidade===state.cmtCategoriaFilter;
+  }).sort(function(a,b){
     var ka = a.data||'', kb = b.data||'';
     return ka<kb ? -1 : (ka>kb ? 1 : 0);
   });
-  if(!list.length){ grid.innerHTML = ''; if(empty) empty.style.display = 'block'; return; }
+  grid.style.display = 'none';
+  if(tblWrap) tblWrap.style.display = 'none';
+  if(!list.length){ grid.innerHTML = ''; if(tblWrap) tblWrap.innerHTML = ''; if(empty) empty.style.display = 'block'; return; }
   if(empty) empty.style.display = 'none';
-  grid.innerHTML = list.map(cmtCardHTML).join('');
+  if(state.cmtViewMode==='lista'){
+    if(tblWrap){ tblWrap.style.display = ''; renderCmtTable(tblWrap, list); }
+  } else {
+    grid.style.display = '';
+    grid.innerHTML = list.map(cmtCardHTML).join('');
+  }
 }
 function maybeRefreshCmtAgenda(){
   if(document.body.getAttribute('data-screen')==='cmtagenda') renderCmtAgenda();
@@ -5877,7 +6001,7 @@ function vistoriaFormHTML(){
    rodapé — libera altura pra moldura dos itens em telas baixas. As abas em
    si passaram a ficar empilhadas na lateral esquerda (.vst-checklist-shell),
    com o painel do item ativo rolando à direita.
-   v4.11: o rodapé fixo (erro de validação + botão "Enviar Vistoria") saiu
+   v5.1: o rodapé fixo (erro de validação + botão "Enviar Vistoria") saiu
    do formulário inteiro e virou parte da própria 4ª aba (Observações) —
    o botão só existe/aparece quando essa aba está ativa, reforçando que
    enviar é o último passo, só depois de revisar observações e fotos. */
@@ -6046,6 +6170,7 @@ function eventsForTipoSearch(includePessoal){
     ? state.events.filter(function(e){ return e.tipo!=='pessoal' || e.visivelCalendario!==false; })
     : state.events.filter(function(e){ return e.tipo!=='pessoal'; });
   if(tipo !== 'todos') list = list.filter(function(e){ return e.tipo===tipo; });
+  if(state.cmtParticipaFilter) list = list.filter(function(e){ return !!e.cmtParticipa; });
   if(q){
     list = list.filter(function(e){
       var addr = e.endereco||{};
@@ -6106,7 +6231,8 @@ function shiftAnchor(dir){
 
 function pillHTML(e){
   var text = e.tipo==='pessoal' ? esc(e.modalidade||'Compromisso') : (esc(e.horaInicio||'')+' '+esc(e.localRef||''));
-  return '<div class="cal-pill '+e.tipo+'" data-act="view" data-id="'+esc(e.id)+'"><span class="dot"></span>'+text+'</div>';
+  var cmtMark = e.cmtParticipa ? '<span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span> ' : '';
+  return '<div class="cal-pill '+e.tipo+'" data-act="view" data-id="'+esc(e.id)+'"><span class="dot"></span>'+cmtMark+text+'</div>';
 }
 
 function renderMonthGrid(container, anchor, filtered){
@@ -6198,7 +6324,7 @@ function tableRowHTML(e){
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span></td>'+
+    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
     '<td>'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
@@ -6467,6 +6593,7 @@ function fillFormFromEvent(ev, opts){
   $('f-solicitante').value = ev.solicitante||'';
   $('f-contato').value = ev.contato||'';
   $('f-obs').value = ev.observacoes||'';
+  $('f-cmt-participa').checked = !!ev.cmtParticipa;
 }
 function openEditForm(id){
   if(!requireAuth()) return;
@@ -6509,6 +6636,7 @@ function handleSubmit(e){
   var solicitante = $('f-solicitante').value.trim();
   var contato = $('f-contato').value.trim();
   var observacoes = $('f-obs').value.trim();
+  var cmtParticipa = $('f-cmt-participa').checked;
   if(!data||!hi||!ht||!ref||!rua||!bairro||!cidade||!estado||!modalidade){
     errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
   }
@@ -6528,7 +6656,7 @@ function handleSubmit(e){
     efetivo: Array.from(state.formEfetivo.entries()).map(function(entry){ return {matricula:entry[0], nome:entry[1].nome, funcional:entry[1].funcional}; }),
     recursos: state.formRecursos.slice(),
     modalidade: modalidade, assunto: (assunto || null), encerramento: (encerramento || null), solicitante: solicitante, contato: contato,
-    observacoes: (observacoes || null)
+    observacoes: (observacoes || null), cmtParticipa: cmtParticipa
   };
   var btn = $('btnSubmitForm'); btn.disabled = true;
   var task;
@@ -7443,6 +7571,12 @@ $_onReady(function(){
     document.querySelectorAll('#ordFilter button').forEach(function(x){ x.classList.toggle('active', x===b); });
     renderMain();
   });
+  $('cmtParticipaFilterSeg').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    state.cmtParticipaFilter = !state.cmtParticipaFilter;
+    b.classList.toggle('active', state.cmtParticipaFilter);
+    renderMain();
+  });
   $('searchInput').addEventListener('input', function(e){ state.search = e.target.value; renderMain(); });
 
   $('viewModeSeg').addEventListener('click', function(e){
@@ -7573,7 +7707,18 @@ $_onReady(function(){
       $('cmt-rel-data-ini').value = ''; $('cmt-rel-data-fim').value = '';
     });
     $('btnNewCmtAgenda').addEventListener('click', function(){ openCmtAgendaForm(null); });
-    $('cmtAgendaList').addEventListener('click', function(e){
+    $('cmtViewModeSeg').addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      state.cmtViewMode = b.dataset.cvm;
+      document.querySelectorAll('#cmtViewModeSeg button').forEach(function(x){ x.classList.toggle('active', x===b); });
+      renderCmtAgenda();
+    });
+    $('cmtCategoriaFilterSeg').addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      state.cmtCategoriaFilter = b.dataset.ccf||'';
+      renderCmtAgenda();
+    });
+    $('cmtAgendaListWrap').addEventListener('click', function(e){
       var btn = e.target.closest('[data-act]'); if(!btn) return;
       var id = btn.dataset.id, act = btn.dataset.act;
       if(act==='cmt-edit'){ openCmtAgendaForm(id); return; }
