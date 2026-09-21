@@ -1125,7 +1125,10 @@ body[data-screen="form"] .app{max-width:1360px;}
   width:auto;padding:0 10px;white-space:nowrap;font-size:11px;
 }
 
-.ec-when{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
+/* v6.1: com o dia da semana por extenso somado à data nos cards, a linha
+   ficou mais longa — flex-wrap deixa o horário cair pra linha de baixo
+   quando não cabe mais ao lado da data, em vez de espremer ou vazar. */
+.ec-when{display:flex;align-items:baseline;gap:8px 10px;flex-wrap:wrap;margin-bottom:8px;}
 .ec-date{font-family:var(--font-display);font-size:19px;letter-spacing:.03em;}
 .ec-time{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);}
 
@@ -2042,7 +2045,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.1 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2659,6 +2662,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
   {
+    version: 'v6.1', date: '21/09/2026',
+    changes: [
+      'Cards de evento (Agenda de Eventos e Agenda do Cmt) passam a mostrar o dia da semana por extenso junto da data — ex.: "22 DE SET 2026 - quarta-feira" — quando o evento é de um dia só. Datas em intervalo (ex.: "01 A 05 OUT 2026") continuam sem dia da semana, já que abrangem vários dias diferentes.'
+    ]
+  },
+  {
     version: 'v6.0', date: '21/09/2026',
     changes: [
       'Polimento do formulário de "Lançar Evento": a aba lateral 3 (Logística/Participantes) alargada — o rótulo mais longo não quebra mais em duas linhas. O botão principal agora mostra "Próxima" em cada aba, e só vira "Lançar Evento"/"Salvar Alterações" na última (Solicitante) — antes o botão de enviar aparecia (e podia ser clicado) em qualquer aba. O campo "Assunto/Motivo" saiu da aba Solicitante e passou a acompanhar a Modalidade, na aba Atuação. Na aba Onde, "Referência do local" e "Escola" passaram a dividir uma linha em vez de cada uma ocupar uma linha inteira.'
@@ -3161,6 +3170,10 @@ function weekdayAbbrev(iso){
   if(!iso) return '';
   return WEEKDAYS_SHORT[parseISODate(iso).getDay()];
 }
+function weekdayFull(iso){
+  if(!iso) return '';
+  return WEEKDAYS_FULL[parseISODate(iso).getDay()];
+}
 function fmtDateCompact(iso){
   if(!iso) return '--/--';
   var dt = parseISODate(iso);
@@ -3178,6 +3191,18 @@ function fmtDateRangeLong(dataIni, dataFim){
     return pad(di.getDate())+' A '+pad(df.getDate())+' '+mon+' '+df.getFullYear();
   }
   return fmtDateLong(dataIni)+' A '+fmtDateLong(dataFim);
+}
+/* v6.1: mesma coisa que fmtDateRangeLong(), mas compõe o dia da semana por
+   extenso junto da data — só faz sentido pra um dia único (um intervalo de
+   vários dias cai em vários dias da semana diferentes, então não se aplica).
+   Usada só nos cards de evento (cardHTML/cmtCardHTML), a pedido do DG. */
+function fmtDateRangeLongWithWeekday(dataIni, dataFim){
+  var base = fmtDateRangeLong(dataIni, dataFim);
+  if(!dataFim || dataFim===dataIni){
+    var wd = weekdayFull(dataIni);
+    if(wd) return base + ' - ' + wd;
+  }
+  return base;
 }
 function fmtDateRangeCompact(dataIni, dataFim){
   if(!dataFim || dataFim===dataIni) return fmtDateCompact(dataIni);
@@ -5234,7 +5259,7 @@ function openEventModal(id){
 
 /* ---------------- agenda: card + filters ---------------- */
 function cardHTML(e){
-  var dt = fmtDateRangeLong(e.data, e.dataFim);
+  var dt = fmtDateRangeLongWithWeekday(e.data, e.dataFim);
   var efetivoTags = (e.efetivo||[]).map(function(p){
     return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+' <span class="mono">'+esc(p.matricula)+'</span></span>';
   }).join('');
@@ -5292,7 +5317,7 @@ function cmtCardHTML(e){
         '<button class="icon-btn del" title="Excluir" data-act="cmt-del" data-id="'+esc(e.id)+'">&#10005;</button>'+
       '</div>' : '')+
     '</div>'+
-    '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLong(e.data, e.dataFim)+'</span>'+(e.horaInicio ? '<span class="ec-time mono">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>' : '')+'</div>'+
+    '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span>'+(e.horaInicio ? '<span class="ec-time mono">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>' : '')+'</div>'+
     (e.assunto ? '<div class="ec-row"><span class="k">Detalhe</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (e.visivelCalendario===false ? '<div class="ec-row"><span class="k">Calendário</span><span style="color:var(--ink-3);">Oculto (só nesta aba)</span></div>' : '')+
   '</article>';
@@ -6474,6 +6499,10 @@ function applyPeriodRange(list, period, anchor){
 }
 
 var WEEKDAYS_SHORT = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+/* v6.1: nome completo do dia da semana, indexado igual WEEKDAYS_SHORT
+   (0=domingo) — usado nos cards de evento (Agenda de Eventos e Agenda do
+   Cmt), a pedido do DG, pra compor a data por extenso. */
+var WEEKDAYS_FULL = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 /* Mesma lista, mas em ordem de exibição (semana começando na segunda-feira)
    — usada apenas para desenhar os cabeçalhos das grades de calendário.
    WEEKDAYS_SHORT (acima) continua indexado por Date.getDay() (0=domingo)
