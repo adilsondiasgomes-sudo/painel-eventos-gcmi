@@ -32,6 +32,7 @@
   --green-live:#3fdd8c;
   --bg-list:#eef1f7;
   --bg-list-row:#ffffff;
+  --bg-list-zebra:#f5f7fb;
   --bg-list-hover:#e4ebf6;
   --text-list-1:#1c2740;
   --text-list-2:#56637c;
@@ -247,14 +248,25 @@ nav.tabs{
   color:var(--ink-2);
 }
 .tab-btn:hover{color:var(--ink-1);}
+/* v5.4: realce mais forte ("retroiluminação") na aba ativa, a pedido do
+   DG — além do brilho já existente, ganha um friso dourado brilhante
+   embaixo (::after) e um leve text-shadow, pra ficar claro de relance
+   qual aba está aberta mesmo numa fileira grande de abas. */
 .tab-btn.active{
+  position:relative;
   color:var(--gold-hi);
-  background:linear-gradient(180deg, rgba(227,180,81,.14), rgba(227,180,81,.02)), var(--bg-panel-2);
-  border-color:rgba(227,180,81,.4);
+  background:linear-gradient(180deg, rgba(227,180,81,.22), rgba(227,180,81,.03)), var(--bg-panel-2);
+  border-color:rgba(227,180,81,.55);
   border-bottom-color:var(--bg-panel-2);
-  box-shadow:0 -4px 18px -6px rgba(227,180,81,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  box-shadow:0 -6px 26px -5px rgba(227,180,81,.65), inset 0 1px 0 rgba(255,255,255,.08);
+  text-shadow:0 0 14px rgba(227,180,81,.5);
 }
-.tab-btn.active .n{background:rgba(227,180,81,.22);color:var(--gold-hi);}
+.tab-btn.active::after{
+  content:'';position:absolute;left:12%;right:12%;bottom:-1px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg, transparent, var(--gold-hi), transparent);
+  box-shadow:0 0 10px 1.5px rgba(227,180,81,.85);
+}
+.tab-btn.active .n{background:rgba(227,180,81,.26);color:var(--gold-hi);}
 
 main{
   background:var(--bg-panel-2);
@@ -1298,6 +1310,10 @@ table.ev-table tbody td{
   border-bottom:1px solid var(--line-list);vertical-align:top;
 }
 table.ev-table tbody tr{cursor:pointer;transition:background .12s ease;}
+/* v5.4: efeito zebrado a pedido do DG — facilita acompanhar uma linha ao
+   longo de várias colunas numa lista longa. O hover continua por cima,
+   com mais contraste que as duas cores zebradas. */
+table.ev-table tbody tr:nth-child(even){background:var(--bg-list-zebra);}
 table.ev-table tbody tr:hover{background:var(--bg-list-hover);}
 table.ev-table tbody tr:last-child td{border-bottom:none;}
 .tbl-type{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;}
@@ -1905,7 +1921,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.3 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.4 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -1966,7 +1982,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     <div class="view-head">
       <div>
         <h2>Agenda do Cmt</h2>
-        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Compromissos pessoais e institucionais do comando — consulta médica, férias, licença, cursos e seminários. Visível só para quem está logado no painel; lançar, editar ou excluir é restrito ao Cmt e ao Subcomandante.</p>
+        <p style="color:var(--ink-3);font-size:12.5px;margin-top:4px;max-width:640px;">Compromissos pessoais e institucionais do comando — consulta médica, férias, licença, cursos e seminários. Visível só para quem está logado no painel; lançar, editar ou excluir é restrito ao Cmt, ao Subcomandante e aos Editores de Eventos.</p>
       </div>
       <button class="btn btn-gold" id="btnNewCmtAgenda" type="button" hidden>＋ Novo Compromisso</button>
     </div>
@@ -2511,6 +2527,15 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v5.4', date: '21/09/2026',
+    changes: [
+      'Lista da Agenda de Eventos passou a mostrar só Data, Horário, Tipo e Local — deixa a leitura mais confortável numa lista longa; os detalhes completos (recursos, efetivo, atuação, solicitante) e as ações de editar/duplicar/excluir continuam a um clique, abrindo o modal do evento ao clicar na linha.',
+      'Efeito zebrado nas linhas das tabelas (Agenda de Eventos e Agenda do Cmt), pra facilitar acompanhar uma linha ao longo das colunas.',
+      'Realce mais forte ("retroiluminação") na aba ativa da navegação principal — friso dourado brilhante embaixo da aba aberta, além do destaque que já existia.',
+      'Editores de Eventos (perfil "eventos-editors", não só Cmt/Subcomandante) passam a poder lançar e editar compromissos na Agenda do Cmt — o gerenciamento de categorias e da lista de e-mails de administrador continua exclusivo do Cmt/Subcomandante, por mexer em quem é admin do painel inteiro.'
+    ]
+  },
   {
     version: 'v5.3', date: '21/09/2026',
     changes: [
@@ -4495,12 +4520,17 @@ function updateFormAccessUI(){
   if(typeof renderMain === 'function' && $('eventGrid')) renderMain();
 }
 /* ---------------- Agenda do Cmt: acesso ---------------- */
-function canManageCmtAgenda(){ return isAdmin(); }
+/* v5.4: a pedido do DG, quem é Editor de Eventos (perfil "eventos-editors",
+   não só Cmt/Subcmt) passa a poder lançar/editar também a Agenda do Cmt —
+   mesmo critério de canManageEventos(), espelhado no banco em
+   is_cmt_agenda_editor(). */
+function canManageCmtAgenda(){ return canManageEventos(); }
 function updateCmtAgendaAccessUI(){
   /* A aba em si é visível pra qualquer logado do lado Agenda (leitura); só
-     o lançamento/edição/exclusão é restrito a quem é admin (Cmt/Subcmt) —
-     reforçado também nas regras de acesso do banco. Quem está logado mas
-     é exclusivo do lado Logística/Licitações (v4.0) não vê mais esta aba. */
+     o lançamento/edição/exclusão é restrito a quem administra Eventos
+     (admin ou Editor de Eventos) — reforçado também nas regras de acesso
+     do banco. Quem está logado mas é exclusivo do lado Logística/Licitações
+     (v4.0) não vê mais esta aba. */
   var restricted = isPublicRestricted() || !canViewAgendaDomain();
   document.querySelectorAll('[data-view="cmtagenda"]').forEach(function(b){ b.hidden = restricted; });
   if(restricted && document.body.getAttribute('data-screen')==='cmtagenda'){ goToView('agenda'); }
@@ -5051,14 +5081,14 @@ function cmtCardHTML(e){
 }
 function renderCmtCategoriaChips(){
   var box = $('cmtCatChips'); if(!box) return;
-  var canEdit = canManageCmtAgenda();
+  var canEdit = isAdmin(); /* v5.4: gerenciar categorias fica no painel admin-only — ver renderCmtAgenda() */
   box.innerHTML = state.cmtCategorias.map(function(c,i){
     return '<span class="chip">'+esc(c)+(canEdit?'<button type="button" data-i="'+i+'" data-act="cmt-cat-del">&#10005;</button>':'')+'</span>';
   }).join('');
 }
 function renderCmtEmailChips(){
   var box = $('cmtEmailChips'); if(!box) return;
-  var canEdit = canManageCmtAgenda();
+  var canEdit = isAdmin(); /* v5.4: essa lista É a lista de administradores do painel — admin-only, ver renderCmtAgenda() */
   box.innerHTML = (state.cmtAgendaEmails||[]).map(function(em,i){
     return '<span class="chip mono">'+esc(em)+(canEdit?'<button type="button" data-i="'+i+'" data-act="cmt-email-del">&#10005;</button>':'')+'</span>';
   }).join('') || '<span style="color:var(--ink-3);font-size:12px;">Nenhum e-mail autorizado ainda.</span>';
@@ -5102,7 +5132,13 @@ function renderCmtAgenda(){
   var btn = $('btnNewCmtAgenda'), mgmt = $('cmtAgendaMgmt');
   var canEdit = canManageCmtAgenda();
   if(btn) btn.hidden = !canEdit;
-  if(mgmt) mgmt.hidden = !canEdit;
+  /* v5.4: "Gerenciar categorias e quem pode lançar" continua exclusivo do
+     admin (Cmt/Subcmt) mesmo depois de Editor de Eventos passar a poder
+     lançar/editar compromissos — esse painel mexe na lista de categorias
+     E na lista de e-mail de administrador (a mesma usada por isAdmin() em
+     todo o painel), então abrir pra Editor de Eventos seria dar a eles
+     controle sobre quem é admin do sistema inteiro. */
+  if(mgmt) mgmt.hidden = !isAdmin();
   renderCmtCategoriaChips();
   renderCmtEmailChips();
   renderCmtCategoriaFilterSeg();
@@ -6314,29 +6350,17 @@ function renderSemesterGrid(container, anchor, filtered){
 
 function tableRowHTML(e){
   var addr = e.endereco||{};
-  var recursoTags = (e.recursos||[]).map(function(r){
-    return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';
-  }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
-  var efetivoTags = (e.efetivo||[]).map(function(p){
-    return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>';
-  }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
+  /* v5.4: a pedido do DG, a Lista da Agenda geral mostra só até o campo
+     Local (Data/Horário/Tipo/Local) — mais confortável de ler numa lista
+     longa. Os detalhes completos (recursos, efetivo, atuação, solicitante,
+     ações de editar/duplicar/excluir) continuam a um clique, no modal de
+     detalhe do evento (a linha inteira já abre o modal via data-act="view"). */
   return ''+
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
     '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
     '<td>'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
-    '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
-    '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
-    '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
-    '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'+
-    '<td class="tbl-actions">'+
-      (canManageEventos() ?
-        '<button class="icon-btn" title="Duplicar / reaproveitar" data-act="dup" data-id="'+esc(e.id)+'">&#10697;</button>'+
-        '<button class="icon-btn" title="Editar" data-act="edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
-        '<button class="icon-btn del" title="Excluir" data-act="del" data-id="'+esc(e.id)+'">&#10005;</button>'
-      : '')+
-    '</td>'+
   '</tr>';
 }
 function renderTable(container, list){
@@ -6345,7 +6369,7 @@ function renderTable(container, list){
     return;
   }
   container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
-    '<th>Data</th><th>Horário</th><th>Tipo</th><th>Local</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th><th></th>'+
+    '<th>Data</th><th>Horário</th><th>Tipo</th><th>Local</th>'+
     '</tr></thead><tbody>'+list.map(tableRowHTML).join('')+'</tbody></table></div>';
 }
 
