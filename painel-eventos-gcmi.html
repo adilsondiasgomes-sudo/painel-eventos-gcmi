@@ -600,7 +600,10 @@ body[data-screen="form"] .evf-shell{
   overflow:hidden;
 }
 body[data-screen="form"] .evf-shell .form-modal-tabs{
-  flex:0 0 148px;min-width:0;
+  /* v6.0: 148px espremia o rótulo mais longo ("3 · Participantes"), que
+     quebrava pra uma segunda linha sozinho — 180px com padding lateral
+     menor cabe confortavelmente numa linha só. */
+  flex:0 0 180px;min-width:0;
   flex-direction:column;overflow-y:auto;overflow-x:hidden;
   margin-bottom:0;
   -webkit-overflow-scrolling:touch;
@@ -608,13 +611,14 @@ body[data-screen="form"] .evf-shell .form-modal-tabs{
 body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab{
   white-space:normal;text-align:left;
   border-right:none;border-bottom:1px solid var(--line);
+  padding:9px 12px;
 }
 body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab:last-child{border-bottom:none;}
 body[data-screen="form"] .form-modal-pane.active{flex:1 1 auto;min-width:0;min-height:0;}
 @media (max-width:640px){
-  body[data-screen="form"] .evf-shell .form-modal-tabs{flex-basis:112px;}
+  body[data-screen="form"] .evf-shell .form-modal-tabs{flex-basis:136px;}
   body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab{
-    padding:8px 8px;font-size:11px;
+    padding:8px 6px;font-size:11px;
   }
 }
 
@@ -695,6 +699,16 @@ body[data-screen="form"] .form-modal-pane.active{flex:1 1 auto;min-width:0;min-h
   box-shadow:0 0 0 1px rgba(227,180,81,.3), 0 6px 20px -6px rgba(227,180,81,.65);
 }
 .btn-gold:hover{filter:brightness(1.06);color:#241705;}
+/* v6.0: botão principal do formulário de evento fora da última aba —
+   "Próxima". Mantém destaque (não é um botão neutro tipo Cancelar), mas
+   sem o preenchimento sólido dourado, reservado pra ação que efetivamente
+   lança/salva o evento. */
+.btn-next{
+  color:var(--gold-hi);
+  border-color:rgba(227,180,81,.45);
+  background:rgba(227,180,81,.07);
+}
+.btn-next:hover{border-color:rgba(227,180,81,.75);background:rgba(227,180,81,.13);color:var(--gold-hi);}
 .btn-ghost{background:transparent;}
 .btn-danger{color:var(--red-crest);border-color:rgba(213,66,76,.4);background:rgba(213,66,76,.08);}
 .btn-danger:hover{color:#ffb3b8;border-color:var(--red-crest);}
@@ -742,6 +756,10 @@ input:focus,select:focus,textarea:focus{
 .grid{display:grid;gap:14px;}
 .grid-2{grid-template-columns:1fr 1fr;}
 .grid-3{grid-template-columns:1fr 1fr 1fr;}
+/* v6.0: usado quando um campo precisa ocupar a linha toda dentro de um
+   .grid-2 — ex.: "Referência do local" quando não há "Escola" pra dividir
+   a linha (ver updateEscolaRowVisibility() em app.js). */
+.field-span2{grid-column:1 / -1;}
 @media (max-width:760px){
   .grid-2,.grid-3{grid-template-columns:1fr;}
 }
@@ -1776,16 +1794,22 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <div class="form-modal-pane" data-formpane="onde">
             <div class="panel">
               <div class="panel-head"><span class="idx">2</span><h3>Onde</h3><span class="desc">Referência do local e endereço completo</span></div>
-              <div class="field">
-                <label for="f-ref">Referência do local</label>
-                <select id="f-ref" required></select>
-                <div class="field-hint">Editável em Configurações → Referências de Local.</div>
-                <div class="chips" id="localSugestoes"></div>
-              </div>
-              <div class="field" id="rowEscola" hidden>
-                <label for="f-escola">Escola</label>
-                <select id="f-escola"><option value="">Selecione a escola&hellip;</option></select>
-                <div class="field-hint">Selecionar preenche o endereço e o responsável (Diretora) abaixo — os campos continuam editáveis.</div>
+              <!-- v6.0: "Referência do local" e "Escola" compartilham uma linha em
+                   vez de cada uma ocupar uma linha inteira à toa — quando não há
+                   escola selecionável, a referência volta a ocupar a linha toda
+                   (ver .field-span2 / updateEscolaRowVisibility() em app.js). -->
+              <div class="grid grid-2" id="rowLocalEscola">
+                <div class="field field-span2" id="fieldRef">
+                  <label for="f-ref">Referência do local</label>
+                  <select id="f-ref" required></select>
+                  <div class="field-hint">Editável em Configurações → Referências de Local.</div>
+                  <div class="chips" id="localSugestoes"></div>
+                </div>
+                <div class="field" id="rowEscola" hidden>
+                  <label for="f-escola">Escola</label>
+                  <select id="f-escola"><option value="">Selecione a escola&hellip;</option></select>
+                  <div class="field-hint">Selecionar preenche o endereço e o responsável (Diretora) abaixo — os campos continuam editáveis.</div>
+                </div>
               </div>
               <div class="grid grid-rua">
                 <div class="field"><label for="f-rua">Rua / Av.</label><input type="text" id="f-rua" placeholder="Ex.: Av. Carlos Chagas" required /></div>
@@ -1833,16 +1857,20 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 <label for="f-modalidade">Modalidade da atuação</label>
                 <select id="f-modalidade" required></select>
               </div>
+              <!-- v6.0: "Assunto / Motivo" saiu da aba Solicitante (só cabia
+                   junto de campos que não têm relação com o assunto em si) e
+                   passou a acompanhar a Modalidade, que é o outro campo que
+                   descreve do que se trata o compromisso administrativo. -->
+              <div class="field" id="fieldAssunto" style="margin-top:10px;" hidden>
+                <label for="f-assunto">Assunto / Motivo</label>
+                <input type="text" id="f-assunto" placeholder="Ex.: Reunião de alinhamento com a Corregedoria" />
+              </div>
             </div>
           </div>
 
           <div class="form-modal-pane" data-formpane="solicitante">
             <div class="panel">
               <div class="panel-head"><span class="idx">5</span><h3 id="solicitanteTitle">Solicitante</h3><span class="desc" id="solicitanteDesc">Responsável pela solicitação do evento</span></div>
-              <div class="field" id="fieldAssunto" hidden>
-                <label for="f-assunto">Assunto / Motivo</label>
-                <input type="text" id="f-assunto" placeholder="Ex.: Reunião de alinhamento com a Corregedoria" />
-              </div>
               <div class="grid grid-2">
                 <div class="field"><label for="f-solicitante" id="labelSolicitante">Nome do solicitante</label><input type="text" id="f-solicitante" placeholder="Nome completo" required /></div>
                 <div class="field"><label for="f-contato" id="labelContato">Contato (celular/outro)</label><input type="tel" id="f-contato" placeholder="(31) 9XXXX-XXXX" required /></div>
@@ -1868,7 +1896,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <div class="form-actions">
           <span class="err" id="formErr"></span>
           <button type="button" class="btn btn-ghost" id="btnCancelForm">Cancelar</button>
-          <button type="submit" class="btn btn-gold" id="btnSubmitForm">Lançar Evento</button>
+          <button type="submit" class="btn btn-next" id="btnSubmitForm">Próxima &rarr;</button>
         </div>
       </form>
     </div>
@@ -2014,7 +2042,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.9 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.0 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2630,6 +2658,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.0', date: '21/09/2026',
+    changes: [
+      'Polimento do formulário de "Lançar Evento": a aba lateral 3 (Logística/Participantes) alargada — o rótulo mais longo não quebra mais em duas linhas. O botão principal agora mostra "Próxima" em cada aba, e só vira "Lançar Evento"/"Salvar Alterações" na última (Solicitante) — antes o botão de enviar aparecia (e podia ser clicado) em qualquer aba. O campo "Assunto/Motivo" saiu da aba Solicitante e passou a acompanhar a Modalidade, na aba Atuação. Na aba Onde, "Referência do local" e "Escola" passaram a dividir uma linha em vez de cada uma ocupar uma linha inteira.'
+    ]
+  },
   {
     version: 'v5.9', date: '21/09/2026',
     changes: [
@@ -5086,6 +5120,40 @@ function switchFormModalTab(form, key){
   var tabsBox = form.querySelector('.form-modal-tabs');
   if(tabsBox) tabsBox.querySelectorAll('.form-modal-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.formtab===key); });
   form.querySelectorAll('.form-modal-pane').forEach(function(p){ p.classList.toggle('active', p.dataset.formpane===key); });
+  /* v6.0: o formulário de evento (#eventForm) é o único form-modal com
+     "próxima aba" no lugar de deixar o botão de enviar solto em toda aba —
+     ver updateFormWizardButton(). Os demais (Logística/Licitações/Vistoria)
+     continuam com o botão de enviar sempre visível/ativo, como já era. */
+  if(form.id==='eventForm') updateFormWizardButton(key);
+}
+/* v6.0: "Lançar Evento"/"Salvar Alterações" só faz sentido na última aba do
+   formulário (Solicitante) — nas demais, o botão principal avança pra
+   próxima aba em vez de tentar enviar o formulário incompleto. Pedido do
+   DG: "o botão lançar evento está presente em todas as abas... o correto
+   seria próxima até chegar na última". */
+var FORM_TAB_ORDER = ['quando','onde','logistica','atuacao','solicitante'];
+function updateFormWizardButton(key){
+  var btn = $('btnSubmitForm'); if(!btn) return;
+  var idx = FORM_TAB_ORDER.indexOf(key);
+  var isLast = idx===-1 || idx===FORM_TAB_ORDER.length-1;
+  btn.textContent = isLast ? (state.editingId ? 'Salvar Alterações' : 'Lançar Evento') : 'Próxima →';
+  btn.classList.toggle('btn-gold', isLast);
+  btn.classList.toggle('btn-next', !isLast);
+}
+/* v6.0: valida só os campos nativamente "required" visíveis na aba atual,
+   antes de avançar pelo botão "Próxima" — feedback mais cedo, sem duplicar
+   as regras completas do handleSubmit (que continuam sendo a validação
+   definitiva, redirecionando pra aba certa se algo escapar). */
+function formPaneRequiredFieldsValid(key){
+  var pane = $('eventForm').querySelector('.form-modal-pane[data-formpane="'+key+'"]');
+  if(!pane) return true;
+  var fields = pane.querySelectorAll('[required]');
+  for(var i=0;i<fields.length;i++){
+    var f = fields[i];
+    if(f.offsetParent===null) continue;
+    if(!f.checkValidity()){ f.reportValidity(); return false; }
+  }
+  return true;
 }
 function versionModalHTML(){
   var body = VERSION_LOG.map(function(v){
@@ -6718,6 +6786,10 @@ function updateEscolaRowVisibility(){
   var isEscola = $('f-ref').value === 'Escola';
   row.hidden = !isEscola;
   if(!isEscola && $('f-escola')) $('f-escola').value = '';
+  /* v6.0: "Referência do local" e "Escola" dividem uma linha (grid-2); sem
+     escola selecionável, a referência volta a ocupar a linha inteira. */
+  var fieldRef = $('fieldRef');
+  if(fieldRef) fieldRef.classList.toggle('field-span2', !isEscola);
 }
 function applyEscolaSelection(){
   var nome = $('f-escola').value;
@@ -6741,7 +6813,6 @@ function resetForm(){
   state.formType = null;
   state.formEfetivo = new Map();
   state.formRecursos = [];
-  $('btnSubmitForm').textContent = 'Lançar Evento';
   $('eventForm').reset();
   $('eventForm').classList.remove('show');
   $('formFrameOuter').style.display = 'none';
@@ -6821,7 +6892,6 @@ function openEditForm(id){
   state.editingId = id;
   goToView('form');
   fillFormFromEvent(ev, {keepDate:true});
-  $('btnSubmitForm').textContent = 'Salvar Alterações';
 }
 function duplicateEvent(id){
   if(!requireAuth()) return;
@@ -6879,7 +6949,7 @@ function handleSubmit(e){
   }
   if(!modalidade){ switchFormModalTab(form, 'atuacao'); errEl.textContent = 'Selecione a modalidade da atuação.'; return; }
   if(isAdmin){
-    if(!assunto){ switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
+    if(!assunto){ switchFormModalTab(form, 'atuacao'); errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
   } else if(!solicitante||!contato){
     switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Preencha o nome e o contato do solicitante.'; return;
   }
@@ -7764,6 +7834,21 @@ $_onReady(function(){
   });
 
   $('eventForm').addEventListener('submit', handleSubmit);
+  /* v6.0: fora da última aba (Solicitante), o botão principal do formulário
+     vira "Próxima" — avança a aba em vez de tentar enviar o formulário
+     ainda incompleto. Validar os campos "required" visíveis da aba atual
+     antes de avançar dá feedback mais cedo; o handleSubmit continua sendo
+     a validação definitiva na hora de realmente lançar/salvar. */
+  $('btnSubmitForm').addEventListener('click', function(e){
+    var activePane = $('eventForm').querySelector('.form-modal-pane.active');
+    var key = activePane ? activePane.dataset.formpane : null;
+    var idx = FORM_TAB_ORDER.indexOf(key);
+    if(idx!==-1 && idx<FORM_TAB_ORDER.length-1){
+      e.preventDefault();
+      if(!formPaneRequiredFieldsValid(key)) return;
+      switchFormModalTab($('eventForm'), FORM_TAB_ORDER[idx+1]);
+    }
+  });
   $('btnCancelForm').addEventListener('click', function(){ resetForm(); goToView('agenda'); });
 
   function gridClickHandler(e){
