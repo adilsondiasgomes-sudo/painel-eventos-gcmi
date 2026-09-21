@@ -1935,7 +1935,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="chips" id="accessAdminChips" style="margin-top:8px;"></div>
           </div>
           <div>
-            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo).</div>
+            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo) e a Agenda do Cmt; gerencia as listas de Locais, Recursos/Equipe e Participantes em Configurações.</div>
             <div class="cfg-add"><input type="email" id="accessEventosInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessEventosAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessEventosChips" style="margin-top:8px;"></div>
           </div>
@@ -1965,7 +1965,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.5 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.6 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2571,6 +2571,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v5.6', date: '21/09/2026',
+    changes: [
+      'Editores de Eventos passam a poder gerenciar (cadastrar/remover) as listas de Referência de Local, Tipos de Recurso/Equipe e Participantes em Configurações — antes essas 3 listas eram exclusivas de admin, e quem fosse lançar um evento sem o item certo já cadastrado ficava impossibilitado de continuar até um admin cadastrar. Gestão, Efetivo, Backup e Perfis de Acesso continuam exclusivos de admin.'
+    ]
+  },
   {
     version: 'v5.5', date: '21/09/2026',
     changes: [
@@ -4547,18 +4553,33 @@ function updateDomainAccessUI(){
     goToView(canViewAgendaDomain() ? 'agenda' : (canViewLogLicDomain() ? 'logistica' : 'agenda'));
   }
 }
+/* v5.6: as abas A/B/C (Locais, Recursos, Tipos de Recurso/Equipe,
+   Participantes) alimentam justamente os dropdowns do formulário de
+   Lançar Evento — a pedido do DG, quem já pode lançar/editar evento
+   (canManageEventos(): admin OU Editor de Eventos) passa a poder gerenciar
+   essas 3 listas também, senão ficava impossibilitado de lançar um evento
+   quando faltava a referência/recurso/participante certo e precisava
+   esperar um admin cadastrar. D (Gestão), E (Efetivo), F (Backup) e G
+   (Perfis de Acesso) continuam exclusivos de admin, por mexerem em dados
+   sensíveis (efetivo, backup completo, quem é admin/editor de cada área) —
+   RLS espelhada em config_auth_write no banco (chaves local-refs,
+   resource-types, participant-types liberadas por is_eventos_editor()). */
+var CFG_PANES_EVENTOS_EDITOR = ['locais','recursos','participantes'];
 function updateCfgAccessUI(){
-  /* Configurações (Locais, Recursos, Participantes, Gestão, Efetivo,
-     Backup, Perfis de Acesso) agora é área de admin — reflete a RLS de
-     config, que passou a exigir isAdmin() pra qualquer escrita. "Sobre"
-     continua visível pra qualquer um, logado ou não, como já era. */
-  var restricted = isPublicRestricted() || !isAdmin();
+  var loggedIn = !isPublicRestricted();
+  var canEventDropdowns = loggedIn && canManageEventos();
+  var canAdminOnly = loggedIn && isAdmin();
   document.querySelectorAll('#cfgSubnav button').forEach(function(b){
-    b.hidden = restricted && b.dataset.cfgpane!=='sobre';
+    var pane = b.dataset.cfgpane;
+    if(pane==='sobre'){ b.hidden = false; }
+    else if(CFG_PANES_EVENTOS_EDITOR.indexOf(pane)!==-1){ b.hidden = !canEventDropdowns; }
+    else { b.hidden = !canAdminOnly; }
   });
-  if(restricted && document.body.getAttribute('data-screen')==='config'){
+  if(document.body.getAttribute('data-screen')==='config'){
     var activePane = document.querySelector('.cfg-pane.active');
-    if(activePane && activePane.dataset.cfgpane!=='sobre'){ goToCfgPane('sobre'); }
+    var key = activePane ? activePane.dataset.cfgpane : null;
+    var stillAllowed = key==='sobre' || (CFG_PANES_EVENTOS_EDITOR.indexOf(key)!==-1 ? canEventDropdowns : canAdminOnly);
+    if(!stillAllowed){ goToCfgPane(canEventDropdowns ? 'locais' : 'sobre'); }
   }
 }
 function updateFormAccessUI(){
@@ -7406,7 +7427,12 @@ function goToView(name){
   document.body.setAttribute('data-screen', name);
   if(name==='form'){ $('subHeaderTitle').textContent = state.editingId ? 'Editar Evento' : 'Novo Evento'; }
   else if(SUBHEADER_TITLES[name]){ $('subHeaderTitle').textContent = SUBHEADER_TITLES[name]; }
-  if(name==='config'){ goToCfgPane((isPublicRestricted() || !isAdmin()) ? 'sobre' : 'locais'); }
+  /* v5.6: quem só tem perfil de Editor de Eventos (não é admin) também cai
+     direto em "Locais" ao entrar em Configurações, já que agora pode
+     gerenciar Locais/Recursos/Participantes — canManageEventos() já cobre
+     admin OU Editor de Eventos. Quem não tem nenhum dos dois perfis cai em
+     "Sobre" (única aba que sempre sobra). */
+  if(name==='config'){ goToCfgPane((!isPublicRestricted() && canManageEventos()) ? 'locais' : 'sobre'); }
   if(name==='relatorios'){ initRelFilters(); renderRelatorio(); }
   if(name==='cmtagenda'){ renderCmtAgenda(); }
   if(name==='logistica'){ setLogisticaSubView(state.logisticaSubView); }
