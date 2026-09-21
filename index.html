@@ -1935,7 +1935,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="chips" id="accessAdminChips" style="margin-top:8px;"></div>
           </div>
           <div>
-            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo) e a Agenda do Cmt; gerencia as listas de Locais, Recursos/Equipe e Participantes em Configurações.</div>
+            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo) e a Agenda do Cmt; gerencia as listas de Locais, Recursos/Equipe e Participantes em Configurações, e as Categorias da Agenda do Cmt.</div>
             <div class="cfg-add"><input type="email" id="accessEventosInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessEventosAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessEventosChips" style="margin-top:8px;"></div>
           </div>
@@ -1965,7 +1965,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.6 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.7 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2047,21 +2047,27 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
     </div>
     <p class="field-hint" style="margin:-4px 0 4px;">O relatório impresso é exclusivo desta aba — não aparece em Relatórios nem no Backup, e reúne todos os compromissos lançados aqui, inclusive os marcados como "Oculto" no Calendário geral.</p>
 
-    <details class="nominal-details" id="cmtAgendaMgmt" hidden>
-      <summary>Gerenciar categorias e quem pode lançar</summary>
+    <!-- v5.7: painel dividido em dois blocos independentes — categorias
+         (liberado pra Editor de Eventos, mesma lógica de Locais/Recursos/
+         Participantes em Configurações) e e-mails de administrador
+         (continua exclusivo do Cmt/Subcomandante, por ser a mesma lista
+         que define quem é admin do painel inteiro). Ver updateCmtAgendaAccessUI-equivalente
+         em renderCmtAgenda(). -->
+    <details class="nominal-details" id="cmtAgendaCatMgmt" hidden>
+      <summary>Gerenciar categorias do compromisso</summary>
       <div class="body">
-        <div class="grid grid-2">
-          <div>
-            <div class="field-hint">Categorias do compromisso:</div>
-            <div class="cfg-add"><input type="text" id="cmtCatInput" placeholder="Nova categoria (ex.: Viagem a serviço)" /><button class="btn btn-sm" id="cmtCatAdd" type="button">Adicionar</button></div>
-            <div class="chips" id="cmtCatChips" style="margin-top:8px;"></div>
-          </div>
-          <div>
-            <div class="field-hint">E-mails de administrador (Cmt e Subcomandante) — edita a Agenda do Cmt e, agora, todas as áreas do painel. Também gerenciável em Configurações → Perfis de Acesso:</div>
-            <div class="cfg-add"><input type="email" id="cmtEmailInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="cmtEmailAdd" type="button">Adicionar</button></div>
-            <div class="chips" id="cmtEmailChips" style="margin-top:8px;"></div>
-          </div>
-        </div>
+        <div class="field-hint">Categorias do compromisso:</div>
+        <div class="cfg-add"><input type="text" id="cmtCatInput" placeholder="Nova categoria (ex.: Viagem a serviço)" /><button class="btn btn-sm" id="cmtCatAdd" type="button">Adicionar</button></div>
+        <div class="chips" id="cmtCatChips" style="margin-top:8px;"></div>
+      </div>
+    </details>
+
+    <details class="nominal-details" id="cmtAgendaAdminMgmt" hidden>
+      <summary>Gerenciar quem pode lançar (e-mails de administrador)</summary>
+      <div class="body">
+        <div class="field-hint">E-mails de administrador (Cmt e Subcomandante) — edita a Agenda do Cmt e, agora, todas as áreas do painel. Também gerenciável em Configurações → Perfis de Acesso:</div>
+        <div class="cfg-add"><input type="email" id="cmtEmailInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="cmtEmailAdd" type="button">Adicionar</button></div>
+        <div class="chips" id="cmtEmailChips" style="margin-top:8px;"></div>
       </div>
     </details>
 
@@ -2571,6 +2577,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v5.7', date: '21/09/2026',
+    changes: [
+      'Editores de Eventos passam a poder gerenciar também as Categorias do dropdown de "Novo Compromisso" na Agenda do Cmt — o painel "Gerenciar categorias e quem pode lançar" foi dividido em dois blocos: Categorias (liberado pra Editor de Eventos) e E-mails de administrador (continua exclusivo do Cmt/Subcomandante, por definir quem é admin do painel inteiro).'
+    ]
+  },
   {
     version: 'v5.6', date: '21/09/2026',
     changes: [
@@ -5153,7 +5165,7 @@ function cmtCardHTML(e){
 }
 function renderCmtCategoriaChips(){
   var box = $('cmtCatChips'); if(!box) return;
-  var canEdit = isAdmin(); /* v5.4: gerenciar categorias fica no painel admin-only — ver renderCmtAgenda() */
+  var canEdit = canManageEventos(); /* v5.7: categorias liberadas pra Editor de Eventos também — ver renderCmtAgenda() */
   box.innerHTML = state.cmtCategorias.map(function(c,i){
     return '<span class="chip">'+esc(c)+(canEdit?'<button type="button" data-i="'+i+'" data-act="cmt-cat-del">&#10005;</button>':'')+'</span>';
   }).join('');
@@ -5201,16 +5213,20 @@ function renderCmtCategoriaFilterSeg(){
   box.innerHTML = html;
 }
 function renderCmtAgenda(){
-  var btn = $('btnNewCmtAgenda'), mgmt = $('cmtAgendaMgmt');
+  var btn = $('btnNewCmtAgenda'), catMgmt = $('cmtAgendaCatMgmt'), adminMgmt = $('cmtAgendaAdminMgmt');
   var canEdit = canManageCmtAgenda();
   if(btn) btn.hidden = !canEdit;
-  /* v5.4: "Gerenciar categorias e quem pode lançar" continua exclusivo do
-     admin (Cmt/Subcmt) mesmo depois de Editor de Eventos passar a poder
-     lançar/editar compromissos — esse painel mexe na lista de categorias
-     E na lista de e-mail de administrador (a mesma usada por isAdmin() em
-     todo o painel), então abrir pra Editor de Eventos seria dar a eles
-     controle sobre quem é admin do sistema inteiro. */
-  if(mgmt) mgmt.hidden = !isAdmin();
+  /* v5.7: o painel foi dividido em dois blocos com gates independentes.
+     "Gerenciar categorias do compromisso" abre pra quem pode
+     lançar/editar (canManageEventos(): admin OU Editor de Eventos) — senão
+     um Editor de Eventos ficava impossibilitado de lançar um compromisso
+     cuja categoria ainda não existisse. "Gerenciar quem pode lançar
+     (e-mails de administrador)" continua exclusivo do admin (Cmt/Subcmt),
+     porque mexe na MESMA lista usada por isAdmin() em todo o painel —
+     abrir isso pra Editor de Eventos daria a eles controle sobre quem é
+     admin do sistema inteiro. */
+  if(catMgmt) catMgmt.hidden = !canManageEventos();
+  if(adminMgmt) adminMgmt.hidden = !isAdmin();
   renderCmtCategoriaChips();
   renderCmtEmailChips();
   renderCmtCategoriaFilterSeg();
