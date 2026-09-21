@@ -532,6 +532,46 @@ body[data-screen="vistoria"] #vistoriaForm > .mov-modal-subtitle{margin:8px 0 6p
   }
 }
 
+/* v5.5: trava de rolamento do formulário de Novo/Editar Evento (Lançar
+   Evento) — mesma mecânica da Vistoria de Viatura acima: os 5 painéis
+   (Quando/Onde/Logística/Atuação/Solicitante), antes lado a lado em 2
+   colunas com rolagem interna, viram abas empilhadas na lateral esquerda
+   (.evf-shell), a pedido do DG. Diferente da Vistoria, o erro/ações
+   (Cancelar/Lançar Evento) NÃO entra na última aba — fica fora das abas,
+   sempre visível, porque aqui há campo obrigatório espalhado por várias
+   abas (Quando/Onde/Atuação/Solicitante) e o erro precisa aparecer não
+   importa em qual aba o usuário esteja (mesmo padrão de Logística/
+   Licitações, que têm o mesmo caso). A escolha do tipo de evento também
+   saiu desta tela — agora é um splash (modal) disparado ao clicar em
+   "Lançar Evento", ver typeSelectModalHTML() em app.js. */
+body[data-screen="form"] #eventForm{
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body[data-screen="form"] .evf-shell{
+  flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:row;gap:10px;
+  overflow:hidden;
+}
+body[data-screen="form"] .evf-shell .form-modal-tabs{
+  flex:0 0 148px;min-width:0;
+  flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  margin-bottom:0;
+  -webkit-overflow-scrolling:touch;
+}
+body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab{
+  white-space:normal;text-align:left;
+  border-right:none;border-bottom:1px solid var(--line);
+}
+body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab:last-child{border-bottom:none;}
+body[data-screen="form"] .form-modal-pane.active{flex:1 1 auto;min-width:0;min-height:0;}
+@media (max-width:640px){
+  body[data-screen="form"] .evf-shell .form-modal-tabs{flex-basis:112px;}
+  body[data-screen="form"] .evf-shell .form-modal-tabs .form-modal-tab{
+    padding:8px 8px;font-size:11px;
+  }
+}
+
 /* ---------- config: sub-screens ---------- */
 .cfg-subnav{margin-bottom:14px;flex-wrap:wrap;flex:none;}
 .cfg-pane{display:none;}
@@ -729,9 +769,8 @@ input:focus,select:focus,textarea:focus{
 .form-body{display:none;}
 .form-body.show{display:block;animation:fade-in .25s ease both;}
 
-/* ---------- form frame (moldura fina, rolagem interna) ---------- */
+/* ---------- form frame (moldura fina, sem rolagem — abas laterais) ---------- */
 body[data-screen="form"] .app{max-width:1360px;}
-.type-select{flex:none;}
 .form-frame-outer{
   position:relative;
   border-radius:var(--radius-lg);
@@ -749,9 +788,7 @@ body[data-screen="form"] .app{max-width:1360px;}
   flex:1 1 auto;min-height:0;
   overflow-y:auto;
 }
-.form-columns{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;}
 @media (max-width:900px){
-  .form-columns{grid-template-columns:1fr;gap:16px;}
   .form-frame{padding:16px 16px 0;}
 }
 .grid-rua{display:grid;grid-template-columns:2.4fr 1fr;gap:14px;}
@@ -1641,27 +1678,23 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
   <!-- ================= FORM ================= -->
   <section class="view" id="view-form">
-    <div class="type-select" id="typeSelect">
-      <button type="button" class="type-card" data-type="operacional">
-        <span class="lamp"></span>
-        <span class="tc-label">01 · Evento</span>
-        <h4>Operacional Especial</h4>
-        <p>Escalas especiais de policiamento preventivo: pontos base, passagens periódicas ou atuação do início ao término em locais de referência.</p>
-      </button>
-      <button type="button" class="type-card" data-type="administrativo">
-        <span class="lamp"></span>
-        <span class="tc-label">02 · Evento</span>
-        <h4>Administrativo</h4>
-        <p>Cursos (EQP), palestras, diligências, reuniões e demais compromissos institucionais da guarda.</p>
-      </button>
-    </div>
-
+    <!-- v5.5: a escolha de tipo (Operacional/Administrativo) saiu daqui — agora
+         é um splash (modal) disparado ao clicar em "Lançar Evento", ver
+         typeSelectModalHTML() em app.js. Ao escolher, cai-se direto aqui já
+         com o tipo definido. -->
     <div class="form-frame-outer" id="formFrameOuter" style="display:none;">
       <span class="frame-corner tl"></span><span class="frame-corner tr"></span><span class="frame-corner bl"></span><span class="frame-corner br"></span>
-      <form id="eventForm" class="form-body scroll form-frame" autocomplete="off">
-        <div class="form-columns">
+      <form id="eventForm" class="form-body scroll form-frame" autocomplete="off" novalidate>
+        <div class="evf-shell">
+          <div class="seg form-modal-tabs">
+            <button type="button" class="form-modal-tab active" data-formtab="quando">1 · Quando</button>
+            <button type="button" class="form-modal-tab" data-formtab="onde">2 · Onde</button>
+            <button type="button" class="form-modal-tab" data-formtab="logistica"><span id="formTabLogisticaLabel">3 · Logística</span></button>
+            <button type="button" class="form-modal-tab" data-formtab="atuacao">4 · Atuação</button>
+            <button type="button" class="form-modal-tab" data-formtab="solicitante">5 · Solicitante</button>
+          </div>
 
-          <div class="form-col">
+          <div class="form-modal-pane active" data-formpane="quando">
             <div class="panel">
               <div class="panel-head"><span class="idx">1</span><h3>Quando</h3><span class="desc">Data e janela de horário do evento</span></div>
               <div class="grid grid-3">
@@ -1689,7 +1722,9 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 </div>
               </div>
             </div>
+          </div>
 
+          <div class="form-modal-pane" data-formpane="onde">
             <div class="panel">
               <div class="panel-head"><span class="idx">2</span><h3>Onde</h3><span class="desc">Referência do local e endereço completo</span></div>
               <div class="field">
@@ -1715,7 +1750,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             </div>
           </div>
 
-          <div class="form-col">
+          <div class="form-modal-pane" data-formpane="logistica">
             <div class="panel">
               <div class="panel-head"><span class="idx">3</span><h3 id="logisticaTitle">Logística</h3><span class="desc" id="logisticaDesc">Recurso/equipe empregado — o dado principal do planejamento</span></div>
               <div class="field-hint" id="logisticaHint">Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):</div>
@@ -1740,7 +1775,9 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 </div>
               </details>
             </div>
+          </div>
 
+          <div class="form-modal-pane" data-formpane="atuacao">
             <div class="panel">
               <div class="panel-head"><span class="idx">4</span><h3>Atuação</h3><span class="desc">Modalidade de emprego no evento</span></div>
               <div class="field">
@@ -1748,7 +1785,9 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 <select id="f-modalidade" required></select>
               </div>
             </div>
+          </div>
 
+          <div class="form-modal-pane" data-formpane="solicitante">
             <div class="panel">
               <div class="panel-head"><span class="idx">5</span><h3 id="solicitanteTitle">Solicitante</h3><span class="desc" id="solicitanteDesc">Responsável pela solicitação do evento</span></div>
               <div class="field" id="fieldAssunto" hidden>
@@ -1772,6 +1811,11 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
         </div>
 
+        <!-- v5.5: erro/ações ficam fora das abas (como em Logística/
+             Licitações) — assim continuam visíveis não importa em qual aba
+             o usuário esteja quando um campo obrigatório de OUTRA aba
+             estiver faltando; o próprio erro já leva de volta pra aba certa
+             (ver switchFormModalTab() em handleSubmit). -->
         <div class="form-actions">
           <span class="err" id="formErr"></span>
           <button type="button" class="btn btn-ghost" id="btnCancelForm">Cancelar</button>
@@ -1921,7 +1965,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.4 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v5.5 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2527,6 +2571,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v5.5', date: '21/09/2026',
+    changes: [
+      'Clicar em "Lançar Evento" agora abre um splash (janela de escolha) para selecionar Operacional ou Administrativo — feita a escolha, o painel já cai direto na tela do formulário do tipo escolhido, sem precisar rolar a tela até o formulário como antes.',
+      'O formulário de Novo/Editar Evento não rola mais — os 5 blocos (Quando/Onde/Logística/Atuação/Solicitante), antes lado a lado com rolagem, viram abas na lateral esquerda (mesmo padrão já usado na Vistoria de Viatura), deixando a tela mais enxuta e travada; havendo mais campo obrigatório pendente numa aba, a mensagem de erro já leva direto pra ela.'
+    ]
+  },
   {
     version: 'v5.4', date: '21/09/2026',
     changes: [
@@ -6448,6 +6499,10 @@ function applyFormTypeUI(type){
   var isAdmin = type === 'administrativo';
   $('logisticaTitle').textContent = isAdmin ? 'Participantes' : 'Logística';
   $('logisticaDesc').textContent = isAdmin ? 'Quem participa do compromisso — o dado principal do planejamento' : 'Recurso/equipe empregado — o dado principal do planejamento';
+  /* v5.5: a aba lateral (3 · Logística/Participantes) espelha o mesmo
+     rótulo do painel, já que agora vira uma aba do formulário em vez de
+     ficar sempre visível ao lado dos demais campos. */
+  if($('formTabLogisticaLabel')) $('formTabLogisticaLabel').textContent = isAdmin ? '3 · Participantes' : '3 · Logística';
   $('logisticaHint').textContent = isAdmin ? 'Informe o(s) grupo(s)/participante(s) previsto(s) (ex.: Inspetores, Comandante/Subcomandante):' : 'Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):';
   $('fieldAssunto').hidden = !isAdmin;
   $('f-assunto').required = isAdmin;
@@ -6575,6 +6630,7 @@ function resetForm(){
   $('eventForm').classList.remove('show');
   $('formFrameOuter').style.display = 'none';
   document.querySelectorAll('.type-card').forEach(function(c){ c.classList.remove('selected'); });
+  switchFormModalTab($('eventForm'), 'quando');
   $('f-cidade').value = 'Ipatinga';
   $('f-estado').value = 'MG';
   $('f-recurso-qtd').value = '1';
@@ -6586,7 +6642,29 @@ function resetForm(){
   renderLocalSugestoes();
   updateEscolaRowVisibility();
 }
-function newEventFlow(){ if(!requireAuth()) return; resetForm(); goToView('form'); }
+/* v5.5: "Lançar Evento" não navega mais direto pra tela do formulário — a
+   pedido do DG, primeiro aparece um splash (modal) pra escolher Operacional
+   ou Administrativo; feita a escolha (ver o clique em .type-card dentro de
+   #modalOverlay), aí sim cai-se na tela do formulário já com o tipo certo. */
+function typeSelectModalHTML(){
+  return '<div class="modal-head"><h3>Novo Evento</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<p class="field-hint" style="margin:0 0 16px;">Escolha o tipo de evento para continuar.</p>'+
+    '<div class="type-select" id="typeSelectModal">'+
+      '<button type="button" class="type-card" data-type="operacional">'+
+        '<span class="lamp"></span>'+
+        '<span class="tc-label">01 &middot; Evento</span>'+
+        '<h4>Operacional Especial</h4>'+
+        '<p>Escalas especiais de policiamento preventivo: pontos base, passagens periódicas ou atuação do início ao término em locais de referência.</p>'+
+      '</button>'+
+      '<button type="button" class="type-card" data-type="administrativo">'+
+        '<span class="lamp"></span>'+
+        '<span class="tc-label">02 &middot; Evento</span>'+
+        '<h4>Administrativo</h4>'+
+        '<p>Cursos (EQP), palestras, diligências, reuniões e demais compromissos institucionais da guarda.</p>'+
+      '</button>'+
+    '</div>';
+}
+function newEventFlow(){ if(!requireAuth()) return; resetForm(); openModal(typeSelectModalHTML()); }
 function fillFormFromEvent(ev, opts){
   opts = opts || {};
   selectType(ev.tipo);
@@ -6641,7 +6719,15 @@ function duplicateEvent(id){
 
 function handleSubmit(e){
   e.preventDefault();
+  var form = $('eventForm');
   var errEl = $('formErr'); errEl.textContent = '';
+  /* v5.5: o formulário virou abas (form-modal-tabs/form-modal-pane) e o
+     <form> agora tem novalidate — sem isso, o "required" de um campo numa
+     aba fechada (display:none) faz o navegador bloquear o submit em
+     silêncio, sem mensagem nem foco visível (mesmo problema já resolvido
+     nos formulários de Logística/Licitações/Vistoria, que usam o mesmo
+     padrão). A validação é toda manual aqui, e cada erro já leva o usuário
+     de volta pra aba onde está o campo pendente. */
   if(!state.formType){ errEl.textContent = 'Selecione o tipo de evento.'; return; }
   var isAdmin = state.formType === 'administrativo';
   var data = $('f-data').value;
@@ -6661,18 +6747,25 @@ function handleSubmit(e){
   var contato = $('f-contato').value.trim();
   var observacoes = $('f-obs').value.trim();
   var cmtParticipa = $('f-cmt-participa').checked;
-  if(!data||!hi||!ht||!ref||!rua||!bairro||!cidade||!estado||!modalidade){
-    errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
+  if(!data||!hi||!ht){
+    switchFormModalTab(form, 'quando'); errEl.textContent = 'Preencha a data e o horário do evento.'; return;
   }
-  if(isAdmin){
-    if(!assunto){ errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
-    if(dataFim && dataFim < data){ errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return; }
-  } else if(!solicitante||!contato){
-    errEl.textContent = 'Preencha todos os campos obrigatórios.'; return;
+  if(hi>=ht){ switchFormModalTab(form, 'quando'); errEl.textContent = 'A hora de término deve ser posterior à hora de início.'; return; }
+  if(isAdmin && dataFim && dataFim < data){
+    switchFormModalTab(form, 'quando'); errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return;
   }
-  if(hi>=ht){ errEl.textContent = 'A hora de término deve ser posterior à hora de início.'; return; }
+  if(!ref||!rua||!bairro||!cidade||!estado){
+    switchFormModalTab(form, 'onde'); errEl.textContent = 'Preencha o endereço completo do local.'; return;
+  }
   if(state.formRecursos.length===0){
+    switchFormModalTab(form, 'logistica');
     errEl.textContent = isAdmin ? 'Informe ao menos um participante previsto (ex.: Inspetores, Comandante/Subcomandante).' : 'Informe ao menos um recurso/equipe a ser empregado (ex.: 01 VTR, 03 GM).'; return;
+  }
+  if(!modalidade){ switchFormModalTab(form, 'atuacao'); errEl.textContent = 'Selecione a modalidade da atuação.'; return; }
+  if(isAdmin){
+    if(!assunto){ switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
+  } else if(!solicitante||!contato){
+    switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Preencha o nome e o contato do solicitante.'; return;
   }
   var payload = {
     tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht, localRef: ref,
@@ -7432,6 +7525,16 @@ $_onReady(function(){
     if(e.target.id==='modalOverlay' || e.target.closest('[data-close]')) closeModal();
     var formTabBtn = e.target.closest('.form-modal-tab');
     if(formTabBtn) switchFormModalTab(formTabBtn.closest('form'), formTabBtn.dataset.formtab);
+    /* v5.5: splash de escolha de tipo (Novo Evento) — ao clicar num
+       .type-card dentro do modal, fecha o splash e já cai direto na tela
+       do formulário com o tipo escolhido (sem o antigo #typeSelect
+       embutido na view, que exigia rolar a tela pra ver o formulário). */
+    var typeCard = e.target.closest('#typeSelectModal .type-card');
+    if(typeCard){
+      closeModal();
+      goToView('form');
+      selectType(typeCard.dataset.type);
+    }
     var actBtn = e.target.closest('[data-modal-act]');
     if(actBtn){
       var id = actBtn.dataset.id;
@@ -7487,9 +7590,13 @@ $_onReady(function(){
     goToCfgPane(b.dataset.cfgpane);
   });
 
-  $('typeSelect').addEventListener('click', function(e){
-    var card = e.target.closest('.type-card'); if(!card) return;
-    selectType(card.dataset.type);
+  /* v5.5: o formulário de evento fica direto na view (não num modal), então
+     a delegação de clique nas abas do form-modal-tabs precisa ser própria —
+     reaproveita switchFormModalTab(), mesma função usada pelo splash de
+     tipo, por Logística/Licitações e pela Vistoria de Viatura. */
+  $('eventForm').addEventListener('click', function(e){
+    var tabBtn = e.target.closest('.form-modal-tab');
+    if(tabBtn) switchFormModalTab($('eventForm'), tabBtn.dataset.formtab);
   });
 
   $('efetivoList').addEventListener('change', function(e){
