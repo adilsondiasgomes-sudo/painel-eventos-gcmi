@@ -1196,6 +1196,11 @@ body[data-screen="form"] .app{max-width:1360px;}
 .cfg-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;flex:none;}
 .cfg-add input{flex:1 1 200px;min-width:140px;}
 .cfg-add button{flex:none;}
+/* v6.4: duas sub-listas (Operacional/Administrativo) dentro do mesmo painel
+   de Configurações — ver #view-config [data-cfgpane="modalidades"]. */
+.cfg-subblock{margin-bottom:24px;}
+.cfg-subblock:last-child{margin-bottom:0;}
+.cfg-subblock h4{font-size:13px;letter-spacing:.04em;color:var(--gold);margin-bottom:2px;text-transform:uppercase;}
 .panel-head{flex:none;}
 .roster-note{
   font-size:12px;color:var(--ink-3);
@@ -1841,7 +1846,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
           <div class="form-modal-pane" data-formpane="logistica">
             <div class="panel">
-              <div class="panel-head"><span class="idx">3</span><h3 id="logisticaTitle">Logística</h3><span class="desc" id="logisticaDesc">Recurso/equipe empregado — o dado principal do planejamento</span></div>
+              <div class="panel-head"><span class="idx">3</span><h3 id="logisticaTitle">Logística</h3><span class="desc" id="logisticaDesc">Recurso/equipe empregado — o dado principal do planejamento</span><button type="button" class="btn btn-sm btn-ghost field-edit-btn" id="btnEditParticipantes" style="margin-left:auto;" title="Adicionar, reordenar ou remover as opções da lista acima, sem sair desta tela">&#9998; editar</button></div>
               <div class="field-hint" id="logisticaHint">Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):</div>
               <div class="recurso-add" style="margin-top:10px;">
                 <select id="f-recurso-tipo"></select>
@@ -1870,7 +1875,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="panel">
               <div class="panel-head"><span class="idx">4</span><h3>Atuação</h3><span class="desc">Modalidade de emprego no evento</span></div>
               <div class="field">
-                <label for="f-modalidade">Modalidade da atuação</label>
+                <div class="field-label-row">
+                  <label for="f-modalidade">Modalidade da atuação</label>
+                  <button type="button" class="btn btn-sm btn-ghost field-edit-btn" id="btnEditModalidade" title="Adicionar, reordenar ou remover as opções sem sair desta tela">&#9998; editar</button>
+                </div>
                 <select id="f-modalidade" required></select>
               </div>
               <!-- v6.0: "Assunto / Motivo" saiu da aba Solicitante (só cabia
@@ -1928,6 +1936,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <button data-cfgpane="efetivo">E · Efetivo</button>
       <button data-cfgpane="backup">F · Backup</button>
       <button data-cfgpane="acessos">G · Perfis de Acesso</button>
+      <button data-cfgpane="modalidades">H · Modalidades</button>
       <button data-cfgpane="sobre">i · Sobre</button>
     </div>
 
@@ -1938,7 +1947,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <input type="text" id="cfgRefInput" placeholder="Nova referência (ex.: Praça Central)" />
           <button class="btn btn-sm" id="cfgRefAdd">Adicionar</button>
         </div>
-        <div class="cfg-list local-ref-list scroll" id="cfgRefList"></div>
+        <div class="cfg-list reorderable-list scroll" id="cfgRefList" data-list="local-refs"></div>
       </div>
     </div>
 
@@ -1949,7 +1958,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <input type="text" id="cfgResInput" placeholder="Novo tipo (ex.: GPR (Motos))" />
           <button class="btn btn-sm" id="cfgResAdd">Adicionar</button>
         </div>
-        <div class="cfg-list scroll" id="cfgResList"></div>
+        <div class="cfg-list reorderable-list scroll" id="cfgResList" data-list="resource-types"></div>
       </div>
     </div>
 
@@ -1960,7 +1969,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           <input type="text" id="cfgPartInput" placeholder="Novo tipo (ex.: Inspetores)" />
           <button class="btn btn-sm" id="cfgPartAdd">Adicionar</button>
         </div>
-        <div class="cfg-list scroll" id="cfgPartList"></div>
+        <div class="cfg-list reorderable-list scroll" id="cfgPartList" data-list="participant-types"></div>
       </div>
     </div>
 
@@ -2028,7 +2037,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             <div class="chips" id="accessAdminChips" style="margin-top:8px;"></div>
           </div>
           <div>
-            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo) e a Agenda do Cmt; gerencia as listas de Locais, Recursos/Equipe e Participantes em Configurações, e as Categorias da Agenda do Cmt.</div>
+            <div class="field-hint"><strong>Editores de Eventos</strong> — lança/edita a Agenda geral (Operacional/Administrativo) e a Agenda do Cmt; gerencia as listas de Locais, Recursos/Equipe, Participantes e Modalidades em Configurações, e as Categorias da Agenda do Cmt.</div>
             <div class="cfg-add"><input type="email" id="accessEventosInput" placeholder="email@exemplo.com" /><button class="btn btn-sm" id="accessEventosAdd" type="button">Adicionar</button></div>
             <div class="chips" id="accessEventosChips" style="margin-top:8px;"></div>
           </div>
@@ -2056,9 +2065,31 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <div class="cfg-pane" data-cfgpane="modalidades">
+      <div class="panel">
+        <div class="panel-head"><span class="idx">H</span><h3>Modalidades da Atuação</h3><span class="desc">Opções do campo "Modalidade da atuação" — listas separadas para Operacional Especial e Administrativo</span></div>
+        <div class="cfg-subblock">
+          <h4>Operacional Especial</h4>
+          <div class="cfg-add">
+            <input type="text" id="cfgModOpInput" placeholder="Nova modalidade (ex.: Escolta)" />
+            <button class="btn btn-sm" id="cfgModOpAdd" type="button">Adicionar</button>
+          </div>
+          <div class="cfg-list reorderable-list scroll" id="cfgModOpList" data-list="modalidades-operacional"></div>
+        </div>
+        <div class="cfg-subblock">
+          <h4>Administrativo</h4>
+          <div class="cfg-add">
+            <input type="text" id="cfgModAdmInput" placeholder="Nova modalidade (ex.: Vistoria)" />
+            <button class="btn btn-sm" id="cfgModAdmAdd" type="button">Adicionar</button>
+          </div>
+          <div class="cfg-list reorderable-list scroll" id="cfgModAdmList" data-list="modalidades-administrativo"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.3 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.4 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2584,6 +2615,13 @@ window.addEventListener('error', function(e){
 var DEFAULT_LOCAL_REFS = ["Escola","Hospital","Posto de Saúde","CONSEP","Igreja Católica","Igreja Evangélica","Delegacia","14º BPM","58º BPM","12ª RPM","12ª Delegacia Regional","11º BBM"];
 var DEFAULT_RESOURCE_TYPES = ["GM (Guarda Municipal)","VTR","GPEC (Escolar)","GPR (Motos)","Equipe Tática","Apoio Administrativo"];
 var DEFAULT_PARTICIPANT_TYPES = ["Comandante/Subcomandante","Inspetores","Todo o Efetivo (Curso/Formação)","Efetivo Convocado"];
+/* v6.4: "Modalidade da atuação" (campo f-modalidade, aba Atuação) virou
+   lista editável/reordenável em Configurações — antes era a constante fixa
+   MODALIDADES{operacional,administrativo}, sem tela nenhuma pra gerenciar.
+   Os valores abaixo são só os defaults (primeira carga / fallback), iguais
+   aos que já estavam fixos em MODALIDADES antes desta versão. */
+var DEFAULT_MODALIDADES_OPERACIONAL = ["Ponto Base","Passagem Periódica","Início ao Término"];
+var DEFAULT_MODALIDADES_ADMINISTRATIVO = ["Curso (EQP)","Palestra","Diligência","Reunião","Ponto Base","Passagem Periódica","Início ao Término","Outro"];
 var DEFAULT_CMT_CATEGORIAS = ["Consulta médica","Férias","Licença","Curso/Seminário","Compromisso institucional","Outro"];
 var DEFAULT_LOGISTICA_CATEGORIAS = ["VTR","Motos","Equipamentos","Armamentos","Manutenção na Sede","Outro"];
 var DEFAULT_LOGISTICA_STATUS = ["Aberto","Em Andamento","Concluído"];
@@ -2653,11 +2691,9 @@ function vistoriaPiorStatus(itens){
   });
   return pior;
 }
-var MODALIDADES = {
-  operacional: ["Ponto Base","Passagem Periódica","Início ao Término"],
-  administrativo: ["Curso (EQP)","Palestra","Diligência","Reunião","Ponto Base","Passagem Periódica","Início ao Término","Outro"]
-};
-var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_gestao', res:'gcmi_ev_res', part:'gcmi_ev_part', meta:'gcmi_ev_meta', rosterRemoved:'gcmi_ev_roster_removed', rosterAdded:'gcmi_ev_roster_added', cmtCat:'gcmi_ev_cmt_cat', cmtEmails:'gcmi_ev_cmt_emails',
+/* MODALIDADES foi substituída em v6.4 por state.modalidadesOperacional /
+   state.modalidadesAdministrativo (editáveis) — ver modalidadesFor(tipo). */
+var LS_KEYS = {events:'gcmi_ev_events', refs:'gcmi_ev_refs', gestao:'gcmi_ev_gestao', res:'gcmi_ev_res', part:'gcmi_ev_part', modOp:'gcmi_ev_mod_op', modAdm:'gcmi_ev_mod_adm', meta:'gcmi_ev_meta', rosterRemoved:'gcmi_ev_roster_removed', rosterAdded:'gcmi_ev_roster_added', cmtCat:'gcmi_ev_cmt_cat', cmtEmails:'gcmi_ev_cmt_emails',
   logistica:'gcmi_ev_logistica', licitacoes:'gcmi_ev_licitacoes',
   logisticaMovimentos:'gcmi_ev_logistica_movimentos', licitacoesMovimentos:'gcmi_ev_licitacoes_movimentos',
   eventosEditors:'gcmi_ev_eventos_editors', logisticaEditors:'gcmi_ev_logistica_editors', licitacoesEditors:'gcmi_ev_licitacoes_editors',
@@ -2675,6 +2711,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.4', date: '23/09/2026',
+    changes: [
+      'O mesmo atalho "✎ Editar" da Referência do local (v6.3) chegou também aos campos "Participantes"/"Logística" (aba 3) e "Modalidade da atuação" (aba 4) do formulário de Lançar Evento — adiciona, remove e reordena as opções sem sair da tela, sempre editando a lista certa (Recursos ou Participantes; Operacional ou Administrativo) conforme o tipo do evento.',
+      'Nova aba "H · Modalidades" em Configurações, com as listas de Modalidade Operacional e Administrativa — antes eram fixas no sistema, sem tela nenhuma pra gerenciar. As listas de Recursos e Participantes em Configurações também ganharam os botões de mover para cima/baixo.'
+    ]
+  },
   {
     version: 'v6.3', date: '23/09/2026',
     changes: [
@@ -3094,6 +3137,8 @@ var state = {
   localRefs: DEFAULT_LOCAL_REFS.slice(),
   resourceTypes: DEFAULT_RESOURCE_TYPES.slice(),
   participantTypes: DEFAULT_PARTICIPANT_TYPES.slice(),
+  modalidadesOperacional: DEFAULT_MODALIDADES_OPERACIONAL.slice(),
+  modalidadesAdministrativo: DEFAULT_MODALIDADES_ADMINISTRATIVO.slice(),
   gestaoExtra: [],
   rosterRemoved: [],
   rosterAdded: [],
@@ -3589,6 +3634,10 @@ function fetchConfigAll(){
     if(!map['resource-types']) upsertConfig('resource-types', {items: state.resourceTypes}).catch(function(){});
     state.participantTypes = (map['participant-types'] && Array.isArray(map['participant-types'].items) && map['participant-types'].items.length) ? map['participant-types'].items : DEFAULT_PARTICIPANT_TYPES.slice();
     if(!map['participant-types']) upsertConfig('participant-types', {items: state.participantTypes}).catch(function(){});
+    state.modalidadesOperacional = (map['modalidades-operacional'] && Array.isArray(map['modalidades-operacional'].items) && map['modalidades-operacional'].items.length) ? map['modalidades-operacional'].items : DEFAULT_MODALIDADES_OPERACIONAL.slice();
+    if(!map['modalidades-operacional']) upsertConfig('modalidades-operacional', {items: state.modalidadesOperacional}).catch(function(){});
+    state.modalidadesAdministrativo = (map['modalidades-administrativo'] && Array.isArray(map['modalidades-administrativo'].items) && map['modalidades-administrativo'].items.length) ? map['modalidades-administrativo'].items : DEFAULT_MODALIDADES_ADMINISTRATIVO.slice();
+    if(!map['modalidades-administrativo']) upsertConfig('modalidades-administrativo', {items: state.modalidadesAdministrativo}).catch(function(){});
     state.gestaoExtra = (map['gestao-extra'] && Array.isArray(map['gestao-extra'].items)) ? map['gestao-extra'].items : [];
     state.rosterRemoved = (map['roster-removed'] && Array.isArray(map['roster-removed'].items)) ? map['roster-removed'].items : [];
     state.rosterAdded = (map['roster-added'] && Array.isArray(map['roster-added'].items)) ? map['roster-added'].items : [];
@@ -3617,6 +3666,7 @@ function fetchConfigAll(){
     renderRefSelect(); renderCfgRefs();
     renderResourceSelect(); renderCfgResources();
     renderParticipantSelect(); renderCfgParticipants();
+    renderModalidadeOptions(); renderCfgModalidades();
     renderCfgGestao();
     renderEfetivoList(); renderRosterGrid();
     renderAccessChips();
@@ -3645,6 +3695,8 @@ function loadLocalAll(){
   state.localRefs = loadLS(LS_KEYS.refs, null) || DEFAULT_LOCAL_REFS.slice();
   state.resourceTypes = loadLS(LS_KEYS.res, null) || DEFAULT_RESOURCE_TYPES.slice();
   state.participantTypes = loadLS(LS_KEYS.part, null) || DEFAULT_PARTICIPANT_TYPES.slice();
+  state.modalidadesOperacional = loadLS(LS_KEYS.modOp, null) || DEFAULT_MODALIDADES_OPERACIONAL.slice();
+  state.modalidadesAdministrativo = loadLS(LS_KEYS.modAdm, null) || DEFAULT_MODALIDADES_ADMINISTRATIVO.slice();
   state.gestaoExtra = loadLS(LS_KEYS.gestao, []);
   state.rosterRemoved = loadLS(LS_KEYS.rosterRemoved, []);
   state.rosterAdded = loadLS(LS_KEYS.rosterAdded, []);
@@ -4141,6 +4193,23 @@ function saveParticipantTypes(items){
   renderParticipantSelect(); renderCfgParticipants();
   return Promise.resolve();
 }
+/* v6.4 */
+function saveModalidadesOperacional(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  state.modalidadesOperacional = items;
+  if(mode==='live'){ return upsertConfig('modalidades-operacional', {items:items}).then(function(){ return fetchConfigAll(); }); }
+  saveLS(LS_KEYS.modOp, items);
+  renderModalidadeOptions(); renderCfgModalidades();
+  return Promise.resolve();
+}
+function saveModalidadesAdministrativo(items){
+  if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
+  state.modalidadesAdministrativo = items;
+  if(mode==='live'){ return upsertConfig('modalidades-administrativo', {items:items}).then(function(){ return fetchConfigAll(); }); }
+  saveLS(LS_KEYS.modAdm, items);
+  renderModalidadeOptions(); renderCfgModalidades();
+  return Promise.resolve();
+}
 function saveCmtCategorias(items){
   if(!requireAuth()) return Promise.reject(new Error('not-authenticated'));
   state.cmtCategorias = items;
@@ -4307,6 +4376,8 @@ function backupExportPayload(){
       localRefs: state.localRefs||[],
       resourceTypes: state.resourceTypes||[],
       participantTypes: state.participantTypes||[],
+      modalidadesOperacional: state.modalidadesOperacional||[],
+      modalidadesAdministrativo: state.modalidadesAdministrativo||[],
       gestaoExtra: state.gestaoExtra||[],
       rosterRemoved: state.rosterRemoved||[],
       rosterAdded: state.rosterAdded||[],
@@ -4377,6 +4448,8 @@ function replaceConfigAll(cfg){
   var localRefs = (Array.isArray(cfg.localRefs) && cfg.localRefs.length) ? cfg.localRefs : DEFAULT_LOCAL_REFS.slice();
   var resourceTypes = (Array.isArray(cfg.resourceTypes) && cfg.resourceTypes.length) ? cfg.resourceTypes : DEFAULT_RESOURCE_TYPES.slice();
   var participantTypes = (Array.isArray(cfg.participantTypes) && cfg.participantTypes.length) ? cfg.participantTypes : DEFAULT_PARTICIPANT_TYPES.slice();
+  var modalidadesOperacional = (Array.isArray(cfg.modalidadesOperacional) && cfg.modalidadesOperacional.length) ? cfg.modalidadesOperacional : DEFAULT_MODALIDADES_OPERACIONAL.slice();
+  var modalidadesAdministrativo = (Array.isArray(cfg.modalidadesAdministrativo) && cfg.modalidadesAdministrativo.length) ? cfg.modalidadesAdministrativo : DEFAULT_MODALIDADES_ADMINISTRATIVO.slice();
   var gestaoExtra = Array.isArray(cfg.gestaoExtra) ? cfg.gestaoExtra : [];
   var rosterRemoved = Array.isArray(cfg.rosterRemoved) ? cfg.rosterRemoved : [];
   var rosterAdded = Array.isArray(cfg.rosterAdded) ? cfg.rosterAdded : [];
@@ -4396,6 +4469,8 @@ function replaceConfigAll(cfg){
       upsertConfig('local-refs', {items:localRefs}),
       upsertConfig('resource-types', {items:resourceTypes}),
       upsertConfig('participant-types', {items:participantTypes}),
+      upsertConfig('modalidades-operacional', {items:modalidadesOperacional}),
+      upsertConfig('modalidades-administrativo', {items:modalidadesAdministrativo}),
       upsertConfig('gestao-extra', {items:gestaoExtra}),
       upsertConfig('roster-removed', {items:rosterRemoved}),
       upsertConfig('roster-added', {items:rosterAdded}),
@@ -4407,15 +4482,18 @@ function replaceConfigAll(cfg){
     ]).then(function(){ return fetchConfigAll(); });
   }
   state.localRefs = localRefs; state.resourceTypes = resourceTypes; state.participantTypes = participantTypes; state.gestaoExtra = gestaoExtra;
+  state.modalidadesOperacional = modalidadesOperacional; state.modalidadesAdministrativo = modalidadesAdministrativo;
   state.rosterRemoved = rosterRemoved; state.rosterAdded = rosterAdded; state.cmtCategorias = cmtCategorias;
   state.logisticaCategorias = logisticaCategorias; state.logisticaStatusList = logisticaStatusList;
   state.licitacoesFases = licitacoesFases; state.licitacoesModalidades = licitacoesModalidades;
   saveLS(LS_KEYS.refs, localRefs); saveLS(LS_KEYS.res, resourceTypes); saveLS(LS_KEYS.part, participantTypes); saveLS(LS_KEYS.gestao, gestaoExtra);
+  saveLS(LS_KEYS.modOp, modalidadesOperacional); saveLS(LS_KEYS.modAdm, modalidadesAdministrativo);
   saveLS(LS_KEYS.rosterRemoved, rosterRemoved); saveLS(LS_KEYS.rosterAdded, rosterAdded); saveLS(LS_KEYS.cmtCat, cmtCategorias);
   saveLS(LS_KEYS.logisticaCat, logisticaCategorias); saveLS(LS_KEYS.logisticaStatus, logisticaStatusList);
   saveLS(LS_KEYS.licitacoesFases, licitacoesFases); saveLS(LS_KEYS.licitacoesModalidades, licitacoesModalidades);
   renderRefSelect(); renderCfgRefs(); renderResourceSelect(); renderCfgResources();
   renderParticipantSelect(); renderCfgParticipants();
+  renderModalidadeOptions(); renderCfgModalidades();
   renderCfgGestao(); renderEfetivoList(); renderRosterGrid(); renderCmtCategoriaChips();
   renderLogisticaCategoriaChips(); renderLogisticaStatusChips(); renderLicitacoesFaseChips(); renderLicitacoesModalidadeChips();
   return Promise.resolve();
@@ -4728,7 +4806,7 @@ function updateDomainAccessUI(){
    sensíveis (efetivo, backup completo, quem é admin/editor de cada área) —
    RLS espelhada em config_auth_write no banco (chaves local-refs,
    resource-types, participant-types liberadas por is_eventos_editor()). */
-var CFG_PANES_EVENTOS_EDITOR = ['locais','recursos','participantes'];
+var CFG_PANES_EVENTOS_EDITOR = ['locais','recursos','participantes','modalidades'];
 function updateCfgAccessUI(){
   var loggedIn = !isPublicRestricted();
   var canEventDropdowns = loggedIn && canManageEventos();
@@ -6753,10 +6831,15 @@ function applyFormTypeUI(type){
   $('rowMultiDia').hidden = !isAdmin;
   if(!isAdmin){ $('f-data-fim').value = ''; $('f-encerramento').value = ''; }
 }
+/* v6.4: modalidadesFor() substitui o antigo acesso direto a
+   MODALIDADES[tipo] — agora lê das listas editáveis em state. */
+function modalidadesFor(tipo){
+  return tipo === 'administrativo' ? state.modalidadesAdministrativo : state.modalidadesOperacional;
+}
 function renderModalidadeOptions(){
   var sel = $('f-modalidade');
   var current = sel.value;
-  var opts = MODALIDADES[state.formType] || [];
+  var opts = modalidadesFor(state.formType) || [];
   sel.innerHTML = opts.map(function(o){ return '<option value="'+esc(o)+'">'+esc(o)+'</option>'; }).join('');
   if(opts.indexOf(current) !== -1) sel.value = current;
 }
@@ -7030,70 +7113,79 @@ function handleSubmit(e){
   }).finally(function(){ btn.disabled = false; });
 }
 
-/* ---------------- config: refs / resources / gestao / roster ---------------- */
-/* v6.3: a lista de Referências de Local passou a ter botões de reordenar
-   (mover pra cima/baixo), além do de remover — a pedido do DG, pra poder
-   ajustar a ordem em que as opções aparecem no dropdown "Referência do
-   local" do formulário. A mesma linha (localRefRowHTML) e o mesmo handler
-   de clique (handleLocalRefListClick) são reaproveitados tanto na lista de
-   Configurações (#cfgRefList) quanto no atalho rápido aberto direto da tela
-   de Lançar Evento (#btnEditLocalRefs → openLocalRefsQuickModal(), ver
-   abaixo) — renderCfgRefs() atualiza as duas listas de uma vez, sempre que
-   alguma delas estiver presente na tela. */
-function localRefRowHTML(r, i, total){
+/* ---------------- config: listas reordenáveis (refs / recursos / participantes / modalidades) ---------------- */
+/* v6.3/v6.4: toda lista simples de opções (Referência de local, Tipos de
+   Recurso, Tipos de Participante, Modalidade Operacional, Modalidade
+   Administrativa) passou a ter botões de mover pra cima/baixo além do de
+   remover — a pedido do DG — e um atalho "✎ Editar" direto no campo do
+   formulário que usa a lista, pra não precisar ir em Configurações. As duas
+   telas (Configurações e o atalho rápido) compartilham a mesma engine:
+   REORDERABLE_LISTS mapeia cada "chave" pro getter/save certo em state;
+   reorderableListHTML()/renderReorderableList() desenham qualquer container
+   com a classe .reorderable-list e o atributo data-list="<chave>" (pode
+   haver mais de um container pra mesma chave na tela ao mesmo tempo — ex.:
+   Configurações aberta numa aba e o atalho rápido não se aplicam juntos na
+   prática, mas o mecanismo suporta); handleReorderableListClick() é um
+   único handler delegado, reaproveitado em todo container dessas listas;
+   openQuickListModal() monta o modal do atalho genérico. */
+var REORDERABLE_LISTS = {
+  'local-refs': { get: function(){ return state.localRefs; }, save: saveRefs },
+  'resource-types': { get: function(){ return state.resourceTypes; }, save: saveResourceTypes },
+  'participant-types': { get: function(){ return state.participantTypes; }, save: saveParticipantTypes },
+  'modalidades-operacional': { get: function(){ return state.modalidadesOperacional; }, save: saveModalidadesOperacional },
+  'modalidades-administrativo': { get: function(){ return state.modalidadesAdministrativo; }, save: saveModalidadesAdministrativo }
+};
+function reorderableRowHTML(listKey, value, i, total){
   return '<div class="cfg-row">'+
-    '<span class="rn">'+esc(r)+'</span>'+
-    '<button type="button" class="icon-btn" data-act="up" data-i="'+i+'" title="Mover para cima"'+(i===0?' disabled':'')+'>&#9650;</button>'+
-    '<button type="button" class="icon-btn" data-act="down" data-i="'+i+'" title="Mover para baixo"'+(i===total-1?' disabled':'')+'>&#9660;</button>'+
-    '<button type="button" class="icon-btn del" data-act="del" data-i="'+i+'" title="Remover">&#10005;</button>'+
+    '<span class="rn">'+esc(value)+'</span>'+
+    '<button type="button" class="icon-btn" data-list="'+listKey+'" data-act="up" data-i="'+i+'" title="Mover para cima"'+(i===0?' disabled':'')+'>&#9650;</button>'+
+    '<button type="button" class="icon-btn" data-list="'+listKey+'" data-act="down" data-i="'+i+'" title="Mover para baixo"'+(i===total-1?' disabled':'')+'>&#9660;</button>'+
+    '<button type="button" class="icon-btn del" data-list="'+listKey+'" data-act="del" data-i="'+i+'" title="Remover">&#10005;</button>'+
   '</div>';
 }
-function localRefListHTML(){
-  return state.localRefs.map(function(r,i){ return localRefRowHTML(r, i, state.localRefs.length); }).join('');
+function reorderableListHTML(listKey){
+  var items = REORDERABLE_LISTS[listKey].get() || [];
+  return items.map(function(v,i){ return reorderableRowHTML(listKey, v, i, items.length); }).join('');
 }
-function renderCfgRefs(){
-  document.querySelectorAll('.local-ref-list').forEach(function(box){ box.innerHTML = localRefListHTML(); });
+function renderReorderableList(listKey){
+  document.querySelectorAll('.reorderable-list[data-list="'+listKey+'"]').forEach(function(box){ box.innerHTML = reorderableListHTML(listKey); });
 }
-function handleLocalRefListClick(e){
+function handleReorderableListClick(e){
   var btn = e.target.closest('button'); if(!btn || !btn.dataset.act) return;
+  var cfg = REORDERABLE_LISTS[btn.dataset.list]; if(!cfg) return;
   var act = btn.dataset.act, i = Number(btn.dataset.i);
-  var items = state.localRefs.slice();
+  var items = (cfg.get() || []).slice();
   if(act==='del'){ items.splice(i,1); }
   else if(act==='up' && i>0){ var t1=items[i-1]; items[i-1]=items[i]; items[i]=t1; }
   else if(act==='down' && i<items.length-1){ var t2=items[i+1]; items[i+1]=items[i]; items[i]=t2; }
   else return;
-  saveRefs(items);
+  cfg.save(items);
 }
-function localRefsQuickModalHTML(){
-  return '<div class="modal-head"><h3>Referências de Local</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-    '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Adicione, remova ou reordene as opções do campo "Referência do local" — a ordem aqui é a mesma exibida no menu suspenso do formulário. A mudança já vale para este lançamento assim que você fechar.</p>'+
-    '<div class="cfg-add"><input type="text" id="quickRefInput" placeholder="Nova referência (ex.: Praça Central)" /><button type="button" class="btn btn-sm" id="quickRefAdd">Adicionar</button></div>'+
-    '<div class="cfg-list local-ref-list scroll" id="quickRefList" style="max-height:min(50vh,380px);">'+localRefListHTML()+'</div>'+
+function renderCfgRefs(){ renderReorderableList('local-refs'); }
+function renderCfgResources(){ renderReorderableList('resource-types'); }
+function renderCfgParticipants(){ renderReorderableList('participant-types'); }
+function renderCfgModalidades(){ renderReorderableList('modalidades-operacional'); renderReorderableList('modalidades-administrativo'); }
+/* Atalho rápido genérico — usado pelos botões "✎ Editar" ao lado dos campos
+   Referência do local (Onde), Participantes (Logística) e Modalidade da
+   atuação (Atuação). listKey escolhe a lista (ver REORDERABLE_LISTS acima);
+   title/hint/placeholder personalizam o texto do modal pra cada campo. */
+function openQuickListModal(listKey, title, hint, placeholder){
+  var html = '<div class="modal-head"><h3>'+esc(title)+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
+    '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">'+esc(hint)+'</p>'+
+    '<div class="cfg-add"><input type="text" id="quickListInput" placeholder="'+esc(placeholder)+'" /><button type="button" class="btn btn-sm" id="quickListAdd">Adicionar</button></div>'+
+    '<div class="cfg-list reorderable-list scroll" id="quickListBox" data-list="'+esc(listKey)+'" style="max-height:min(50vh,380px);">'+reorderableListHTML(listKey)+'</div>'+
     '<div class="modal-actions"><button type="button" class="btn btn-gold btn-sm" data-close="1">Concluído</button></div>';
-}
-function openLocalRefsQuickModal(){
-  openModal(localRefsQuickModalHTML());
-  $('quickRefList').addEventListener('click', handleLocalRefListClick);
-  $('quickRefAdd').addEventListener('click', function(){
-    var input = $('quickRefInput'); var v = input.value.trim();
+  openModal(html);
+  $('quickListBox').addEventListener('click', handleReorderableListClick);
+  $('quickListAdd').addEventListener('click', function(){
+    var input = $('quickListInput'); var v = input.value.trim();
     if(!v) return;
-    if(state.localRefs.indexOf(v)!==-1){ showToast('Referência já existe.'); return; }
-    saveRefs(state.localRefs.concat([v]));
+    var cfg = REORDERABLE_LISTS[listKey];
+    if((cfg.get()||[]).indexOf(v)!==-1){ showToast('Item já existe.'); return; }
+    cfg.save((cfg.get()||[]).concat([v]));
     input.value = ''; input.focus();
   });
-  $('quickRefInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); $('quickRefAdd').click(); } });
-}
-function renderCfgResources(){
-  var box = $('cfgResList');
-  box.innerHTML = state.resourceTypes.map(function(r,i){
-    return '<div class="cfg-row"><span class="rn">'+esc(r)+'</span><button class="icon-btn del" data-i="'+i+'" title="Remover">&#10005;</button></div>';
-  }).join('');
-}
-function renderCfgParticipants(){
-  var box = $('cfgPartList');
-  box.innerHTML = state.participantTypes.map(function(r,i){
-    return '<div class="cfg-row"><span class="rn">'+esc(r)+'</span><button class="icon-btn del" data-i="'+i+'" title="Remover">&#10005;</button></div>';
-  }).join('');
+  $('quickListInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); $('quickListAdd').click(); } });
 }
 function renderCfgGestao(){
   var box = $('cfgGestList');
@@ -7124,7 +7216,7 @@ function initRelFilters(){
   var selMod = $('rel-modalidade');
   var curMod = selMod.value;
   var seen = {}; var allMods = [];
-  MODALIDADES.operacional.concat(MODALIDADES.administrativo).forEach(function(m){ if(!seen[m]){ seen[m]=true; allMods.push(m); } });
+  state.modalidadesOperacional.concat(state.modalidadesAdministrativo).forEach(function(m){ if(!seen[m]){ seen[m]=true; allMods.push(m); } });
   selMod.innerHTML = '<option value="">Todas</option>' + allMods.map(function(m){ return '<option value="'+esc(m)+'">'+esc(m)+'</option>'; }).join('');
   if(curMod && allMods.indexOf(curMod)!==-1) selMod.value = curMod;
 }
@@ -7910,7 +8002,27 @@ $_onReady(function(){
   });
 
   $('f-ref').addEventListener('change', function(){ renderLocalSugestoes(); updateEscolaRowVisibility(); });
-  $('btnEditLocalRefs').addEventListener('click', function(e){ e.preventDefault(); openLocalRefsQuickModal(); });
+  $('btnEditLocalRefs').addEventListener('click', function(e){
+    e.preventDefault();
+    openQuickListModal('local-refs', 'Referências de Local', 'Adicione, remova ou reordene as opções do campo "Referência do local" — a ordem aqui é a mesma exibida no menu suspenso do formulário.', 'Nova referência (ex.: Praça Central)');
+  });
+  $('btnEditParticipantes').addEventListener('click', function(e){
+    e.preventDefault();
+    var isAdmin = state.formType === 'administrativo';
+    var listKey = isAdmin ? 'participant-types' : 'resource-types';
+    var title = isAdmin ? 'Tipos de Participante' : 'Tipos de Recurso/Equipe';
+    var hint = 'Adicione, remova ou reordene as opções do campo "'+(isAdmin?'Participantes':'Logística')+'" — a ordem aqui é a mesma exibida no menu suspenso do formulário.';
+    var placeholder = isAdmin ? 'Novo tipo (ex.: Efetivo do Turno)' : 'Novo tipo (ex.: Drone)';
+    openQuickListModal(listKey, title, hint, placeholder);
+  });
+  $('btnEditModalidade').addEventListener('click', function(e){
+    e.preventDefault();
+    var isAdmin = state.formType === 'administrativo';
+    var listKey = isAdmin ? 'modalidades-administrativo' : 'modalidades-operacional';
+    var title = 'Modalidades da Atuação (' + (isAdmin ? 'Administrativo' : 'Operacional Especial') + ')';
+    var hint = 'Adicione, remova ou reordene as opções do campo "Modalidade da atuação" — a ordem aqui é a mesma exibida no menu suspenso do formulário.';
+    openQuickListModal(listKey, title, hint, 'Nova modalidade');
+  });
   $('f-escola').addEventListener('change', applyEscolaSelection);
   renderEscolaOptions();
   $('localSugestoes').addEventListener('click', function(e){
@@ -8055,7 +8167,7 @@ $_onReady(function(){
   $('navNext').addEventListener('click', function(){ shiftAnchor(1); });
   $('navToday').addEventListener('click', function(){ state.anchorDate = new Date(); renderMain(); updateNavLabel(); });
 
-  $('cfgRefList').addEventListener('click', handleLocalRefListClick);
+  $('cfgRefList').addEventListener('click', handleReorderableListClick);
   $('cfgRefAdd').addEventListener('click', function(){
     var input = $('cfgRefInput'); var v = input.value.trim();
     if(!v) return;
@@ -8063,12 +8175,7 @@ $_onReady(function(){
     saveRefs(state.localRefs.concat([v]));
     input.value = '';
   });
-  $('cfgResList').addEventListener('click', function(e){
-    var btn = e.target.closest('button'); if(!btn) return;
-    var i = Number(btn.dataset.i);
-    var items = state.resourceTypes.slice(); items.splice(i,1);
-    saveResourceTypes(items);
-  });
+  $('cfgResList').addEventListener('click', handleReorderableListClick);
   $('cfgResAdd').addEventListener('click', function(){
     var input = $('cfgResInput'); var v = input.value.trim();
     if(!v) return;
@@ -8076,17 +8183,28 @@ $_onReady(function(){
     saveResourceTypes(state.resourceTypes.concat([v]));
     input.value = '';
   });
-  $('cfgPartList').addEventListener('click', function(e){
-    var btn = e.target.closest('button'); if(!btn) return;
-    var i = Number(btn.dataset.i);
-    var items = state.participantTypes.slice(); items.splice(i,1);
-    saveParticipantTypes(items);
-  });
+  $('cfgPartList').addEventListener('click', handleReorderableListClick);
   $('cfgPartAdd').addEventListener('click', function(){
     var input = $('cfgPartInput'); var v = input.value.trim();
     if(!v) return;
     if(state.participantTypes.indexOf(v)!==-1){ showToast('Tipo já existe.'); return; }
     saveParticipantTypes(state.participantTypes.concat([v]));
+    input.value = '';
+  });
+  $('cfgModOpList').addEventListener('click', handleReorderableListClick);
+  $('cfgModOpAdd').addEventListener('click', function(){
+    var input = $('cfgModOpInput'); var v = input.value.trim();
+    if(!v) return;
+    if(state.modalidadesOperacional.indexOf(v)!==-1){ showToast('Modalidade já existe.'); return; }
+    saveModalidadesOperacional(state.modalidadesOperacional.concat([v]));
+    input.value = '';
+  });
+  $('cfgModAdmList').addEventListener('click', handleReorderableListClick);
+  $('cfgModAdmAdd').addEventListener('click', function(){
+    var input = $('cfgModAdmInput'); var v = input.value.trim();
+    if(!v) return;
+    if(state.modalidadesAdministrativo.indexOf(v)!==-1){ showToast('Modalidade já existe.'); return; }
+    saveModalidadesAdministrativo(state.modalidadesAdministrativo.concat([v]));
     input.value = '';
   });
   $('cfgGestList').addEventListener('click', function(e){
