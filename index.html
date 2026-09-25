@@ -1444,6 +1444,11 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 .tbl-type.operacional{color:#b5701a;}
 .tbl-type.administrativo .dot{background:var(--cyan);box-shadow:0 0 5px 1px rgba(69,230,230,.5);}
 .tbl-type.administrativo{color:#1f8686;}
+/* v6.6: compromissos da Agenda do Cmt (tipo "pessoal") passam a poder
+   aparecer nas mesmas listas — tom dourado, coerente com os destaques ★ Cmt
+   já usados no resto do painel. */
+.tbl-type.pessoal .dot{background:var(--gold);box-shadow:0 0 5px 1px rgba(227,180,81,.5);}
+.tbl-type.pessoal{color:#8a6d1f;}
 .tbl-date{color:var(--text-list-1);font-weight:600;white-space:nowrap;}
 .tbl-time{font-family:var(--font-mono);color:var(--text-list-2);white-space:nowrap;}
 .tbl-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:220px;}
@@ -1583,6 +1588,22 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   transition:transform .15s ease;
 }
 .modal-overlay.show .modal-box{transform:translateY(0);}
+/* v6.6: modal do Compromisso (Agenda do Cmt) "travado" — cabeçalho e
+   botões de ação ficam sempre visíveis, só os campos rolam por dentro
+   quando não cabem na tela (antes o .modal-box inteiro rolava junto com a
+   página, dando sensação de tela solta). Fica limitado a essa mesma
+   altura do overlay (40px de padding em cima/embaixo) pra nunca precisar
+   de scroll no overlay em si. */
+.modal-box.cmt-modal{
+  max-height:calc(100vh - 80px);
+  display:flex;flex-direction:column;
+}
+.modal-box.cmt-modal .modal-head{flex:none;}
+.modal-box.cmt-modal > p{flex:none;}
+.modal-box.cmt-modal form{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.modal-box.cmt-modal .cmt-form-fields{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:2px;}
+.modal-box.cmt-modal .login-err{flex:none;}
+.modal-box.cmt-modal .modal-actions{flex:none;}
 
 /* ---------- crest lightbox (brasão ampliado, com créditos ocultos) ---------- */
 .modal-box.crest-modal{
@@ -2094,7 +2115,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.5 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.6 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2724,6 +2745,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.6', date: '25/09/2026',
+    changes: [
+      'Modal de Novo/Editar Compromisso (Agenda do Cmt) "travado": o cabeçalho e os botões Excluir/Lançar agora ficam sempre visíveis, só os campos rolam por dentro quando não cabem na tela — antes era o modal inteiro que rolava junto com a página, dando sensação de tela solta.',
+      'A caixa "Mostrar no Calendário" virou "Mostrar na Agenda de Eventos": um compromisso da Agenda do Cmt marcado com ela agora aparece também no Calendário, nos Cards/Lista e nos Relatórios da Agenda de Eventos — antes só entrava no Calendário, mesmo estando marcado, o que fazia um compromisso lançado (ex.: participação exclusiva do Cmt num evento) não aparecer na Agenda geral. Desmarcada, o compromisso continua só na própria aba, como antes.'
+    ]
+  },
   {
     version: 'v6.5', date: '25/09/2026',
     changes: [
@@ -5477,7 +5505,7 @@ function cmtCardHTML(e){
     '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span>'+(e.horaInicio ? '<span class="ec-time mono">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>' : '')+'</div>'+
     (e.localRef ? '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef)+'</span></div>' : '')+
     (e.assunto ? '<div class="ec-row"><span class="k">Detalhe</span><span>'+esc(e.assunto)+'</span></div>' : '')+
-    (e.visivelCalendario===false ? '<div class="ec-row"><span class="k">Calendário</span><span style="color:var(--ink-3);">Oculto (só nesta aba)</span></div>' : '')+
+    (e.visivelCalendario===false ? '<div class="ec-row"><span class="k">Agenda de Eventos</span><span style="color:var(--ink-3);">Oculto (só nesta aba)</span></div>' : '')+
   '</article>';
 }
 function renderCmtCategoriaChips(){
@@ -5503,7 +5531,7 @@ function cmtTableRowHTML(e){
     '<td>'+esc(e.modalidade||'Compromisso')+'</td>'+
     '<td>'+(e.localRef?esc(e.localRef):'&mdash;')+'</td>'+
     '<td>'+(e.assunto?esc(e.assunto):'&mdash;')+'</td>'+
-    '<td>'+(e.visivelCalendario===false ? '<span style="color:var(--ink-3);">Oculto</span>' : '<span style="color:var(--ink-3);">Visível</span>')+'</td>'+
+    '<td>'+(e.visivelCalendario===false ? '<span style="color:var(--ink-3);">Só aqui</span>' : '<span style="color:var(--ink-3);">Visível na Agenda</span>')+'</td>'+
     '<td class="tbl-actions">'+
       (canEdit ?
         '<button class="icon-btn" title="Editar" data-act="cmt-edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
@@ -5518,7 +5546,7 @@ function renderCmtTable(container, list){
     return;
   }
   container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
-    '<th>Data</th><th>Horário</th><th>Categoria</th><th>Local</th><th>Detalhe</th><th>Calendário</th><th></th>'+
+    '<th>Data</th><th>Horário</th><th>Categoria</th><th>Local</th><th>Detalhe</th><th>Agenda de Eventos</th><th></th>'+
     '</tr></thead><tbody>'+list.map(cmtTableRowHTML).join('')+'</tbody></table></div>';
 }
 function renderCmtCategoriaFilterSeg(){
@@ -5585,29 +5613,38 @@ function maybeRefreshCmtAgenda(){
 }
 function cmtFormModalHTML(ev){
   ev = ev || {};
+  /* v6.6: modal "travado" — cabeçalho e botões de ação (Excluir/Lançar)
+     ficam sempre fixos, só a área de campos (.cmt-form-fields) rola por
+     dentro quando não coube tudo na tela. Antes o .modal-box inteiro
+     (cabeçalho incluso) rolava junto com a página — funcionava, mas dava a
+     sensação de "tela solta" em vez de travada, a pedido do DG. Mesmo
+     espírito do .form-modal/.mov-modal (cabeçalho/rodapé fixos), só que
+     sem ir pra tela cheia, já que este formulário é bem mais curto. */
   return '<div class="modal-head"><h3>'+(ev.id?'Editar Compromisso':'Novo Compromisso')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
     '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Compromisso pessoal/institucional do comando — visível só para usuários logados no painel.</p>'+
     '<form id="cmtAgendaForm">'+
-      '<div class="field">'+
-        '<div class="field-label-row"><label for="cmt-f-categoria">Categoria</label>'+
-        '<button type="button" class="btn btn-sm btn-ghost field-edit-btn" id="btnEditCmtCategorias" title="Adicionar, reordenar ou remover categorias sem sair desta tela">&#9998; editar</button></div>'+
-        '<select id="cmt-f-categoria" required>'+cmtCategoriaOptionsHTML(ev.modalidade)+'</select>'+
+      '<div class="cmt-form-fields">'+
+        '<div class="field">'+
+          '<div class="field-label-row"><label for="cmt-f-categoria">Categoria</label>'+
+          '<button type="button" class="btn btn-sm btn-ghost field-edit-btn" id="btnEditCmtCategorias" title="Adicionar, reordenar ou remover categorias sem sair desta tela">&#9998; editar</button></div>'+
+          '<select id="cmt-f-categoria" required>'+cmtCategoriaOptionsHTML(ev.modalidade)+'</select>'+
+        '</div>'+
+        '<div class="grid grid-2" style="margin-top:10px;">'+
+          '<div class="field"><label for="cmt-f-data">Data</label><input type="date" id="cmt-f-data" value="'+esc(ev.data||'')+'" required /></div>'+
+          '<div class="field"><label for="cmt-f-data-fim">Até (opcional — ex.: férias)</label><input type="date" id="cmt-f-data-fim" value="'+esc(ev.dataFim||'')+'" /></div>'+
+        '</div>'+
+        '<div class="grid grid-2" style="margin-top:10px;">'+
+          '<div class="field"><label for="cmt-f-hi">Hora início (opcional)</label><select id="cmt-f-hi"></select></div>'+
+          '<div class="field"><label for="cmt-f-ht">Hora término (opcional)</label><select id="cmt-f-ht"></select></div>'+
+        '</div>'+
+        '<div class="field" style="margin-top:10px;"><label for="cmt-f-local">Local (opcional)</label><input type="text" id="cmt-f-local" value="'+esc(ev.localRef||'')+'" placeholder="Ex.: Hospital Municipal, Sala 3" /></div>'+
+        '<div class="field" style="margin-top:10px;"><label for="cmt-f-assunto">Detalhe / observação (opcional)</label><textarea id="cmt-f-assunto" rows="3" placeholder="Ex.: Cardiologista — Dr. Fulano, 14h">'+esc(ev.assunto||'')+'</textarea></div>'+
+        '<label class="field-check" style="margin-top:12px;display:flex;align-items:flex-start;gap:8px;">'+
+          '<input type="checkbox" id="cmt-f-visivel-cal"'+(ev.visivelCalendario===false ? '' : ' checked')+' style="margin-top:3px;" />'+
+          '<span><strong style="display:block;">Mostrar na Agenda de Eventos</strong>'+
+          '<span style="display:block;color:var(--ink-3);font-size:12px;margin-top:2px;">Além desta aba, o compromisso também aparece no Calendário, nos Cards/Lista e nos Relatórios da Agenda de Eventos, como se fosse um evento comum. Desmarque para compromissos que devem ficar só aqui (ex.: consulta médica).</span></span>'+
+        '</label>'+
       '</div>'+
-      '<div class="grid grid-2" style="margin-top:10px;">'+
-        '<div class="field"><label for="cmt-f-data">Data</label><input type="date" id="cmt-f-data" value="'+esc(ev.data||'')+'" required /></div>'+
-        '<div class="field"><label for="cmt-f-data-fim">Até (opcional — ex.: férias)</label><input type="date" id="cmt-f-data-fim" value="'+esc(ev.dataFim||'')+'" /></div>'+
-      '</div>'+
-      '<div class="grid grid-2" style="margin-top:10px;">'+
-        '<div class="field"><label for="cmt-f-hi">Hora início (opcional)</label><select id="cmt-f-hi"></select></div>'+
-        '<div class="field"><label for="cmt-f-ht">Hora término (opcional)</label><select id="cmt-f-ht"></select></div>'+
-      '</div>'+
-      '<div class="field" style="margin-top:10px;"><label for="cmt-f-local">Local (opcional)</label><input type="text" id="cmt-f-local" value="'+esc(ev.localRef||'')+'" placeholder="Ex.: Hospital Municipal, Sala 3" /></div>'+
-      '<div class="field" style="margin-top:10px;"><label for="cmt-f-assunto">Detalhe / observação (opcional)</label><textarea id="cmt-f-assunto" rows="3" placeholder="Ex.: Cardiologista — Dr. Fulano, 14h">'+esc(ev.assunto||'')+'</textarea></div>'+
-      '<label class="field-check" style="margin-top:12px;display:flex;align-items:flex-start;gap:8px;">'+
-        '<input type="checkbox" id="cmt-f-visivel-cal"'+(ev.visivelCalendario===false ? '' : ' checked')+' style="margin-top:3px;" />'+
-        '<span><strong style="display:block;">Mostrar no Calendário</strong>'+
-        '<span style="display:block;color:var(--ink-3);font-size:12px;margin-top:2px;">Desmarque para compromissos que devem ficar só nesta aba (ex.: consulta médica) — não aparecem no Calendário geral, mas continuam visíveis aqui pra quem tem acesso à Agenda do Cmt.</span></span>'+
-      '</label>'+
       '<div class="login-err" id="cmtFormErr"></div>'+
       '<div class="modal-actions">'+
         (ev.id ? '<button type="button" class="btn btn-danger btn-sm" id="cmtFormDelBtn">Excluir</button>' : '')+
@@ -5619,6 +5656,7 @@ function openCmtAgendaForm(id){
   if(!canManageCmtAgenda()){ showToast('Você não tem permissão para lançar na Agenda do Cmt.'); return; }
   var ev = id ? state.events.find(function(x){ return x.id===id && x.tipo==='pessoal'; }) : null;
   openModal(cmtFormModalHTML(ev||{}));
+  $('modalBox').classList.add('cmt-modal');
   populateTimeSelect($('cmt-f-hi'), true);
   populateTimeSelect($('cmt-f-ht'), true);
   $('cmt-f-hi').value = (ev && ev.horaInicio) || '';
@@ -6625,19 +6663,19 @@ function renderAccessChips(){
   if($('accessVistoriaChips')) $('accessVistoriaChips').innerHTML = accessChipsHTML(state.viaturasVistoriaLogins, 'access-vistoria-del');
 }
 
-function eventsForTipoSearch(includePessoal){
+function eventsForTipoSearch(){
   var tipo = state.filterTipo;
   var q = (state.search||'').trim().toLowerCase();
-  /* Compromissos da Agenda do Cmt (tipo "pessoal") não entram nos Cards/Lista
-     da Agenda geral nem nos Relatórios — só no Calendário (a pedido do DG),
-     e mesmo aí só quando o filtro de tipo está em "Todos" (escolher
-     Operacional/Administrativo continua mostrando só aquele tipo) e só os
-     que a própria servidora marcou como "Mostrar no Calendário" ao lançar —
-     um compromisso pessoal pode ficar só na aba, sem aparecer no Calendário
-     geral (ex.: consulta médica). */
-  var list = includePessoal
-    ? state.events.filter(function(e){ return e.tipo!=='pessoal' || e.visivelCalendario!==false; })
-    : state.events.filter(function(e){ return e.tipo!=='pessoal'; });
+  /* v6.6: compromissos da Agenda do Cmt (tipo "pessoal") entram junto no
+     Calendário, nos Cards/Lista e nos Relatórios da Agenda de Eventos — a
+     mesma caixa "Mostrar na Agenda de Eventos" do formulário do compromisso
+     controla os quatro de uma vez (antes só valia pro Calendário, a pedido
+     do DG; ele mesmo pediu a unificação depois de lançar um compromisso e
+     não vê-lo nos Cards/Lista). Continuam de fora só quando desmarcados
+     (ex.: consulta médica) — e mesmo os marcados só aparecem quando o
+     filtro de tipo está em "Todos" (Operacional/Administrativo continuam
+     mostrando só aquele tipo, já que "pessoal" não é nenhum dos dois). */
+  var list = state.events.filter(function(e){ return e.tipo!=='pessoal' || e.visivelCalendario!==false; });
   if(tipo !== 'todos') list = list.filter(function(e){ return e.tipo===tipo; });
   if(state.cmtParticipaFilter) list = list.filter(function(e){ return !!e.cmtParticipa; });
   if(q){
@@ -6792,12 +6830,19 @@ function tableRowHTML(e){
      longa. Os detalhes completos (recursos, efetivo, atuação, solicitante,
      ações de editar/duplicar/excluir) continuam a um clique, no modal de
      detalhe do evento (a linha inteira já abre o modal via data-act="view"). */
+  /* v6.6: compromissos visíveis da Agenda do Cmt (tipo "pessoal") podem
+     aparecer aqui junto — mantém as mesmas 4 colunas, mas com rótulo/
+     conteúdo próprios (não tem recursos/efetivo/endereço institucional). */
+  var tipoLabel = e.tipo==='operacional' ? 'Operacional' : (e.tipo==='administrativo' ? 'Administrativo' : 'Compromisso');
+  var localCell = e.tipo==='pessoal'
+    ? esc(e.localRef||'—')+(e.modalidade ? '<br><span style="color:var(--ink-3);font-size:11px;">'+esc(e.modalidade)+'</span>' : '')
+    : esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span>';
   return ''+
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
-    '<td>'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
+    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
+    '<td>'+localCell+'</td>'+
   '</tr>';
 }
 function renderTable(container, list){
@@ -6811,7 +6856,7 @@ function renderTable(container, list){
 }
 
 function renderMain(){
-  $('tabCountAll').textContent = state.events.filter(function(e){ return e.tipo!=='pessoal'; }).length;
+  $('tabCountAll').textContent = state.events.filter(function(e){ return e.tipo!=='pessoal' || e.visivelCalendario!==false; }).length;
   maybeRefreshRelatorio();
   maybeRefreshCmtAgenda();
   var calWrap = $('calendarWrap'), grid = $('eventGrid'), empty = $('emptyState'), tblWrap = $('tableWrap');
@@ -6822,9 +6867,7 @@ function renderMain(){
   empty.style.display = 'none';
 
   if(state.viewMode === 'calendario'){
-    /* Só no Calendário os compromissos da Agenda do Cmt entram junto — Cards,
-       Lista e Relatórios continuam sem eles (ver eventsForTipoSearch). */
-    var filtered = eventsForTipoSearch(true);
+    var filtered = eventsForTipoSearch();
     var effPeriod = state.period === 'todos' ? 'mes' : state.period;
     calWrap.style.display = '';
     if(effPeriod==='dia') renderDayList(calWrap, state.anchorDate, filtered);
@@ -6834,7 +6877,7 @@ function renderMain(){
     return;
   }
 
-  var filtered = eventsForTipoSearch(false);
+  var filtered = eventsForTipoSearch();
   var list = applyPeriodRange(filtered, state.period, state.anchorDate);
   var todayIsoOrd = toISODate(new Date());
   list.sort(function(a,b){
@@ -6868,7 +6911,10 @@ function renderMain(){
     empty.style.display = 'block';
     return;
   }
-  grid.innerHTML = list.map(cardHTML).join('');
+  /* v6.6: compromissos da Agenda do Cmt marcados como visíveis podem cair
+     aqui junto com os eventos normais — usa o card compacto próprio deles
+     (mesmo despacho já usado no Dia do Calendário, ver renderDayList). */
+  grid.innerHTML = list.map(function(e){ return e.tipo==='pessoal' ? cmtCardHTML(e) : cardHTML(e); }).join('');
 }
 
 /* ---------------- form: type + efetivo + modalidade ---------------- */
@@ -7300,7 +7346,11 @@ function relFilteredEvents(){
   var integ = ($('rel-integrante').value||'').trim().toLowerCase();
   var motivo = ($('rel-motivo').value||'').trim().toLowerCase();
   return state.events.filter(function(e){
-    if(e.tipo==='pessoal') return false;
+    /* v6.6: compromissos da Agenda do Cmt entram no Relatório junto com os
+       eventos normais quando marcados como "Mostrar na Agenda de Eventos"
+       — mesma caixa que já controla Calendário e Cards/Lista (ver
+       eventsForTipoSearch()). Continuam de fora quando desmarcados. */
+    if(e.tipo==='pessoal' && e.visivelCalendario===false) return false;
     var eDataFim = e.dataFim || e.data;
     if(di && (!e.data || eDataFim < di)) return false;
     if(df && (!e.data || e.data > df)) return false;
@@ -7351,8 +7401,8 @@ function buildFilteredTableHTML(fieldsConfig, selectedKeys, items){
 var EVENTOS_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
   {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'; }},
-  {key:'tipo', label:'Tipo', th:'<th>Tipo</th>', td:function(e){ return '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span></td>'; }},
-  {key:'local', label:'Local', th:'<th class="th-local">Local</th>', td:function(e){ var addr=e.endereco||{}; return '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'; }},
+  {key:'tipo', label:'Tipo', th:'<th>Tipo</th>', td:function(e){ return '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':(e.tipo==='administrativo'?'Administrativo':'Compromisso'))+'</span></td>'; }},
+  {key:'local', label:'Local', th:'<th class="th-local">Local</th>', td:function(e){ var addr=e.endereco||{}; var sub = e.tipo==='pessoal' ? (e.modalidade||'') : [addr.bairro,addr.cidade].filter(Boolean).join(', '); return '<td class="tbl-local">'+esc(e.localRef||(e.tipo==='pessoal'?'—':''))+(sub?'<br><span style="color:var(--ink-3);font-size:11px;">'+esc(sub)+'</span>':'')+'</td>'; }},
   {key:'recursos', label:'Recursos', th:'<th>Recursos</th>', td:function(e){ var recursoTags=(e.recursos||[]).map(function(r){return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+recursoTags+'</div></td>'; }},
   {key:'efetivo', label:'Efetivo', th:'<th>Efetivo</th>', td:function(e){ var efetivoTags=(e.efetivo||[]).map(function(p){return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'; }},
   {key:'atuacao', label:'Atuação/Modalidade', th:'<th>Atuação</th>', td:function(e){ return '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'; }},
@@ -7365,7 +7415,7 @@ var CMT_REL_FIELDS = [
   {key:'categoria', label:'Categoria', th:'<th>Categoria</th>', td:function(e){ return '<td>'+esc(e.modalidade||'—')+'</td>'; }},
   {key:'local', label:'Local', th:'<th>Local</th>', td:function(e){ return '<td>'+(e.localRef ? esc(e.localRef) : '<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'detalhe', label:'Detalhe', th:'<th>Detalhe</th>', td:function(e){ return '<td>'+(e.assunto ? esc(e.assunto) : '<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
-  {key:'calendario', label:'Status no Calendário', th:'<th>Calendário</th>', td:function(e){ return '<td>'+(e.visivelCalendario===false ? 'Oculto (só nesta aba)' : 'Visível')+'</td>'; }}
+  {key:'calendario', label:'Status na Agenda de Eventos', th:'<th>Agenda de Eventos</th>', td:function(e){ return '<td>'+(e.visivelCalendario===false ? 'Oculto (só nesta aba)' : 'Visível (Calendário/Cards/Lista/Relatórios)')+'</td>'; }}
 ];
 var LOGLIC_REL_FIELDS = [
   {key:'area', label:'Área', th:'<th>Área</th>', td:function(it){ return '<td>'+(it.area==='logistica'?'Logística':'Licitações')+'</td>'; }},
@@ -7418,11 +7468,12 @@ function relTableRowHTML(e){
   var addr = e.endereco||{};
   var recursoTags = (e.recursos||[]).map(function(r){ return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>'; }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
   var efetivoTags = (e.efetivo||[]).map(function(p){ return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>'; }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
+  var tipoLabel = e.tipo==='operacional' ? 'Operacional' : (e.tipo==='administrativo' ? 'Administrativo' : 'Compromisso');
   return ''+
   '<tr>'+
     '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':'Administrativo')+'</span></td>'+
+    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
@@ -7435,6 +7486,10 @@ function renderRelatorio(){
   var list = relFilteredEvents();
   var op = list.filter(function(e){ return e.tipo==='operacional'; }).length;
   var adm = list.filter(function(e){ return e.tipo==='administrativo'; }).length;
+  /* v6.6: compromissos da Agenda do Cmt marcados como visíveis entram no
+     total do filtro — contagem própria, já que não são nem Operacional
+     nem Administrativo. */
+  var cmt = list.filter(function(e){ return e.tipo==='pessoal'; }).length;
   var totRecursos = list.reduce(function(s,e){ return s + (e.recursos||[]).reduce(function(s2,r){ return s2 + (Number(r.quantidade)||0); }, 0); }, 0);
   var integrantesSet = {};
   list.forEach(function(e){ (e.efetivo||[]).forEach(function(p){ integrantesSet[p.matricula] = true; }); });
@@ -7448,6 +7503,7 @@ function renderRelatorio(){
     '<div class="rel-kpi"><div class="num">'+list.length+'</div><div class="lbl">Eventos no filtro</div></div>'+
     '<div class="rel-kpi"><div class="num">'+op+'</div><div class="lbl">Operacionais</div></div>'+
     '<div class="rel-kpi"><div class="num">'+adm+'</div><div class="lbl">Administrativos</div></div>'+
+    (cmt ? '<div class="rel-kpi"><div class="num">'+cmt+'</div><div class="lbl">Compromissos (Agenda do Cmt)</div></div>' : '')+
     '<div class="rel-kpi"><div class="num">'+totRecursos+'</div><div class="lbl">Recursos empregados</div></div>'+
     '<div class="rel-kpi"><div class="num">'+totIntegrantes+'</div><div class="lbl">Integrantes distintos</div></div>';
 
@@ -7481,6 +7537,7 @@ function relPrintReportHTML(selectedKeys){
   var list = relFilteredEvents();
   var op = list.filter(function(e){ return e.tipo==='operacional'; }).length;
   var adm = list.filter(function(e){ return e.tipo==='administrativo'; }).length;
+  var cmt = list.filter(function(e){ return e.tipo==='pessoal'; }).length;
   var totRecursos = list.reduce(function(s,e){ return s + (e.recursos||[]).reduce(function(s2,r){ return s2 + (Number(r.quantidade)||0); }, 0); }, 0);
   var integrantesSet = {};
   list.forEach(function(e){ (e.efetivo||[]).forEach(function(p){ integrantesSet[p.matricula] = true; }); });
@@ -7500,6 +7557,7 @@ function relPrintReportHTML(selectedKeys){
       '<div class="rel-kpi"><div class="num">'+list.length+'</div><div class="lbl">Eventos no filtro</div></div>'+
       '<div class="rel-kpi"><div class="num">'+op+'</div><div class="lbl">Operacionais</div></div>'+
       '<div class="rel-kpi"><div class="num">'+adm+'</div><div class="lbl">Administrativos</div></div>'+
+      (cmt ? '<div class="rel-kpi"><div class="num">'+cmt+'</div><div class="lbl">Compromissos (Agenda do Cmt)</div></div>' : '')+
       '<div class="rel-kpi"><div class="num">'+totRecursos+'</div><div class="lbl">Recursos empregados</div></div>'+
       '<div class="rel-kpi"><div class="num">'+totIntegrantes+'</div><div class="lbl">Integrantes distintos</div></div>'+
     '</div>'+
@@ -7520,11 +7578,12 @@ function openPrintOverlayHTML(html){
 }
 
 /* ---------------- relatório restrito: Agenda do Cmt ----------------
-   Espelha a lógica de relFilteredEvents()/relTableRowHTML(), mas só para
-   compromissos tipo "pessoal" — o mesmo tipo que relFilteredEvents()
-   exclui do Relatório geral. Fica de propósito fora de initRelFilters()/
-   renderRelatorio(): essa impressão só existe dentro da própria aba
-   Agenda do Cmt, nunca em Relatórios. */
+   Espelha a lógica de relFilteredEvents()/relTableRowHTML(), mas reúne
+   TODOS os compromissos tipo "pessoal" do período (inclusive os
+   desmarcados de "Mostrar na Agenda de Eventos", que o Relatório geral
+   não traz — ver relFilteredEvents()). Fica de propósito fora de
+   initRelFilters()/renderRelatorio(): essa impressão só existe dentro da
+   própria aba Agenda do Cmt, nunca em Relatórios. */
 function cmtRelFilteredEvents(){
   var diEl = $('cmt-rel-data-ini'), dfEl = $('cmt-rel-data-fim');
   var di = diEl ? diEl.value : '', df = dfEl ? dfEl.value : '';
