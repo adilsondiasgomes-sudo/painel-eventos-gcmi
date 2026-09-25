@@ -1563,6 +1563,11 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 }
 .modal-overlay.show{opacity:1;}
 .modal-overlay[hidden]{display:none;}
+/* v6.5: overlay secundário (empilhado acima do #modalOverlay) usado pelo
+   atalho "✎ Editar" quando acionado de dentro de um formulário que já está
+   dentro do #modalOverlay (ex.: Categoria, na Agenda do Cmt) — ver
+   openModal2()/openQuickListModal() em app.js. */
+#modalOverlay2{z-index:80;}
 .modal-box{
   width:100%;max-width:720px;
   background:linear-gradient(160deg, var(--bg-card-hi), var(--bg-card) 60%);
@@ -2089,7 +2094,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.4 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.5 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2436,6 +2441,14 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
   <div class="modal-box" id="modalBox"></div>
 </div>
 
+<!-- v6.5: overlay secundário, empilhado acima do #modalOverlay — usado pelo
+     atalho rápido "✎ Editar" (openQuickListModal) quando aberto de dentro de
+     um formulário que já está, ele mesmo, dentro do #modalOverlay (caso da
+     Agenda do Cmt), pra não substituir/perder o formulário em edição. -->
+<div class="modal-overlay" id="modalOverlay2" hidden>
+  <div class="modal-box" id="modalBox2"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const ROSTER_BASE=[
@@ -2711,6 +2724,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.5', date: '25/09/2026',
+    changes: [
+      'Agenda do Cmt: o formulário de Novo/Editar Compromisso ganhou o mesmo atalho "✎ Editar" das telas de Lançar Evento — o botão ao lado do campo "Categoria" abre um modal para adicionar, remover e reordenar as categorias, sem sair do lançamento do compromisso e sem perder o que já estava preenchido no formulário.',
+      'Novo campo "Local (opcional)" no formulário de Compromisso da Agenda do Cmt (ex.: "Hospital Municipal, Sala 3") — aparece nos cards, na visão Lista (nova coluna) e no relatório impresso/exportado da Agenda do Cmt, quando preenchido.'
+    ]
+  },
   {
     version: 'v6.4', date: '23/09/2026',
     changes: [
@@ -3667,6 +3687,7 @@ function fetchConfigAll(){
     renderResourceSelect(); renderCfgResources();
     renderParticipantSelect(); renderCfgParticipants();
     renderModalidadeOptions(); renderCfgModalidades();
+    renderCmtCategoriaChips(); renderCmtCategoriaFilterSeg(); renderCmtCategoriaSelect(); renderReorderableList('cmt-categorias');
     renderCfgGestao();
     renderEfetivoList(); renderRosterGrid();
     renderAccessChips();
@@ -4216,6 +4237,9 @@ function saveCmtCategorias(items){
   if(mode==='live'){ return upsertConfig('cmt-categorias', {items:items}).then(function(){ return fetchConfigAll(); }); }
   saveLS(LS_KEYS.cmtCat, items);
   renderCmtCategoriaChips();
+  renderCmtCategoriaFilterSeg();
+  renderCmtCategoriaSelect();
+  renderReorderableList('cmt-categorias');
   return Promise.resolve();
 }
 function saveCmtAgendaEmails(items){
@@ -5228,6 +5252,22 @@ function closeModal(){
   movModalCtx = null;
   setTimeout(function(){ $('modalOverlay').hidden = true; $('modalBox').innerHTML=''; $('modalBox').className = 'modal-box'; }, 150);
 }
+/* v6.5: segundo overlay, empilhado acima do #modalOverlay — só usado pelo
+   atalho rápido de listas (openQuickListModal) quando ele é aberto de
+   dentro de um formulário que já está, ele mesmo, dentro do #modalOverlay
+   (caso da Categoria na Agenda do Cmt), pra não substituir/perder o
+   formulário em edição por baixo. Nos outros usos (Referência do local,
+   Participantes, Modalidade — todos em formulários fora do #modalOverlay)
+   o comportamento visual fica idêntico ao de antes. */
+function openModal2(html){
+  $('modalBox2').innerHTML = html;
+  $('modalOverlay2').hidden = false;
+  requestAnimationFrame(function(){ $('modalOverlay2').classList.add('show'); });
+}
+function closeModal2(){
+  $('modalOverlay2').classList.remove('show');
+  setTimeout(function(){ $('modalOverlay2').hidden = true; $('modalBox2').innerHTML=''; }, 150);
+}
 /* Modal de formulário em tela cheia, dividido em abas quando o conteúdo é
    grande demais pra caber numa tela só sem rolar (Nova/Editar Licitação,
    Nova/Editar Ocorrência de Logística) — mesmo espírito do .mov-modal
@@ -5411,6 +5451,18 @@ function cardHTML(e){
 function cmtCategoriaOptionsHTML(current){
   return state.cmtCategorias.map(function(c){ return '<option value="'+esc(c)+'"'+(c===current?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
 }
+/* v6.5: refresca as opções do <select> de Categoria do formulário de
+   Compromisso (Agenda do Cmt), preservando a seleção atual quando ainda
+   existir — mesmo espírito de renderRefSelect()/renderResourceSelect(),
+   mas com guarda de existência porque, ao contrário de #f-ref (sempre
+   presente na tela do formulário principal), #cmt-f-categoria só existe
+   enquanto o modal de Novo/Editar Compromisso estiver aberto. */
+function renderCmtCategoriaSelect(){
+  var sel = $('cmt-f-categoria'); if(!sel) return;
+  var current = sel.value;
+  sel.innerHTML = cmtCategoriaOptionsHTML(current);
+  if(current && state.cmtCategorias.indexOf(current)!==-1) sel.value = current;
+}
 function cmtCardHTML(e){
   var canEdit = canManageCmtAgenda();
   return ''+
@@ -5423,6 +5475,7 @@ function cmtCardHTML(e){
       '</div>' : '')+
     '</div>'+
     '<div class="ec-when"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span>'+(e.horaInicio ? '<span class="ec-time mono">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>' : '')+'</div>'+
+    (e.localRef ? '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef)+'</span></div>' : '')+
     (e.assunto ? '<div class="ec-row"><span class="k">Detalhe</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (e.visivelCalendario===false ? '<div class="ec-row"><span class="k">Calendário</span><span style="color:var(--ink-3);">Oculto (só nesta aba)</span></div>' : '')+
   '</article>';
@@ -5448,6 +5501,7 @@ function cmtTableRowHTML(e){
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+(e.horaInicio ? esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--') : '&mdash;')+'</td>'+
     '<td>'+esc(e.modalidade||'Compromisso')+'</td>'+
+    '<td>'+(e.localRef?esc(e.localRef):'&mdash;')+'</td>'+
     '<td>'+(e.assunto?esc(e.assunto):'&mdash;')+'</td>'+
     '<td>'+(e.visivelCalendario===false ? '<span style="color:var(--ink-3);">Oculto</span>' : '<span style="color:var(--ink-3);">Visível</span>')+'</td>'+
     '<td class="tbl-actions">'+
@@ -5464,7 +5518,7 @@ function renderCmtTable(container, list){
     return;
   }
   container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
-    '<th>Data</th><th>Horário</th><th>Categoria</th><th>Detalhe</th><th>Calendário</th><th></th>'+
+    '<th>Data</th><th>Horário</th><th>Categoria</th><th>Local</th><th>Detalhe</th><th>Calendário</th><th></th>'+
     '</tr></thead><tbody>'+list.map(cmtTableRowHTML).join('')+'</tbody></table></div>';
 }
 function renderCmtCategoriaFilterSeg(){
@@ -5534,7 +5588,11 @@ function cmtFormModalHTML(ev){
   return '<div class="modal-head"><h3>'+(ev.id?'Editar Compromisso':'Novo Compromisso')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
     '<p style="color:var(--ink-3);font-size:12.5px;margin:-8px 0 14px;">Compromisso pessoal/institucional do comando — visível só para usuários logados no painel.</p>'+
     '<form id="cmtAgendaForm">'+
-      '<div class="field"><label for="cmt-f-categoria">Categoria</label><select id="cmt-f-categoria" required>'+cmtCategoriaOptionsHTML(ev.modalidade)+'</select></div>'+
+      '<div class="field">'+
+        '<div class="field-label-row"><label for="cmt-f-categoria">Categoria</label>'+
+        '<button type="button" class="btn btn-sm btn-ghost field-edit-btn" id="btnEditCmtCategorias" title="Adicionar, reordenar ou remover categorias sem sair desta tela">&#9998; editar</button></div>'+
+        '<select id="cmt-f-categoria" required>'+cmtCategoriaOptionsHTML(ev.modalidade)+'</select>'+
+      '</div>'+
       '<div class="grid grid-2" style="margin-top:10px;">'+
         '<div class="field"><label for="cmt-f-data">Data</label><input type="date" id="cmt-f-data" value="'+esc(ev.data||'')+'" required /></div>'+
         '<div class="field"><label for="cmt-f-data-fim">Até (opcional — ex.: férias)</label><input type="date" id="cmt-f-data-fim" value="'+esc(ev.dataFim||'')+'" /></div>'+
@@ -5543,6 +5601,7 @@ function cmtFormModalHTML(ev){
         '<div class="field"><label for="cmt-f-hi">Hora início (opcional)</label><select id="cmt-f-hi"></select></div>'+
         '<div class="field"><label for="cmt-f-ht">Hora término (opcional)</label><select id="cmt-f-ht"></select></div>'+
       '</div>'+
+      '<div class="field" style="margin-top:10px;"><label for="cmt-f-local">Local (opcional)</label><input type="text" id="cmt-f-local" value="'+esc(ev.localRef||'')+'" placeholder="Ex.: Hospital Municipal, Sala 3" /></div>'+
       '<div class="field" style="margin-top:10px;"><label for="cmt-f-assunto">Detalhe / observação (opcional)</label><textarea id="cmt-f-assunto" rows="3" placeholder="Ex.: Cardiologista — Dr. Fulano, 14h">'+esc(ev.assunto||'')+'</textarea></div>'+
       '<label class="field-check" style="margin-top:12px;display:flex;align-items:flex-start;gap:8px;">'+
         '<input type="checkbox" id="cmt-f-visivel-cal"'+(ev.visivelCalendario===false ? '' : ' checked')+' style="margin-top:3px;" />'+
@@ -5564,6 +5623,14 @@ function openCmtAgendaForm(id){
   populateTimeSelect($('cmt-f-ht'), true);
   $('cmt-f-hi').value = (ev && ev.horaInicio) || '';
   $('cmt-f-ht').value = (ev && ev.horaTermino) || '';
+  /* v6.5: mesmo atalho "✎ Editar" já usado em Referência do local/
+     Participantes/Modalidade, agora também pra Categoria — abre no overlay2
+     (empilhado) pra não perder o formulário de compromisso em edição por
+     baixo; ao fechar, atualiza o <select> preservando a seleção atual. */
+  $('btnEditCmtCategorias').addEventListener('click', function(e){
+    e.preventDefault();
+    openQuickListModal('cmt-categorias', 'Categorias da Agenda do Cmt', 'Adicione, remova ou reordene as categorias de compromisso — a ordem aqui é a mesma exibida no menu suspenso do formulário.', 'Nova categoria (ex.: Viagem)');
+  });
   var form = $('cmtAgendaForm');
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -5573,13 +5640,14 @@ function openCmtAgendaForm(id){
     var dataFim = $('cmt-f-data-fim').value;
     var horaInicio = $('cmt-f-hi').value;
     var horaTermino = $('cmt-f-ht').value;
+    var local = $('cmt-f-local').value.trim();
     var assunto = $('cmt-f-assunto').value.trim();
     var visivelCalendario = $('cmt-f-visivel-cal').checked;
     if(!categoria || !data){ errEl.textContent = 'Selecione a categoria e a data.'; return; }
     if(dataFim && dataFim < data){ errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return; }
     if(horaTermino && !horaInicio){ errEl.textContent = 'Informe também a hora início.'; return; }
     if(horaInicio && horaTermino && horaTermino < horaInicio){ errEl.textContent = 'A hora término não pode ser anterior à hora início.'; return; }
-    var payload = {tipo:'pessoal', data:data, dataFim:(dataFim && dataFim!==data ? dataFim : null), horaInicio:(horaInicio||null), horaTermino:(horaTermino||null), modalidade:categoria, assunto:(assunto||null), visivelCalendario:visivelCalendario};
+    var payload = {tipo:'pessoal', data:data, dataFim:(dataFim && dataFim!==data ? dataFim : null), horaInicio:(horaInicio||null), horaTermino:(horaTermino||null), modalidade:categoria, localRef:(local||null), assunto:(assunto||null), visivelCalendario:visivelCalendario};
     var btnSubmit = form.querySelector('button[type="submit"]'); if(btnSubmit) btnSubmit.disabled = true;
     var task = (ev && ev.id) ? updateEvent(ev.id, payload) : addEvent(Object.assign({createdAt:new Date().toISOString()}, payload));
     task.then(function(){
@@ -7133,7 +7201,8 @@ var REORDERABLE_LISTS = {
   'resource-types': { get: function(){ return state.resourceTypes; }, save: saveResourceTypes },
   'participant-types': { get: function(){ return state.participantTypes; }, save: saveParticipantTypes },
   'modalidades-operacional': { get: function(){ return state.modalidadesOperacional; }, save: saveModalidadesOperacional },
-  'modalidades-administrativo': { get: function(){ return state.modalidadesAdministrativo; }, save: saveModalidadesAdministrativo }
+  'modalidades-administrativo': { get: function(){ return state.modalidadesAdministrativo; }, save: saveModalidadesAdministrativo },
+  'cmt-categorias': { get: function(){ return state.cmtCategorias; }, save: saveCmtCategorias }
 };
 function reorderableRowHTML(listKey, value, i, total){
   return '<div class="cfg-row">'+
@@ -7175,7 +7244,9 @@ function openQuickListModal(listKey, title, hint, placeholder){
     '<div class="cfg-add"><input type="text" id="quickListInput" placeholder="'+esc(placeholder)+'" /><button type="button" class="btn btn-sm" id="quickListAdd">Adicionar</button></div>'+
     '<div class="cfg-list reorderable-list scroll" id="quickListBox" data-list="'+esc(listKey)+'" style="max-height:min(50vh,380px);">'+reorderableListHTML(listKey)+'</div>'+
     '<div class="modal-actions"><button type="button" class="btn btn-gold btn-sm" data-close="1">Concluído</button></div>';
-  openModal(html);
+  /* v6.5: usa o overlay2 (empilhado) em vez do #modalOverlay principal —
+     ver openModal2(). */
+  openModal2(html);
   $('quickListBox').addEventListener('click', handleReorderableListClick);
   $('quickListAdd').addEventListener('click', function(){
     var input = $('quickListInput'); var v = input.value.trim();
@@ -7292,6 +7363,7 @@ var CMT_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
   {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return e.horaInicio ? '<td class="tbl-time">'+esc(e.horaInicio)+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>' : '<td class="tbl-time">&mdash;</td>'; }},
   {key:'categoria', label:'Categoria', th:'<th>Categoria</th>', td:function(e){ return '<td>'+esc(e.modalidade||'—')+'</td>'; }},
+  {key:'local', label:'Local', th:'<th>Local</th>', td:function(e){ return '<td>'+(e.localRef ? esc(e.localRef) : '<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'detalhe', label:'Detalhe', th:'<th>Detalhe</th>', td:function(e){ return '<td>'+(e.assunto ? esc(e.assunto) : '<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'calendario', label:'Status no Calendário', th:'<th>Calendário</th>', td:function(e){ return '<td>'+(e.visivelCalendario===false ? 'Oculto (só nesta aba)' : 'Visível')+'</td>'; }}
 ];
@@ -7973,7 +8045,18 @@ $_onReady(function(){
       }
     }
   });
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !$('modalOverlay').hidden) closeModal(); });
+  /* v6.5: overlay2 (empilhado) — usado pelo atalho rápido de listas quando
+     aberto de dentro de um formulário que já está no #modalOverlay (ver
+     openModal2()/openQuickListModal()). Clique fora/no X/"Concluído" fecha
+     só o overlay2, deixando o formulário por baixo intacto. */
+  $('modalOverlay2').addEventListener('click', function(e){
+    if(e.target.id==='modalOverlay2' || e.target.closest('[data-close]')) closeModal2();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Escape') return;
+    if(!$('modalOverlay2').hidden){ closeModal2(); return; }
+    if(!$('modalOverlay').hidden) closeModal();
+  });
   $('cfgSubnav').addEventListener('click', function(e){
     var b = e.target.closest('button'); if(!b) return;
     goToCfgPane(b.dataset.cfgpane);
