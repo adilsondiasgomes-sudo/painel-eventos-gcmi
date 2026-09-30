@@ -1323,24 +1323,19 @@ details.roster-view summary{
 }
 #printOverlayContent .rel-print-area{max-width:960px;margin:0 auto;}
 
-/* Impressão isolada: somente uma cópia do relatório selecionado. */
-#printDocument{display:none}
 @media print{
- @page{size:A4 landscape;margin:12mm}
- html,body{height:auto!important;min-height:0!important;overflow:visible!important;background:white!important;padding:0!important;margin:0!important}
- body>*{display:none!important}
- body>#printDocument{display:block!important;position:static!important;width:100%!important;color:#172238;background:white}
- #printDocument *{visibility:visible!important;box-shadow:none!important;text-shadow:none!important;transform:none!important;animation:none!important}
- #printDocument .rel-print-area{max-width:none!important;width:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:white!important}
- #printDocument .table-wrap,#printDocument .rel-table-wrap{overflow:visible!important;height:auto!important;max-height:none!important;border:0!important}
- #printDocument table{width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:collapse!important}
- #printDocument th,#printDocument td{position:static!important;min-width:0!important;width:auto!important;white-space:normal!important;overflow-wrap:anywhere!important;padding:6px!important;font-size:9pt!important}
- #printDocument thead{display:table-header-group!important}
- #printDocument tr{break-inside:avoid}
- #printDocument .rel-letterhead,#printDocument .rel-kpis,#printDocument .rel-title,#printDocument .rel-meta{break-inside:avoid;break-after:avoid}
- #printDocument .rel-kpis{display:flex;flex-wrap:wrap}
- #printDocument .rel-kpi{flex:1;min-width:80px}
- #printDocument button{display:none!important}
+  body *{visibility:hidden;}
+  #relPrintArea, #relPrintArea *,
+  #printOverlayContent, #printOverlayContent *{visibility:visible;}
+  #relPrintArea{
+    position:absolute;left:0;top:0;width:100%;
+    border:none;box-shadow:none;padding:0;
+  }
+  #printOverlayContent{
+    position:absolute;left:0;top:0;width:100%;padding:0;
+  }
+  .print-overlay{position:static;background:none;}
+  .print-overlay-bar{display:none;}
 }
 
 /* ---------- auth widget ---------- */
@@ -1427,6 +1422,11 @@ footer.foot{
   background:var(--bg-list-row);box-shadow:0 20px 44px -30px rgba(15,25,50,.35);
 }
 table.ev-table{width:100%;border-collapse:collapse;min-width:900px;}
+/* v6.7: a Lista da Agenda geral tem só 4 colunas (Data/Horário/Local/Tipo) —
+   os 900px de largura mínima acima foram pensados pra tabela mais larga dos
+   Relatórios (.rel-ev-table, 9 colunas) e obrigavam essa tabela mais simples
+   a rolar na horizontal mesmo no celular. Aqui ela pode encolher bem mais. */
+table.ev-table:not(.rel-ev-table){min-width:480px;}
 table.ev-table thead th{
   text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--text-list-2);padding:13px 14px;
@@ -1716,7 +1716,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <nav class="tabs" id="tabsNav">
-  <button class="tab-btn active" data-view="agenda">Agenda de Eventos <span class="n" id="tabCountAll">0</span></button>
+  <button class="tab-btn active" data-view="agenda">Agenda <span class="n" id="tabCountAll">0</span></button>
   <button class="tab-btn" data-view="cmtagenda" hidden>Agenda do Cmt</button>
   <button class="tab-btn" data-view="logistica" hidden>Logística</button>
   <button class="tab-btn" data-view="licitacoes" hidden>Licitações</button>
@@ -2120,7 +2120,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.6 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.7 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2750,6 +2750,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v6.7', date: '30/09/2026',
+    changes: [
+      'Lista da Agenda de Eventos: a coluna Local passou a vir antes da coluna Tipo (é o dado buscado primeiro ao ler a lista), e o rótulo do Tipo foi abreviado (Oper./Adm./Comp.) — mais espaço sobra pra cada coluna, especialmente no celular, onde a tabela agora também encolhe bem mais antes de precisar rolar na horizontal.',
+      'A aba "Agenda de Eventos" na navegação principal passou a se chamar só "Agenda" — nome mais curto, cabe melhor na barra de abas no celular.'
+    ]
+  },
   {
     version: 'v6.6', date: '25/09/2026',
     changes: [
@@ -6831,14 +6838,18 @@ function renderSemesterGrid(container, anchor, filtered){
 function tableRowHTML(e){
   var addr = e.endereco||{};
   /* v5.4: a pedido do DG, a Lista da Agenda geral mostra só até o campo
-     Local (Data/Horário/Tipo/Local) — mais confortável de ler numa lista
+     Local (Data/Horário/Local/Tipo) — mais confortável de ler numa lista
      longa. Os detalhes completos (recursos, efetivo, atuação, solicitante,
      ações de editar/duplicar/excluir) continuam a um clique, no modal de
      detalhe do evento (a linha inteira já abre o modal via data-act="view"). */
   /* v6.6: compromissos visíveis da Agenda do Cmt (tipo "pessoal") podem
      aparecer aqui junto — mantém as mesmas 4 colunas, mas com rótulo/
      conteúdo próprios (não tem recursos/efetivo/endereço institucional). */
-  var tipoLabel = e.tipo==='operacional' ? 'Operacional' : (e.tipo==='administrativo' ? 'Administrativo' : 'Compromisso');
+  /* v6.7: a pedido do DG, Local passou a vir antes de Tipo (é o dado que a
+     servidora busca primeiro ao ler a lista) e o rótulo do Tipo foi
+     abreviado (Oper./Adm./Comp.) — pensado pra sobrar mais espaço na tela
+     do celular, onde a tabela costuma cortar o texto. */
+  var tipoLabel = e.tipo==='operacional' ? 'Oper.' : (e.tipo==='administrativo' ? 'Adm.' : 'Comp.');
   var localCell = e.tipo==='pessoal'
     ? esc(e.localRef||'—')+(e.modalidade ? '<br><span style="color:var(--ink-3);font-size:11px;">'+esc(e.modalidade)+'</span>' : '')
     : esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span>';
@@ -6846,8 +6857,8 @@ function tableRowHTML(e){
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
     '<td>'+localCell+'</td>'+
+    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
   '</tr>';
 }
 function renderTable(container, list){
@@ -6856,7 +6867,7 @@ function renderTable(container, list){
     return;
   }
   container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
-    '<th>Data</th><th>Horário</th><th>Tipo</th><th>Local</th>'+
+    '<th>Data</th><th>Horário</th><th>Local</th><th>Tipo</th>'+
     '</tr></thead><tbody>'+list.map(tableRowHTML).join('')+'</tbody></table></div>';
 }
 
@@ -7569,20 +7580,6 @@ function relPrintReportHTML(selectedKeys){
     '<div class="rel-table-wrap">'+tableHTML+'</div>'+
   '</div>';
 }
-function preparePrintDocument(){
- var old=document.getElementById('printDocument');if(old)old.remove();
- var overlay=$('printOverlay'),source;
- if(overlay&&!overlay.hidden)source=$('printOverlayContent');
- else{source=[$('relPrintArea'),$('loglicRelPrintArea')].find(function(el){return el&&el.getClientRects().length;});}
- if(!source)return;
- var root=document.createElement('div');root.id='printDocument';
- if(source.id==='printOverlayContent')root.innerHTML=source.innerHTML;
- else root.appendChild(source.cloneNode(true));
- root.querySelectorAll('[id]').forEach(function(el){el.removeAttribute('id');});
- document.body.appendChild(root);
-}
-window.addEventListener('beforeprint',preparePrintDocument);
-window.addEventListener('afterprint',function(){var root=$('printDocument');if(root)root.remove();});
 function closePrintOverlay(){ $('printOverlay').hidden = true; }
 /* Variante que injeta HTML já pronto no overlay, em vez de clonar um nó
    fixo do DOM — usada pelo relatório da Agenda do Cmt, que não mantém uma
