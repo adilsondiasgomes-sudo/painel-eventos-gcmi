@@ -1268,6 +1268,18 @@ details.roster-view summary{
 #btnBackupImport{margin-top:12px;}
 #btnBackupImport.confirm{background:var(--red-crest);color:#fff;border-color:var(--red-crest);}
 
+/* v7.0: documentos anexados aos eventos (ofícios/PDF) — mostrador de
+   armazenamento (puramente informativo, sem gatilho automático de aviso;
+   só conferência humana), exportação (.zip) e apagamento manual dos já
+   arquivados. */
+.doc-gauge-track{height:8px;border-radius:4px;background:var(--bg-panel-2);overflow:hidden;margin:8px 0 6px;}
+.doc-gauge-fill{height:100%;background:var(--gold);border-radius:4px;min-width:2px;transition:width .3s ease;}
+.doc-gauge-text{font-size:12.5px;color:var(--ink-2);line-height:1.6;}
+.doc-gauge-text strong{color:var(--ink-1);}
+#btnDocApagarArquivados.confirm{background:var(--red-crest);color:#fff;border-color:var(--red-crest);}
+.doc-field-current{font-size:12.5px;color:var(--ink-2);background:var(--bg-panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.doc-field-current .mono{font-family:var(--font-mono);font-size:11.5px;}
+
 /* ================= RELATORIOS =================
    Título "Relatórios" já aparece na barra superior compacta (subheader),
    então aqui o botão de imprimir entra direto na própria linha de filtros
@@ -1349,6 +1361,19 @@ details.roster-view summary{
   }
   .print-overlay{position:static;background:none;}
   .print-overlay-bar{display:none;}
+  /* v6.9: thead com position:sticky (usado para a tabela rolar na tela)
+     provoca um bug conhecido do Chrome/Edge ao imprimir tabelas longas que
+     quebram em mais de uma página — a última linha antes da quebra é
+     duplicada no topo da página seguinte. Sticky só faz sentido com rolagem
+     na tela; na impressão a tabela não rola, então aqui ele é desligado. */
+  #relPrintArea table.ev-table thead th,
+  #printOverlayContent table.ev-table thead th{
+    position:static;
+  }
+  #relPrintArea .table-wrap,
+  #printOverlayContent .table-wrap{
+    overflow:visible;
+  }
 }
 
 /* ---------- auth widget ---------- */
@@ -1951,6 +1976,16 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 <input type="checkbox" id="f-cmt-participa" style="margin-top:3px;" />
                 <label for="f-cmt-participa" style="margin:0;font-weight:400;">O Cmt participa (ou participou) deste evento</label>
               </div>
+              <div class="field" style="margin-top:14px;">
+                <label id="labelDocumento">Ofício de solicitação ou documento do evento (PDF, opcional)</label>
+                <input type="file" id="f-documento" accept="application/pdf,.pdf" hidden />
+                <div class="doc-field-current" id="documentoAtualInfo" hidden style="margin-bottom:8px;"></div>
+                <div class="backup-import-row">
+                  <button class="btn btn-sm" id="btnDocumentoChoose" type="button">Selecionar PDF…</button>
+                  <span class="backup-file-name" id="documentoFileName">Nenhum arquivo selecionado</span>
+                </div>
+                <p class="field-hint" style="margin-top:6px;">Tamanho máximo: 15&nbsp;MB. O arquivo fica guardado de forma privada — só quem acessa o painel consegue abri-lo.</p>
+              </div>
             </div>
           </div>
 
@@ -2052,7 +2087,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <div class="backup-box">
           <div class="backup-block">
             <h4>Exportar</h4>
-            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações), as Viaturas (com o histórico de status) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança.</p>
+            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações), as Viaturas (com o histórico de status) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança. (Os PDFs anexados aos eventos não entram aqui — use "Exportar documentos (.zip)", mais abaixo.)</p>
             <button class="btn btn-sm btn-gold" id="btnBackupExport" type="button">Exportar backup (.json)</button>
           </div>
           <div class="backup-block">
@@ -2065,6 +2100,18 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
             </div>
             <div class="backup-summary" id="backupSummary" hidden></div>
             <button class="btn btn-sm btn-danger" id="btnBackupImport" type="button" hidden>Substituir dados atuais</button>
+          </div>
+          <div class="backup-block" style="grid-column:1/-1;">
+            <h4>Documentos dos Eventos</h4>
+            <p>Ofícios/PDFs anexados aos eventos ficam no armazenamento de arquivos do Supabase (separado do banco de dados). O mostrador abaixo é só informativo — não há aviso ou apagamento automático; a conferência é sempre humana, por exemplo acompanhando também "Project Overview" no painel do Supabase.</p>
+            <div class="doc-gauge-text" id="docGaugeText">Carregando uso de armazenamento…</div>
+            <div class="doc-gauge-track"><div class="doc-gauge-fill" id="docGaugeFill" style="width:0%;"></div></div>
+            <div class="backup-import-row" style="margin-top:10px;">
+              <button class="btn btn-sm" id="btnDocGaugeRefresh" type="button">Atualizar</button>
+              <button class="btn btn-sm btn-gold" id="btnDocExportZip" type="button">Exportar documentos (.zip)</button>
+              <button class="btn btn-sm btn-danger" id="btnDocApagarArquivados" type="button">Apagar documentos já arquivados</button>
+            </div>
+            <p class="field-hint" style="margin-top:10px;margin-bottom:0;">"Apagar documentos já arquivados" remove definitivamente, do armazenamento da nuvem, os arquivos dos eventos — recomenda-se exportar o .zip acima antes. O evento continua existindo, só passa a mostrar que o documento foi arquivado localmente.</p>
           </div>
         </div>
       </div>
@@ -2133,7 +2180,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v6.8 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.0 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2489,6 +2536,10 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- v7.0: JSZip — usado só pela exportação manual "Exportar documentos"
+     (gera um .zip com os PDFs anexados aos eventos + um manifesto). Versão
+     fixa (3.10.1) para não quebrar com uma atualização da lib no CDN. -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
 const ROSTER_BASE=[
 {m:'140218-2',n:'ADALTON MARTINS DORNELAS',f:'Adalton'},
@@ -2763,6 +2814,19 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.0', date: '28/10/2026',
+    changes: [
+      'Novo: cada evento pode receber em anexo uma cópia do ofício de solicitação (ou outro documento, em PDF, até 15 MB) — fica guardado de forma privada no armazenamento do Supabase, com um botão "Ver documento" na tela de detalhe do evento.',
+      'Novo, em Configurações → Backup de Dados: um mostrador do espaço ocupado pelos documentos anexados (só informativo — sem aviso nem apagamento automático; a conferência é sempre feita por uma pessoa), um botão para exportar todos os documentos num único .zip (com um manifesto listando evento/data/solicitante de cada um) e um botão separado para apagar do armazenamento da nuvem os documentos já arquivados — cada apagamento é uma ação manual, nunca ligada a limite de espaço ou à exportação, e o evento continua mostrando que o documento foi "arquivado localmente" em tal data.'
+    ]
+  },
+  {
+    version: 'v6.9', date: '28/10/2026',
+    changes: [
+      'Corrigido: ao imprimir (ou salvar em PDF) um Relatório de Eventos com muitas linhas, a última linha de cada página podia aparecer duplicada no topo da página seguinte. Era um efeito colateral do cabeçalho "fixo" da tabela (usado para rolar a tela sem perder os títulos das colunas), que não se comporta bem quando o navegador quebra a tabela em várias páginas de impressão — foi desligado só na impressão, onde não faz falta.'
+    ]
+  },
   {
     version: 'v6.8', date: '01/10/2026',
     changes: [
@@ -3299,6 +3363,7 @@ var movModalCtx = null;
 var pendingRosterDelete = null;
 var pendingBackupPayload = null;
 var pendingBackupConfirm = false;
+var pendingDocApagarConfirm = false;
 
 /* ---------------- helpers ---------------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -3422,7 +3487,8 @@ function toDbRow(e){
     observacoes: e.observacoes||null,
     visivel_calendario: (e.visivelCalendario===false ? false : true),
     cmt_participa: !!e.cmtParticipa,
-    exemplo: !!e.exemplo
+    exemplo: !!e.exemplo,
+    documento: (e.documento===undefined ? null : e.documento)
   };
   if(e.createdAt) row.created_at = e.createdAt;
   return row;
@@ -3435,6 +3501,10 @@ function fromDbRow(r){
     observacoes:r.observacoes||null, exemplo:!!r.exemplo,
     visivelCalendario: (r.visivel_calendario===false ? false : true),
     cmtParticipa: !!r.cmt_participa,
+    /* v7.0: {path,nome,tamanho,tipo,enviadoEm} enquanto o arquivo está no
+       Storage; depois de "Apagar documentos já arquivados" o path some e
+       fica só {nome,tamanho,arquivadoEm} (nunca uma referência quebrada). */
+    documento: r.documento||null,
     createdAt:r.created_at
   };
 }
@@ -4423,7 +4493,11 @@ function backupExportPayload(){
         localRef:e.localRef, endereco:e.endereco||{}, efetivo:e.efetivo||[], recursos:e.recursos||[],
         modalidade:e.modalidade||null, assunto:e.assunto||null, encerramento:e.encerramento||null, solicitante:e.solicitante||null, contato:e.contato||null,
         observacoes:e.observacoes||null,
-        exemplo:!!e.exemplo, createdAt:e.createdAt||null
+        exemplo:!!e.exemplo, createdAt:e.createdAt||null,
+        /* v7.0: só a referência/metadado do documento (nome, caminho no
+           Storage, tamanho) — nunca o PDF em si, que não entra no .json de
+           backup (ver "Exportar documentos (.zip)", separado, pra isso). */
+        documento: e.documento||null
       };
     }),
     logistica: (state.logistica||[]).map(function(p){
@@ -4722,6 +4796,150 @@ function importBackupPayload(payload){
     return replaceAllViaturas(payload.viaturas||[]);
   }).then(function(){
     return replaceConfigAll(payload.config||{});
+  });
+}
+
+/* ---------------- Documentos de Evento: mostrador / exportar / apagar (v7.0) ----------------
+   Os três são independentes entre si e sempre disparados por ação humana:
+   não existe gatilho automático nenhum (nem aviso de limite, nem
+   apagamento) — a pedido explícito do DG. O mostrador é só informativo:
+   soma, em tempo real, o tamanho dos arquivos que já estão no bucket (não é
+   um contador separado guardado em algum lugar, então nunca fica
+   desatualizado por um apagamento feito fora do painel). */
+function requireDocAuth(){
+  if(!requireAuth()) return false;
+  if(mode==='live' && !canManageEventos()){
+    showToast('Você não tem permissão para gerenciar documentos de eventos.');
+    return false;
+  }
+  return true;
+}
+function _somarPastaDocumentos(pasta, offset, total){
+  return sb.storage.from(DOC_BUCKET).list(pasta, {limit:1000, offset:offset}).then(function(res){
+    if(res.error) throw res.error;
+    var itens = res.data||[];
+    var soma = total + itens.reduce(function(acc, it){ return acc + ((it.metadata && it.metadata.size) || 0); }, 0);
+    if(itens.length < 1000) return soma;
+    return _somarPastaDocumentos(pasta, offset+1000, soma);
+  });
+}
+function fetchDocumentosStorageUsageBytes(){
+  if(mode!=='live'){ return Promise.resolve(0); }
+  /* bucket tem subpastas por ano-mês (ver uploadEventoDocumento) — list('')
+     só lista as pastas em si, então é preciso somar pasta por pasta. */
+  return sb.storage.from(DOC_BUCKET).list('', {limit:1000}).then(function(res){
+    if(res.error) throw res.error;
+    var pastas = (res.data||[]).filter(function(it){ return it.id===null; }).map(function(it){ return it.name; });
+    if(!pastas.length) return 0;
+    return Promise.all(pastas.map(function(p){ return _somarPastaDocumentos(p, 0, 0); })).then(function(somas){
+      return somas.reduce(function(a,b){ return a+b; }, 0);
+    });
+  });
+}
+function fmtBytes(n){
+  if(!n || n<=0) return '0 KB';
+  var kb = n/1024;
+  if(kb < 1024) return kb.toFixed(kb<10?1:0)+' KB';
+  var mb = kb/1024;
+  if(mb < 1024) return mb.toFixed(mb<10?2:1)+' MB';
+  return (mb/1024).toFixed(2)+' GB';
+}
+function refreshDocumentosStorageGauge(){
+  var textEl = $('docGaugeText'), fillEl = $('docGaugeFill');
+  if(!textEl || !fillEl) return;
+  textEl.textContent = 'Carregando uso de armazenamento…';
+  if(mode!=='live'){
+    textEl.textContent = 'O uso de armazenamento fica disponível quando conectado ao Supabase.';
+    fillEl.style.width = '0%';
+    return;
+  }
+  fetchDocumentosStorageUsageBytes().then(function(bytes){
+    /* plano gratuito do Supabase inclui 1 GB de armazenamento de arquivos —
+       a barra é só uma referência visual dessa fração, sem nenhum aviso
+       automático atrelado a ela. */
+    var pct = Math.min(100, (bytes/(1024*1024*1024))*100);
+    textEl.innerHTML = '<strong>'+fmtBytes(bytes)+'</strong> ocupados pelos documentos anexados aos eventos (referência: plano gratuito do Supabase inclui 1 GB de armazenamento de arquivos).';
+    fillEl.style.width = Math.max(pct, bytes>0?1:0)+'%';
+  }).catch(function(err){
+    console.error('refreshDocumentosStorageGauge', err);
+    textEl.textContent = 'Não foi possível calcular o uso de armazenamento agora.';
+    fillEl.style.width = '0%';
+  });
+}
+function exportarDocumentosZip(){
+  if(!requireDocAuth()) return;
+  if(mode!=='live'){ showToast('A exportação de documentos fica disponível quando conectado ao Supabase.'); return; }
+  if(typeof JSZip==='undefined'){ showToast('Não foi possível carregar a biblioteca de .zip. Verifique a conexão e tente novamente.'); return; }
+  var comDoc = (state.events||[]).filter(function(e){ return e.documento && e.documento.path; });
+  if(!comDoc.length){ showToast('Não há documentos anexados a eventos para exportar.'); return; }
+  var btn = $('btnDocExportZip'); if(btn){ btn.disabled = true; btn.textContent = 'Exportando…'; }
+  var zip = new JSZip();
+  var manifesto = [['Evento','Data','Tipo','Local/Referência','Assunto','Solicitante','Matrículas do efetivo','Arquivo','Tamanho (bytes)','Enviado em']];
+  Promise.all(comDoc.map(function(e, i){
+    return sb.storage.from(DOC_BUCKET).download(e.documento.path).then(function(res){
+      if(res.error) throw res.error;
+      var nomeZip = (i+1)+'_'+(e.documento.nome||'documento.pdf').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      zip.file(nomeZip, res.data);
+      manifesto.push([
+        e.tipo==='administrativo'?'Administrativo':'Operacional', e.data||'', e.modalidade||'',
+        e.localRef||'', e.assunto||'', e.solicitante||'',
+        (e.efetivo||[]).map(function(p){ return p.matricula; }).join('; '),
+        nomeZip, String(e.documento.tamanho||''), e.documento.enviadoEm||''
+      ]);
+    }).catch(function(err){
+      console.error('exportarDocumentosZip: falha ao baixar', e.documento.path, err);
+      manifesto.push(['ERRO AO BAIXAR', e.data||'', '', e.localRef||'', e.assunto||'', e.solicitante||'', '', e.documento.nome||'', '', '']);
+    });
+  })).then(function(){
+    var csv = manifesto.map(function(row){
+      return row.map(function(v){ var s=String(v==null?'':v); return /[",;\n]/.test(s) ? ('"'+s.replace(/"/g,'""')+'"') : s; }).join(';');
+    }).join('\r\n');
+    zip.file('manifesto.csv', '﻿'+csv);
+    return zip.generateAsync({type:'blob'});
+  }).then(function(blob){
+    var url = URL.createObjectURL(blob);
+    var d = new Date();
+    var stamp = d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());
+    var a = document.createElement('a');
+    a.href = url; a.download = 'painel-eventos-gcmi-documentos-'+stamp+'.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    showToast(comDoc.length+' documento(s) exportado(s) em .zip.');
+  }).catch(function(err){
+    console.error('exportarDocumentosZip', err);
+    showToast('Erro ao gerar o .zip de documentos.');
+  }).finally(function(){
+    if(btn){ btn.disabled = false; btn.textContent = 'Exportar documentos (.zip)'; }
+  });
+}
+function apagarDocumentosArquivados(){
+  if(!requireDocAuth()) return Promise.reject(new Error('not-authorized'));
+  var comDoc = (state.events||[]).filter(function(e){ return e.documento && e.documento.path; });
+  if(!comDoc.length){ showToast('Não há documentos no armazenamento para apagar.'); return Promise.resolve(); }
+  var hoje = new Date();
+  var hojeFmt = pad(hoje.getDate())+'/'+pad(hoje.getMonth()+1)+'/'+hoje.getFullYear();
+  return comDoc.reduce(function(chain, e){
+    return chain.then(function(){
+      return removerObjetoDocumento(e.documento.path).then(function(){
+        var novoDoc = {nome:e.documento.nome, tamanho:e.documento.tamanho, arquivadoEm:hojeFmt};
+        if(mode==='live'){
+          return sb.from('events').update({documento:novoDoc}).eq('id', e.id).then(function(res){
+            if(res.error) throw res.error;
+          });
+        }
+        var list = loadLS(LS_KEYS.events, []);
+        var idx = list.findIndex(function(x){ return x.id===e.id; });
+        if(idx>-1){ list[idx] = Object.assign({}, list[idx], {documento:novoDoc}); saveLS(LS_KEYS.events, list); }
+      });
+    });
+  }, Promise.resolve()).then(function(){
+    return fetchEvents();
+  }).then(function(){
+    showToast(comDoc.length+' documento(s) apagado(s) do armazenamento da nuvem (eventos atualizados para "arquivado localmente").');
+    refreshDocumentosStorageGauge();
+  }).catch(function(err){
+    console.error('apagarDocumentosArquivados', err);
+    showToast('Erro ao apagar documentos arquivados.');
   });
 }
 
@@ -5438,6 +5656,8 @@ function eventModalHTML(e){
   '<div class="ec-row"><span class="k">Contato</span><span>'+(e.contato?esc(e.contato):'&mdash;')+'</span></div>'+
   (e.observacoes ? '<div class="ec-row"><span class="k">Observações</span><span>'+esc(e.observacoes)+'</span></div>' : '')+
   (e.cmtParticipa ? '<div class="ec-row"><span class="k">Cmt</span><span class="ec-cmt-badge">&#9733; Participa deste evento</span></div>' : '')+
+  (e.documento && e.documento.path ? '<div class="ec-row"><span class="k">Documento</span><span><button type="button" class="btn btn-sm btn-ghost" data-modal-act="ver-doc" data-id="'+esc(e.id)+'">Ver documento</button></span></div>' : '')+
+  (e.documento && !e.documento.path && e.documento.arquivadoEm ? '<div class="ec-row"><span class="k">Documento</span><span>Arquivado localmente em '+esc(e.documento.arquivadoEm)+'</span></div>' : '')+
   '<div class="modal-actions">'+
     '<button type="button" class="btn btn-danger btn-sm" data-modal-act="del" data-id="'+esc(e.id)+'">Excluir</button>'+
     '<button type="button" class="btn btn-ghost btn-sm" data-modal-act="dup" data-id="'+esc(e.id)+'">Duplicar</button>'+
@@ -6484,6 +6704,45 @@ function abrirFotosVistoria(vistoriaId){
   });
 }
 
+/* ---------------- Documentos de Evento (ofício etc.) — v7.0 ----------------
+   Mesmo padrão de uploadVistoriaFotos/abrirFotosVistoria, mas um PDF só por
+   evento. O caminho no bucket não depende do id do evento (que ainda não
+   existe ao criar um evento novo) — é só uma pasta por ano/mês. */
+var DOC_BUCKET = 'eventos-documentos';
+var DOC_MAX_BYTES = 15*1024*1024;
+function uploadEventoDocumento(file){
+  if(!file) return Promise.resolve(null);
+  if(file.size > DOC_MAX_BYTES){
+    return Promise.reject(new Error('O arquivo passa de 15 MB. Reduza o tamanho do PDF e tente novamente.'));
+  }
+  var safeName = (file.name||'documento.pdf').replace(/[^a-zA-Z0-9_.-]/g, '_');
+  var now = new Date();
+  var folder = now.getFullYear()+'-'+pad(now.getMonth()+1);
+  var path = folder+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,7)+'_'+safeName;
+  if(mode!=='live'){
+    return Promise.resolve({path:'local/'+path, nome:file.name||'documento.pdf', tamanho:file.size, tipo:file.type||'application/pdf', enviadoEm:new Date().toISOString()});
+  }
+  return sb.storage.from(DOC_BUCKET).upload(path, file).then(function(res){
+    if(res.error) throw res.error;
+    return {path:path, nome:file.name||'documento.pdf', tamanho:file.size, tipo:file.type||'application/pdf', enviadoEm:new Date().toISOString()};
+  });
+}
+function removerObjetoDocumento(path){
+  if(!path || mode!=='live') return Promise.resolve();
+  return sb.storage.from(DOC_BUCKET).remove([path]).then(function(res){
+    if(res.error) console.error('removerObjetoDocumento', res.error);
+  }).catch(function(err){ console.error('removerObjetoDocumento', err); });
+}
+function abrirDocumentoEvento(id){
+  var ev = state.events.find(function(x){ return x.id===id; });
+  if(!ev || !ev.documento || !ev.documento.path) return;
+  if(mode!=='live'){ showToast('O documento fica disponível quando conectado ao Supabase.'); return; }
+  sb.storage.from(DOC_BUCKET).createSignedUrl(ev.documento.path, 3600).then(function(res){
+    if(res && res.data && res.data.signedUrl){ window.open(res.data.signedUrl, '_blank', 'noopener'); }
+    else { showToast('Não foi possível abrir o documento.'); }
+  }).catch(function(){ showToast('Não foi possível abrir o documento.'); });
+}
+
 /* ---------------- Vistoria de Viatura: formulário de envio (v4.6) ----------------
    Aba própria, pensada pra celular: sem cards, sem listagem — só o
    formulário do checklist, porque quem usa o login compartilhado nem tem
@@ -7101,6 +7360,8 @@ function resetForm(){
   state.formType = null;
   state.formEfetivo = new Map();
   state.formRecursos = [];
+  state.formDocumentoAtual = null;
+  state.formDocumentoRemover = false;
   $('eventForm').reset();
   $('eventForm').classList.remove('show');
   $('formFrameOuter').style.display = 'none';
@@ -7110,12 +7371,45 @@ function resetForm(){
   $('f-estado').value = 'MG';
   $('f-recurso-qtd').value = '1';
   $('formErr').textContent = '';
+  $('f-documento').value = '';
+  $('documentoFileName').textContent = 'Nenhum arquivo selecionado';
   renderEfetivoChips();
   renderEfetivoList();
   renderRecursoChips();
   renderRefSelect();
   renderLocalSugestoes();
   updateEscolaRowVisibility();
+  renderDocumentoFormInfo();
+}
+/* v7.0: mostra, acima do botão "Selecionar PDF…", o documento já salvo no
+   evento (com "Ver"/"Remover") ou o aviso de que já foi arquivado
+   localmente — nunca os dois junto com um novo arquivo escolhido, pra não
+   confundir qual vai valer ao salvar (ver handleSubmit). */
+function renderDocumentoFormInfo(){
+  var box = $('documentoAtualInfo');
+  if(!box) return;
+  var doc = state.formDocumentoAtual;
+  if(!doc || state.formDocumentoRemover){
+    box.hidden = true; box.innerHTML = '';
+    return;
+  }
+  if(doc.path){
+    box.hidden = false;
+    box.innerHTML = 'Documento atual: <span class="mono">'+esc(doc.nome||'documento.pdf')+'</span>'+
+      '<button type="button" class="btn btn-sm btn-ghost" id="btnDocumentoVerAtual">Ver</button>'+
+      '<button type="button" class="btn btn-sm btn-ghost" id="btnDocumentoRemoverAtual">Remover</button>';
+    $('btnDocumentoVerAtual').addEventListener('click', function(){ if(state.editingId) abrirDocumentoEvento(state.editingId); });
+    $('btnDocumentoRemoverAtual').addEventListener('click', function(){
+      state.formDocumentoRemover = true;
+      renderDocumentoFormInfo();
+      showToast('O documento será removido ao salvar o evento.');
+    });
+  } else if(doc.arquivadoEm){
+    box.hidden = false;
+    box.innerHTML = 'Documento arquivado localmente em '+esc(doc.arquivadoEm)+' (<span class="mono">'+esc(doc.nome||'')+'</span>) — já não está mais no armazenamento da nuvem.';
+  } else {
+    box.hidden = true; box.innerHTML = '';
+  }
 }
 /* v5.5: "Lançar Evento" não navega mais direto pra tela do formulário — a
    pedido do DG, primeiro aparece um splash (modal) pra escolher Operacional
@@ -7171,6 +7465,13 @@ function fillFormFromEvent(ev, opts){
   $('f-contato').value = ev.contato||'';
   $('f-obs').value = ev.observacoes||'';
   $('f-cmt-participa').checked = !!ev.cmtParticipa;
+  /* duplicar não leva o documento do evento original — é um evento novo,
+     sem id ainda, o documento (se quiser) é anexado de novo na hora. */
+  state.formDocumentoAtual = (opts.keepDate===false) ? null : (ev.documento||null);
+  state.formDocumentoRemover = false;
+  $('f-documento').value = '';
+  $('documentoFileName').textContent = 'Nenhum arquivo selecionado';
+  renderDocumentoFormInfo();
 }
 function openEditForm(id){
   if(!requireAuth()) return;
@@ -7241,6 +7542,10 @@ function handleSubmit(e){
   } else if(!solicitante||!contato){
     switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Preencha o nome e o contato do solicitante.'; return;
   }
+  var novoDocumentoFile = ($('f-documento').files && $('f-documento').files[0]) || null;
+  if(novoDocumentoFile && novoDocumentoFile.size > DOC_MAX_BYTES){
+    switchFormModalTab(form, 'solicitante'); errEl.textContent = 'O documento passa de 15 MB — reduza o tamanho do PDF e tente novamente.'; return;
+  }
   var payload = {
     tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht, localRef: ref,
     endereco: {rua:rua, numero:num, bairro:bairro, cidade:cidade, estado:estado},
@@ -7250,15 +7555,37 @@ function handleSubmit(e){
     observacoes: (observacoes || null), cmtParticipa: cmtParticipa
   };
   var btn = $('btnSubmitForm'); btn.disabled = true;
-  var task;
-  if(state.editingId){ task = updateEvent(state.editingId, payload); }
-  else { payload.createdAt = new Date().toISOString(); task = addEvent(payload); }
-  task.then(function(){
+  /* v7.0: documento do evento (ofício etc.) — três casos, nunca automáticos:
+     (1) escolheu um PDF novo → sobe pro Storage e, se estava trocando um
+         documento que já existia, o antigo é removido (substituição
+         deliberada, feita neste mesmo salvar); (2) clicou "Remover" no
+         documento atual → só apaga o antigo, fica sem documento; (3) nem
+         uma coisa nem outra → mantém o que já estava (ou o "arquivado
+         localmente em…", se for o caso) exatamente como estava. */
+  var documentoAntigo = state.formDocumentoAtual;
+  var docTask;
+  if(novoDocumentoFile){
+    docTask = uploadEventoDocumento(novoDocumentoFile).then(function(doc){
+      if(documentoAntigo && documentoAntigo.path){ removerObjetoDocumento(documentoAntigo.path); }
+      return doc;
+    });
+  } else if(state.formDocumentoRemover && documentoAntigo){
+    docTask = removerObjetoDocumento(documentoAntigo.path||null).then(function(){ return null; });
+  } else {
+    docTask = Promise.resolve(documentoAntigo||null);
+  }
+  docTask.then(function(documento){
+    payload.documento = documento;
+    var task;
+    if(state.editingId){ task = updateEvent(state.editingId, payload); }
+    else { payload.createdAt = new Date().toISOString(); task = addEvent(payload); }
+    return task;
+  }).then(function(){
     showToast(state.editingId ? 'Evento atualizado.' : 'Evento lançado.');
     resetForm();
     goToView('agenda');
-  }).catch(function(){
-    errEl.textContent = 'Erro ao salvar. Tente novamente.';
+  }).catch(function(err){
+    errEl.textContent = (err && err.message) ? err.message : 'Erro ao salvar. Tente novamente.';
   }).finally(function(){ btn.disabled = false; });
 }
 
@@ -7977,6 +8304,7 @@ function goToView(name){
 function goToCfgPane(name){
   document.querySelectorAll('.cfg-pane').forEach(function(p){ p.classList.toggle('active', p.dataset.cfgpane===name); });
   document.querySelectorAll('#cfgSubnav button').forEach(function(b){ b.classList.toggle('active', b.dataset.cfgpane===name); });
+  if(name==='backup') refreshDocumentosStorageGauge();
 }
 
 /* ---------------- boot / event wiring ---------------- */
@@ -8095,6 +8423,7 @@ $_onReady(function(){
       var id = actBtn.dataset.id;
       if(actBtn.dataset.modalAct==='edit'){ closeModal(); openEditForm(id); }
       if(actBtn.dataset.modalAct==='dup'){ closeModal(); duplicateEvent(id); }
+      if(actBtn.dataset.modalAct==='ver-doc'){ abrirDocumentoEvento(id); }
       if(actBtn.dataset.modalAct==='del'){
         closeModal();
         deleteEvent(id).then(function(){ showToast('Evento excluído.'); }).catch(function(){});
@@ -8831,6 +9160,48 @@ $_onReady(function(){
       }
     });
   }catch(e){ console.error('wiring backup', e); }
+
+  /* ---------------- documentos de evento: wiring (v7.0) ---------------- */
+  try{
+    $('btnDocumentoChoose').addEventListener('click', function(){ $('f-documento').click(); });
+    $('f-documento').addEventListener('change', function(e){
+      var file = e.target.files && e.target.files[0];
+      $('documentoFileName').textContent = file ? file.name : 'Nenhum arquivo selecionado';
+      if(file){
+        /* escolher um novo arquivo substitui qualquer "Remover" pendente —
+           e some com o aviso do documento atual, já que ele vai ser
+           trocado ao salvar (ver handleSubmit). */
+        state.formDocumentoRemover = false;
+        $('documentoAtualInfo').hidden = true;
+      }
+    });
+  }catch(e){ console.error('wiring documento do evento (form)', e); }
+  try{
+    $('btnDocGaugeRefresh').addEventListener('click', refreshDocumentosStorageGauge);
+    $('btnDocExportZip').addEventListener('click', exportarDocumentosZip);
+    $('btnDocApagarArquivados').addEventListener('click', function(){
+      if(!requireDocAuth()) return;
+      var btn = $('btnDocApagarArquivados');
+      if(pendingDocApagarConfirm){
+        pendingDocApagarConfirm = false;
+        btn.disabled = true; btn.textContent = 'Apagando…';
+        apagarDocumentosArquivados().finally(function(){
+          btn.disabled = false; btn.classList.remove('confirm'); btn.textContent = 'Apagar documentos já arquivados';
+        });
+      } else {
+        pendingDocApagarConfirm = true;
+        btn.classList.add('confirm');
+        btn.textContent = 'Confirmar: apagar da nuvem (exportou o .zip?)';
+        setTimeout(function(){
+          if(pendingDocApagarConfirm){
+            pendingDocApagarConfirm = false;
+            btn.classList.remove('confirm');
+            btn.textContent = 'Apagar documentos já arquivados';
+          }
+        }, 6000);
+      }
+    });
+  }catch(e){ console.error('wiring documentos de evento (backup)', e); }
 });
 
 })();
