@@ -1349,13 +1349,18 @@ details.roster-view summary{
 #printOverlayContent .rel-print-area{max-width:960px;margin:0 auto;}
 
 @media print{
+  /* v7.1: desde a v4.1 a impressão para de clonar #relPrintArea (ele
+     ficou só como a visualização normal, sempre em tela, da aba
+     Relatórios — ver o comentário em relPrintReportHTML()) e passou a
+     montar o relatório do zero dentro de #printOverlayContent. Só que a
+     regra de impressão aqui embaixo continuava, por engano, "religando" a
+     visibilidade do #relPrintArea também — e como a aba Relatórios
+     continua ativa por baixo do overlay, os DOIS acabavam entrando na
+     impressão ao mesmo tempo, sobrepostos na mesma posição (era isso que
+     causava o relatório "dobrado"/embaralhado ao imprimir ou salvar em
+     PDF). Agora só #printOverlayContent entra na impressão. */
   body *{visibility:hidden;}
-  #relPrintArea, #relPrintArea *,
   #printOverlayContent, #printOverlayContent *{visibility:visible;}
-  #relPrintArea{
-    position:absolute;left:0;top:0;width:100%;
-    border:none;box-shadow:none;padding:0;
-  }
   #printOverlayContent{
     position:absolute;left:0;top:0;width:100%;padding:0;
   }
@@ -1366,11 +1371,9 @@ details.roster-view summary{
      quebram em mais de uma página — a última linha antes da quebra é
      duplicada no topo da página seguinte. Sticky só faz sentido com rolagem
      na tela; na impressão a tabela não rola, então aqui ele é desligado. */
-  #relPrintArea table.ev-table thead th,
   #printOverlayContent table.ev-table thead th{
     position:static;
   }
-  #relPrintArea .table-wrap,
   #printOverlayContent .table-wrap{
     overflow:visible;
   }
@@ -1616,6 +1619,39 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
    dentro do #modalOverlay (ex.: Categoria, na Agenda do Cmt) — ver
    openModal2()/openQuickListModal() em app.js. */
 #modalOverlay2{z-index:80;}
+
+/* v7.3: hover preview do documento anexado ao evento — popover pequeno que
+   aparece ao passar o mouse sobre "Ver documento" (ou focar nele via
+   teclado), sem abrir aba nova; o clique continua abrindo o documento
+   normalmente. Fica acima de qualquer modal (z-index 95). */
+.doc-hover-preview{
+  position:fixed;z-index:95;width:260px;height:340px;
+  background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:0 12px 32px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.doc-hover-preview[hidden]{display:none;}
+.doc-hover-preview-head{
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-3);background:var(--bg-panel-2);border-bottom:1px solid var(--line-soft);
+}
+.doc-hover-preview-close{
+  background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:13px;
+  line-height:1;padding:2px 4px;
+}
+.doc-hover-preview-close:hover{color:var(--ink-1);}
+.doc-hover-preview-body{flex:1 1 auto;min-height:0;position:relative;background:#525659;}
+.doc-hover-preview-frame{width:100%;height:100%;border:none;display:block;}
+.doc-hover-preview-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#e8e8e8;font-size:12px;text-align:center;padding:0 16px;
+}
+@media (max-width:640px){
+  /* sem hover de verdade em touch — o popover nunca chega a ser agendado
+     nesses aparelhos (ver scheduleDocPreview), então isso é só segurança. */
+  .doc-hover-preview{display:none !important;}
+}
 .modal-box{
   width:100%;max-width:720px;
   background:linear-gradient(160deg, var(--bg-card-hi), var(--bg-card) 60%);
@@ -1953,9 +1989,17 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
               <!-- v6.0: "Assunto / Motivo" saiu da aba Solicitante (só cabia
                    junto de campos que não têm relação com o assunto em si) e
                    passou a acompanhar a Modalidade, que é o outro campo que
-                   descreve do que se trata o compromisso administrativo. -->
-              <div class="field" id="fieldAssunto" style="margin-top:10px;" hidden>
-                <label for="f-assunto">Assunto / Motivo</label>
+                   descreve do que se trata o compromisso administrativo.
+                   v7.2: o mesmo campo passou a valer também pro operacional
+                   — rótulo e texto de apoio trocam pra "Evento" (ver
+                   applyFormTypeUI), onde entra o nome do evento em si (ex.:
+                   "Corrida do Aço 2026"), já que a Modalidade sozinha só diz
+                   o TIPO de atuação (Ponto Base, Passagem Periódica etc.),
+                   não QUAL evento é. Isso também passa a preencher a coluna
+                   "Motivo" do Relatório de Eventos, que antes ficava vazia
+                   nas linhas operacionais. -->
+              <div class="field" id="fieldAssunto" style="margin-top:10px;">
+                <label for="f-assunto" id="labelAssunto">Assunto / Motivo</label>
                 <input type="text" id="f-assunto" placeholder="Ex.: Reunião de alinhamento com a Corregedoria" />
               </div>
             </div>
@@ -2180,7 +2224,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.3 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2814,6 +2858,24 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.3', date: '28/10/2026',
+    changes: [
+      'O botão "Ver documento" (no detalhe do evento) ganhou pré-visualização ao passar o mouse (ou ao focar com Tab, pelo teclado) — mostra o PDF num popover pequeno, sem precisar abrir aba nova. Clicar continua abrindo o documento normalmente em outra aba. Em celular/tablet (sem mouse de verdade) o toque já vai direto pra abertura, como antes.'
+    ]
+  },
+  {
+    version: 'v7.2', date: '28/10/2026',
+    changes: [
+      'Novo campo "Evento" no formulário de evento Operacional Especial (na aba Atuação, junto da Modalidade) — para informar o nome do evento em si (ex.: "Corrida do Aço 2026", "Maratona X", "Festa Junina"), já que a Modalidade sozinha só descreve o tipo de atuação (Ponto Base, Passagem Periódica etc.), não qual evento é. É o mesmo campo que já existia para eventos Administrativos como "Assunto / Motivo" — passa a ser obrigatório nos dois tipos, aparece no card, no detalhe do evento e também passa a preencher a coluna "Motivo" do Relatório de Eventos (antes vazia nos eventos operacionais).'
+    ]
+  },
+  {
+    version: 'v7.1', date: '28/10/2026',
+    changes: [
+      'Corrigido: ao imprimir (ou salvar em PDF) o Relatório de Eventos, o conteúdo podia sair embaralhado/sobreposto, como duas cópias do relatório uma por cima da outra. A área do relatório que fica sempre visível na tela da aba Relatórios (usada só de preview desde a v4.1) continuava, por engano, sendo incluída na impressão junto com a pré-visualização de tela cheia que é a que realmente deveria ser impressa — agora só essa última entra na impressão.'
+    ]
+  },
   {
     version: 'v7.0', date: '28/10/2026',
     changes: [
@@ -5527,6 +5589,7 @@ function closeModal(){
   $('modalOverlay').classList.remove('mov-modal-overlay');
   $('modalOverlay').classList.remove('form-modal-overlay');
   movModalCtx = null;
+  hideDocPreview(); /* v7.3: nunca deixa o popover de pré-visualização do documento órfão em tela se o modal fechar com ele aberto */
   setTimeout(function(){ $('modalOverlay').hidden = true; $('modalBox').innerHTML=''; $('modalBox').className = 'modal-box'; }, 150);
 }
 /* v6.5: segundo overlay, empilhado acima do #modalOverlay — só usado pelo
@@ -5648,7 +5711,7 @@ function eventModalHTML(e){
   '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Endereço</span><span>'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
-  (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
+  (e.assunto ? '<div class="ec-row"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span>'+esc(e.assunto)+'</span></div>' : '')+
   (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
   '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>'+
   '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>'+
@@ -5679,6 +5742,7 @@ function openEventModal(id){
   var ev = state.events.find(function(x){ return x.id===id; });
   if(!ev) return;
   openModal(ev.tipo==='pessoal' ? cmtEventModalHTML(ev) : eventModalHTML(ev));
+  if(ev.tipo!=='pessoal' && ev.documento && ev.documento.path) wireDocPreviewHover(ev);
 }
 
 /* ---------------- agenda: card + filters ---------------- */
@@ -5713,7 +5777,7 @@ function cardHTML(e){
     '<div class="ec-local" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;">'+esc(e.localRef||'')+'</div>'+
     '<div class="ec-addr">'+esc(addrLine1)+(addr.bairro ? ' &middot; '+esc(addr.bairro) : '')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</div>'+
     '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
-    (e.assunto ? '<div class="ec-row"><span class="k">Assunto</span><span>'+esc(e.assunto)+'</span></div>' : '')+
+    (e.assunto ? '<div class="ec-row"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
     (efetivoTags ? '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>' : '')+
     (recursoTags ? '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>' : '')+
@@ -6733,14 +6797,115 @@ function removerObjetoDocumento(path){
     if(res.error) console.error('removerObjetoDocumento', res.error);
   }).catch(function(err){ console.error('removerObjetoDocumento', err); });
 }
+/* v7.3: URL assinada (1h) do documento de um evento, com cache em memória
+   (50min — um pouco menor que a validade real) pra não gerar uma nova a
+   cada hover e deixar o clique logo depois do hover instantâneo. */
+var docSignedUrlCache = {};
+function getDocSignedUrl(ev){
+  var path = ev.documento && ev.documento.path;
+  if(!path) return Promise.resolve(null);
+  var cached = docSignedUrlCache[ev.id];
+  if(cached && cached.path===path && cached.expiresAt > Date.now()) return Promise.resolve(cached.url);
+  return sb.storage.from(DOC_BUCKET).createSignedUrl(path, 3600).then(function(res){
+    var url = (res && res.data && res.data.signedUrl) ? res.data.signedUrl : null;
+    if(url) docSignedUrlCache[ev.id] = {path:path, url:url, expiresAt: Date.now() + 50*60*1000};
+    return url;
+  }).catch(function(){ return null; });
+}
 function abrirDocumentoEvento(id){
   var ev = state.events.find(function(x){ return x.id===id; });
   if(!ev || !ev.documento || !ev.documento.path) return;
   if(mode!=='live'){ showToast('O documento fica disponível quando conectado ao Supabase.'); return; }
-  sb.storage.from(DOC_BUCKET).createSignedUrl(ev.documento.path, 3600).then(function(res){
-    if(res && res.data && res.data.signedUrl){ window.open(res.data.signedUrl, '_blank', 'noopener'); }
+  getDocSignedUrl(ev).then(function(url){
+    if(url){ window.open(url, '_blank', 'noopener'); }
     else { showToast('Não foi possível abrir o documento.'); }
-  }).catch(function(){ showToast('Não foi possível abrir o documento.'); });
+  });
+}
+
+/* ---------------- hover preview do documento (v7.3) ----------------
+   Popover pequeno, independente do modal (fica em document.body), que
+   mostra o PDF embutido (visor nativo do navegador, sem biblioteca extra)
+   ao passar o mouse ou focar em "Ver documento" — sem abrir aba nova; o
+   clique continua abrindo normalmente (abrirDocumentoEvento). */
+var docPreviewShowTimer = null;
+var docPreviewHideTimer = null;
+function docPreviewSupported(){
+  /* sem hover de verdade (touch), não há por que agendar a pré-visualização
+     — o toque vai direto pro clique, que já abre o documento. */
+  try{ return window.matchMedia && window.matchMedia('(hover: hover)').matches; }catch(e){ return true; }
+}
+function getDocPreviewEl(){
+  var el = document.getElementById('docHoverPreview');
+  if(el) return el;
+  el = document.createElement('div');
+  el.id = 'docHoverPreview';
+  el.className = 'doc-hover-preview';
+  el.hidden = true;
+  el.innerHTML =
+    '<div class="doc-hover-preview-head">Pré-visualização<button type="button" class="doc-hover-preview-close" aria-label="Fechar pré-visualização">&#10005;</button></div>'+
+    '<div class="doc-hover-preview-body"></div>';
+  document.body.appendChild(el);
+  el.addEventListener('mouseenter', function(){ clearTimeout(docPreviewHideTimer); });
+  el.addEventListener('mouseleave', scheduleHideDocPreview);
+  el.querySelector('.doc-hover-preview-close').addEventListener('click', hideDocPreview);
+  return el;
+}
+function positionDocPreview(el, anchorEl){
+  var r = anchorEl.getBoundingClientRect();
+  var w = 260, h = 340, margin = 8;
+  var left = Math.min(Math.max(margin, r.left), window.innerWidth - w - margin);
+  var top = r.bottom + margin;
+  if(top + h > window.innerHeight - margin) top = Math.max(margin, r.top - h - margin);
+  el.style.left = left+'px';
+  el.style.top = top+'px';
+}
+function showDocPreview(ev, anchorEl){
+  if(!ev.documento || !ev.documento.path || mode!=='live') return;
+  var el = getDocPreviewEl();
+  clearTimeout(docPreviewHideTimer);
+  el.dataset.docId = ev.id;
+  positionDocPreview(el, anchorEl);
+  el.hidden = false;
+  el.querySelector('.doc-hover-preview-body').innerHTML = '<div class="doc-hover-preview-loading">Carregando pré-visualização…</div>';
+  getDocSignedUrl(ev).then(function(url){
+    /* evita aplicar um resultado de um evento que já não é mais o que está
+       sob o mouse (hover trocou de card antes da URL assinada voltar). */
+    if(el.hidden || el.dataset.docId !== ev.id) return;
+    var body = el.querySelector('.doc-hover-preview-body');
+    body.innerHTML = url
+      ? '<iframe class="doc-hover-preview-frame" src="'+esc(url)+'#toolbar=0&navpanes=0&view=FitH" title="Pré-visualização do documento"></iframe>'
+      : '<div class="doc-hover-preview-loading">Não foi possível carregar a pré-visualização.</div>';
+  });
+}
+function hideDocPreview(){
+  clearTimeout(docPreviewShowTimer);
+  clearTimeout(docPreviewHideTimer);
+  var el = document.getElementById('docHoverPreview');
+  if(el) el.hidden = true;
+}
+function scheduleHideDocPreview(){
+  clearTimeout(docPreviewHideTimer);
+  /* pequena folga pra dar tempo do mouse "atravessar" do botão até o
+     popover sem ele fechar no meio do caminho. */
+  docPreviewHideTimer = setTimeout(hideDocPreview, 150);
+}
+function scheduleShowDocPreview(ev, anchorEl){
+  if(!docPreviewSupported() || mode!=='live') return;
+  if(!ev.documento || !ev.documento.path) return;
+  clearTimeout(docPreviewHideTimer);
+  clearTimeout(docPreviewShowTimer);
+  docPreviewShowTimer = setTimeout(function(){ showDocPreview(ev, anchorEl); }, 350);
+}
+/* Liga o hover/foco de "Ver documento" dentro do modal de detalhe recém-
+   aberto — chamada de openEventModal() logo após openModal(). Precisa ser
+   religada a cada abertura porque o HTML do modal é recriado do zero. */
+function wireDocPreviewHover(ev){
+  var btn = document.querySelector('#modalBox [data-modal-act="ver-doc"]');
+  if(!btn) return;
+  btn.addEventListener('mouseenter', function(){ scheduleShowDocPreview(ev, btn); });
+  btn.addEventListener('mouseleave', function(){ clearTimeout(docPreviewShowTimer); scheduleHideDocPreview(); });
+  btn.addEventListener('focus', function(){ scheduleShowDocPreview(ev, btn); });
+  btn.addEventListener('blur', function(){ clearTimeout(docPreviewShowTimer); scheduleHideDocPreview(); });
 }
 
 /* ---------------- Vistoria de Viatura: formulário de envio (v4.6) ----------------
@@ -7230,8 +7395,12 @@ function applyFormTypeUI(type){
      ficar sempre visível ao lado dos demais campos. */
   if($('formTabLogisticaLabel')) $('formTabLogisticaLabel').textContent = isAdmin ? '3 · Participantes' : '3 · Logística';
   $('logisticaHint').textContent = isAdmin ? 'Informe o(s) grupo(s)/participante(s) previsto(s) (ex.: Inspetores, Comandante/Subcomandante):' : 'Informe o(s) recurso(s) previsto(s) para o evento (ex.: 01 VTR, 03 GM):';
-  $('fieldAssunto').hidden = !isAdmin;
-  $('f-assunto').required = isAdmin;
+  /* v7.2: campo "Assunto/Motivo" (operacional) / "Evento" (administrativo)
+     agora aparece e é obrigatório nos dois tipos — só o rótulo e o texto de
+     apoio mudam, pra deixar claro o que se espera em cada um. */
+  $('labelAssunto').textContent = isAdmin ? 'Assunto / Motivo' : 'Evento';
+  $('f-assunto').placeholder = isAdmin ? 'Ex.: Reunião de alinhamento com a Corregedoria' : 'Ex.: Corrida do Aço 2026, Maratona X, Festa Junina';
+  $('f-assunto').required = true;
   $('labelSolicitante').textContent = isAdmin ? 'Nome do responsável (opcional)' : 'Nome do solicitante';
   $('labelContato').textContent = isAdmin ? 'Contato (opcional)' : 'Contato (celular/outro)';
   $('f-solicitante').required = !isAdmin;
@@ -7537,9 +7706,14 @@ function handleSubmit(e){
     errEl.textContent = isAdmin ? 'Informe ao menos um participante previsto (ex.: Inspetores, Comandante/Subcomandante).' : 'Informe ao menos um recurso/equipe a ser empregado (ex.: 01 VTR, 03 GM).'; return;
   }
   if(!modalidade){ switchFormModalTab(form, 'atuacao'); errEl.textContent = 'Selecione a modalidade da atuação.'; return; }
-  if(isAdmin){
-    if(!assunto){ switchFormModalTab(form, 'atuacao'); errEl.textContent = 'Informe o assunto/motivo do evento.'; return; }
-  } else if(!solicitante||!contato){
+  /* v7.2: "Assunto/Motivo" (admin) e "Evento" (operacional) são o mesmo
+     campo (f-assunto) e agora os dois tipos exigem preenchê-lo. */
+  if(!assunto){
+    switchFormModalTab(form, 'atuacao');
+    errEl.textContent = isAdmin ? 'Informe o assunto/motivo do evento.' : 'Informe o nome do evento (ex.: Corrida do Aço 2026).';
+    return;
+  }
+  if(!isAdmin && (!solicitante||!contato)){
     switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Preencha o nome e o contato do solicitante.'; return;
   }
   var novoDocumentoFile = ($('f-documento').files && $('f-documento').files[0]) || null;
