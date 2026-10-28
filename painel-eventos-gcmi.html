@@ -1620,25 +1620,34 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
    openModal2()/openQuickListModal() em app.js. */
 #modalOverlay2{z-index:80;}
 
-/* v7.3: hover preview do documento anexado ao evento — popover pequeno que
-   aparece ao passar o mouse sobre "Ver documento" (ou focar nele via
-   teclado), sem abrir aba nova; o clique continua abrindo o documento
-   normalmente. Fica acima de qualquer modal (z-index 95). */
+/* v7.3: hover preview do documento anexado ao evento — aparece ao passar o
+   mouse sobre "Ver documento" (ou focar nele via teclado), sem abrir aba
+   nova; o clique continua abrindo o documento normalmente. Fica acima de
+   qualquer modal (z-index 95/94).
+   v7.4: ampliado de um popover pequeno ancorado no botão pra um painel
+   grande, centralizado na tela (quase tela cheia), com um fundo escurecido
+   atrás — bem mais fácil de ler o documento sem precisar abrir aba nova. */
+.doc-hover-preview-backdrop{
+  position:fixed;inset:0;z-index:94;background:rgba(6,10,18,.72);
+}
+.doc-hover-preview-backdrop[hidden]{display:none;}
 .doc-hover-preview{
-  position:fixed;z-index:95;width:260px;height:340px;
+  position:fixed;z-index:95;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(94vw,1200px);height:min(92vh,1400px);
   background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius-lg);
-  box-shadow:0 12px 32px rgba(0,0,0,.45);
+  box-shadow:0 24px 64px rgba(0,0,0,.55);
   display:flex;flex-direction:column;overflow:hidden;
 }
 .doc-hover-preview[hidden]{display:none;}
 .doc-hover-preview-head{
   flex:none;display:flex;align-items:center;justify-content:space-between;
-  padding:8px 10px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;
+  padding:10px 14px;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;
   color:var(--ink-3);background:var(--bg-panel-2);border-bottom:1px solid var(--line-soft);
 }
 .doc-hover-preview-close{
-  background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:13px;
-  line-height:1;padding:2px 4px;
+  background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:17px;
+  line-height:1;padding:4px 6px;
 }
 .doc-hover-preview-close:hover{color:var(--ink-1);}
 .doc-hover-preview-body{flex:1 1 auto;min-height:0;position:relative;background:#525659;}
@@ -1650,7 +1659,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 @media (max-width:640px){
   /* sem hover de verdade em touch — o popover nunca chega a ser agendado
      nesses aparelhos (ver scheduleDocPreview), então isso é só segurança. */
-  .doc-hover-preview{display:none !important;}
+  .doc-hover-preview, .doc-hover-preview-backdrop{display:none !important;}
 }
 .modal-box{
   width:100%;max-width:720px;
@@ -2224,7 +2233,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.3 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.4 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2858,6 +2867,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.4', date: '28/10/2026',
+    changes: [
+      'Ajuste na pré-visualização de documento (v7.3): em vez de um popover pequeno ancorado no botão, agora abre um painel grande, centralizado na tela (quase tela cheia), com o fundo escurecido atrás, pra ficar bem mais fácil de ler o documento sem precisar abrir aba nova. Continua abrindo ao passar o mouse ou focar com Tab, e fecha ao tirar o mouse, apertar o "X" ou clicar fora dele.'
+    ]
+  },
   {
     version: 'v7.3', date: '28/10/2026',
     changes: [
@@ -6822,11 +6837,11 @@ function abrirDocumentoEvento(id){
   });
 }
 
-/* ---------------- hover preview do documento (v7.3) ----------------
-   Popover pequeno, independente do modal (fica em document.body), que
-   mostra o PDF embutido (visor nativo do navegador, sem biblioteca extra)
-   ao passar o mouse ou focar em "Ver documento" — sem abrir aba nova; o
-   clique continua abrindo normalmente (abrirDocumentoEvento). */
+/* ---------------- hover preview do documento (v7.3, ampliado v7.4) ----------------
+   Painel grande, independente do modal (fica em document.body, com um fundo
+   escurecido atrás), que mostra o PDF embutido (visor nativo do navegador,
+   sem biblioteca extra) ao passar o mouse ou focar em "Ver documento" — sem
+   abrir aba nova; o clique continua abrindo normalmente (abrirDocumentoEvento). */
 var docPreviewShowTimer = null;
 var docPreviewHideTimer = null;
 function docPreviewSupported(){
@@ -6834,9 +6849,25 @@ function docPreviewSupported(){
      — o toque vai direto pro clique, que já abre o documento. */
   try{ return window.matchMedia && window.matchMedia('(hover: hover)').matches; }catch(e){ return true; }
 }
+function getDocPreviewBackdrop(){
+  var bd = document.getElementById('docHoverPreviewBackdrop');
+  if(bd) return bd;
+  bd = document.createElement('div');
+  bd.id = 'docHoverPreviewBackdrop';
+  bd.className = 'doc-hover-preview-backdrop';
+  bd.hidden = true;
+  document.body.appendChild(bd);
+  /* v7.4: painel ocupa quase a tela toda, então o fundo visível é pequeno —
+     mas se o mouse chegar até ele (ou um clique), entende como "saiu da
+     pré-visualização" e fecha, igual à borda de um popover normal. */
+  bd.addEventListener('mouseenter', scheduleHideDocPreview);
+  bd.addEventListener('click', hideDocPreview);
+  return bd;
+}
 function getDocPreviewEl(){
   var el = document.getElementById('docHoverPreview');
   if(el) return el;
+  getDocPreviewBackdrop();
   el = document.createElement('div');
   el.id = 'docHoverPreview';
   el.className = 'doc-hover-preview';
@@ -6850,21 +6881,15 @@ function getDocPreviewEl(){
   el.querySelector('.doc-hover-preview-close').addEventListener('click', hideDocPreview);
   return el;
 }
-function positionDocPreview(el, anchorEl){
-  var r = anchorEl.getBoundingClientRect();
-  var w = 260, h = 340, margin = 8;
-  var left = Math.min(Math.max(margin, r.left), window.innerWidth - w - margin);
-  var top = r.bottom + margin;
-  if(top + h > window.innerHeight - margin) top = Math.max(margin, r.top - h - margin);
-  el.style.left = left+'px';
-  el.style.top = top+'px';
-}
 function showDocPreview(ev, anchorEl){
   if(!ev.documento || !ev.documento.path || mode!=='live') return;
   var el = getDocPreviewEl();
+  var bd = getDocPreviewBackdrop();
   clearTimeout(docPreviewHideTimer);
   el.dataset.docId = ev.id;
-  positionDocPreview(el, anchorEl);
+  /* v7.4: painel grande e centralizado via CSS (left/top/transform fixos no
+     estilo) — não precisa mais calcular posição a partir do botão. */
+  bd.hidden = false;
   el.hidden = false;
   el.querySelector('.doc-hover-preview-body').innerHTML = '<div class="doc-hover-preview-loading">Carregando pré-visualização…</div>';
   getDocSignedUrl(ev).then(function(url){
@@ -6882,6 +6907,8 @@ function hideDocPreview(){
   clearTimeout(docPreviewHideTimer);
   var el = document.getElementById('docHoverPreview');
   if(el) el.hidden = true;
+  var bd = document.getElementById('docHoverPreviewBackdrop');
+  if(bd) bd.hidden = true;
 }
 function scheduleHideDocPreview(){
   clearTimeout(docPreviewHideTimer);
