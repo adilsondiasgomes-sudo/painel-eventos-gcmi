@@ -1749,6 +1749,12 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 .doc-hover-preview-close:hover{color:var(--ink-1);}
 .doc-hover-preview-body{flex:1 1 auto;min-height:0;position:relative;background:#525659;}
 .doc-hover-preview-frame{width:100%;height:100%;border:none;display:block;}
+/* v8.3: documento-imagem (JPEG/PNG/WEBP) usa <img> em vez de <iframe> na
+   pré-visualização — object-fit:contain centraliza e encaixa a imagem
+   inteira no painel, em vez de depender do visor de imagem nativo de cada
+   navegador (que nem sempre encaixa bem dentro de um iframe). Ver
+   isImageDoc()/showDocPreview(). */
+.doc-hover-preview-img{width:100%;height:100%;object-fit:contain;display:block;}
 .doc-hover-preview-loading{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   color:#e8e8e8;font-size:12px;text-align:center;padding:0 16px;
@@ -2170,14 +2176,19 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                 <label for="f-cmt-participa" style="margin:0;font-weight:400;">O Cmt participa (ou participou) deste evento</label>
               </div>
               <div class="field" style="margin-top:14px;">
-                <label id="labelDocumento">Ofício de solicitação ou documento do evento (PDF, opcional)</label>
-                <input type="file" id="f-documento" accept="application/pdf,.pdf" hidden />
+                <!-- v8.3: passa a aceitar imagem além de PDF (ofício fotografado
+                     no celular, por exemplo), a pedido do DG — ver
+                     uploadEventoDocumento() e o bucket eventos-documentos
+                     (allowed_mime_types amplos no Supabase). HEIC fica de
+                     fora de propósito (ver comentário na migração). -->
+                <label id="labelDocumento">Ofício de solicitação ou documento do evento (PDF ou imagem, opcional)</label>
+                <input type="file" id="f-documento" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden />
                 <div class="doc-field-current" id="documentoAtualInfo" hidden style="margin-bottom:8px;"></div>
                 <div class="backup-import-row">
-                  <button class="btn btn-sm" id="btnDocumentoChoose" type="button">Selecionar PDF…</button>
+                  <button class="btn btn-sm" id="btnDocumentoChoose" type="button">Selecionar PDF ou imagem…</button>
                   <span class="backup-file-name" id="documentoFileName">Nenhum arquivo selecionado</span>
                 </div>
-                <p class="field-hint" style="margin-top:6px;">Tamanho máximo: 15&nbsp;MB. O arquivo fica guardado de forma privada — só quem acessa o painel consegue abri-lo.</p>
+                <p class="field-hint" style="margin-top:6px;">Tamanho máximo: 15&nbsp;MB. Formatos aceitos: PDF, JPEG, PNG ou WEBP. O arquivo fica guardado de forma privada — só quem acessa o painel consegue abri-lo.</p>
               </div>
             </div>
           </div>
@@ -2280,7 +2291,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
         <div class="backup-box">
           <div class="backup-block">
             <h4>Exportar</h4>
-            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações), as Viaturas (com o histórico de status) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança. (Os PDFs anexados aos eventos não entram aqui — use "Exportar documentos (.zip)", mais abaixo.)</p>
+            <p>Baixa um arquivo <code>.json</code> com todos os eventos, os processos de Logística e Licitações (com o histórico de movimentações), as Viaturas (com o histórico de status) e as configurações atuais (locais, recursos, gestão, efetivo, categorias/status/fases/modalidades). Guarde em local seguro como cópia de segurança. (Os documentos anexados aos eventos — PDF ou imagem — não entram aqui — use "Exportar documentos (.zip)", mais abaixo.)</p>
             <button class="btn btn-sm btn-gold" id="btnBackupExport" type="button">Exportar backup (.json)</button>
           </div>
           <div class="backup-block">
@@ -2296,7 +2307,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
           </div>
           <div class="backup-block" style="grid-column:1/-1;">
             <h4>Documentos dos Eventos</h4>
-            <p>Ofícios/PDFs anexados aos eventos ficam no armazenamento de arquivos do Supabase (separado do banco de dados). O mostrador abaixo é só informativo — não há aviso ou apagamento automático; a conferência é sempre humana, por exemplo acompanhando também "Project Overview" no painel do Supabase.</p>
+            <p>Ofícios/documentos (PDF ou imagem) anexados aos eventos ficam no armazenamento de arquivos do Supabase (separado do banco de dados). O mostrador abaixo é só informativo — não há aviso ou apagamento automático; a conferência é sempre humana, por exemplo acompanhando também "Project Overview" no painel do Supabase.</p>
             <div class="doc-gauge-text" id="docGaugeText">Carregando uso de armazenamento…</div>
             <div class="doc-gauge-track"><div class="doc-gauge-fill" id="docGaugeFill" style="width:0%;"></div></div>
             <div class="backup-import-row" style="margin-top:10px;">
@@ -2373,7 +2384,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.2 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.3 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -3007,6 +3018,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v8.3', date: '29/10/2026',
+    changes: [
+      'Duas atualizações pendentes entregues, a pedido do DG: (1) o detalhe do evento (modal aberto ao clicar num evento Operacional Especial) ganhou o botão "Imprimir Evento Especial" como 4º botão, com a mesma regra do botão já existente no card — só aparece pra quem está logado; (2) o campo de documento do evento passou a aceitar imagem (JPEG, PNG ou WEBP), além de PDF — útil para anexar um ofício fotografado no celular. A pré-visualização ao passar o mouse sobre "Ver documento" também foi ajustada para encaixar corretamente uma imagem (antes só tinha o visor de PDF). Tamanho máximo continua 15 MB.'
+    ]
+  },
   {
     version: 'v8.2', date: '29/10/2026',
     changes: [
@@ -5189,7 +5206,7 @@ function exportarDocumentosZip(){
   Promise.all(comDoc.map(function(e, i){
     return sb.storage.from(DOC_BUCKET).download(e.documento.path).then(function(res){
       if(res.error) throw res.error;
-      var nomeZip = (i+1)+'_'+(e.documento.nome||'documento.pdf').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      var nomeZip = (i+1)+'_'+(e.documento.nome||'documento').replace(/[^a-zA-Z0-9_.-]/g, '_');
       zip.file(nomeZip, res.data);
       manifesto.push([
         e.tipo==='administrativo'?'Administrativo':'Operacional', e.data||'', e.modalidade||'',
@@ -5981,6 +5998,12 @@ function eventModalHTML(e){
   (e.documento && !e.documento.path && e.documento.arquivadoEm ? '<div class="ec-row"><span class="k">Documento</span><span>Arquivado localmente em '+esc(e.documento.arquivadoEm)+'</span></div>' : '')+
   '</div>'+
   '<div class="modal-actions">'+
+    /* v8.3: 4º botão, pedido do DG — mesma ação/mesma restrição de acesso
+       do botão de impressão já existente no card (print-escala, v7.9):
+       só Operacional Especial, só pra quem está logado (authUser, não
+       canManageEventos() — ver comentário em cardHTML). Faz sentido no
+       detalhe exatamente pelo mesmo motivo que fazia sentido no card. */
+    (authUser && e.tipo==='operacional' ? '<button type="button" class="btn btn-ghost btn-sm" data-modal-act="print-escala" data-id="'+esc(e.id)+'">&#128424; Imprimir Evento Especial</button>' : '')+
     '<button type="button" class="btn btn-danger btn-sm" data-modal-act="del" data-id="'+esc(e.id)+'">Excluir</button>'+
     '<button type="button" class="btn btn-ghost btn-sm" data-modal-act="dup" data-id="'+esc(e.id)+'">Duplicar</button>'+
     '<button type="button" class="btn btn-gold btn-sm" data-modal-act="edit" data-id="'+esc(e.id)+'">Editar</button>'+
@@ -7041,21 +7064,45 @@ function abrirFotosVistoria(vistoriaId){
    existe ao criar um evento novo) — é só uma pasta por ano/mês. */
 var DOC_BUCKET = 'eventos-documentos';
 var DOC_MAX_BYTES = 15*1024*1024;
+var DOC_ALLOWED_MIME = ['application/pdf','image/jpeg','image/png','image/webp'];
+var DOC_ALLOWED_EXT = ['pdf','jpg','jpeg','png','webp'];
+/* v8.3: validação de formato do lado do cliente, pra dar um erro em
+   português claro na hora de "Lançar Evento"/"Salvar" (ver handleSubmit)
+   em vez do visitante só descobrir pelo erro cru que o Storage devolve
+   depois do upload. file.type pode vir vazio em alguns navegadores/SO
+   (não é bug, é como o browser reporta quando não reconhece a extensão)
+   — nesse caso cai pra conferir pela extensão do nome do arquivo, em vez
+   de bloquear um arquivo válido por falta de informação. */
+function isAllowedDocType(file){
+  if(file.type) return DOC_ALLOWED_MIME.indexOf(file.type)!==-1;
+  var ext = (file.name||'').toLowerCase().split('.').pop();
+  return DOC_ALLOWED_EXT.indexOf(ext)!==-1;
+}
+/* v8.3: aceita imagem (JPEG/PNG/WEBP) além de PDF — ver accept do
+   #f-documento e allowed_mime_types do bucket eventos-documentos (Supabase).
+   HEIC fica de fora de propósito: Chrome/Firefox não exibem HEIC
+   nativamente, e a pré-visualização em iframe (showDocPreview) e o "Ver
+   documento" (abrirDocumentoEvento, window.open) dependem do navegador
+   saber renderizar o arquivo sozinho — nenhuma biblioteca de conversão
+   extra foi adicionada ao painel. */
 function uploadEventoDocumento(file){
   if(!file) return Promise.resolve(null);
   if(file.size > DOC_MAX_BYTES){
-    return Promise.reject(new Error('O arquivo passa de 15 MB. Reduza o tamanho do PDF e tente novamente.'));
+    return Promise.reject(new Error('O arquivo passa de 15 MB. Reduza o tamanho do arquivo e tente novamente.'));
   }
-  var safeName = (file.name||'documento.pdf').replace(/[^a-zA-Z0-9_.-]/g, '_');
+  if(!isAllowedDocType(file)){
+    return Promise.reject(new Error('Formato não aceito — envie um PDF, JPEG, PNG ou WEBP.'));
+  }
+  var safeName = (file.name||'documento').replace(/[^a-zA-Z0-9_.-]/g, '_');
   var now = new Date();
   var folder = now.getFullYear()+'-'+pad(now.getMonth()+1);
   var path = folder+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,7)+'_'+safeName;
   if(mode!=='live'){
-    return Promise.resolve({path:'local/'+path, nome:file.name||'documento.pdf', tamanho:file.size, tipo:file.type||'application/pdf', enviadoEm:new Date().toISOString()});
+    return Promise.resolve({path:'local/'+path, nome:file.name||'documento', tamanho:file.size, tipo:file.type||'application/octet-stream', enviadoEm:new Date().toISOString()});
   }
   return sb.storage.from(DOC_BUCKET).upload(path, file).then(function(res){
     if(res.error) throw res.error;
-    return {path:path, nome:file.name||'documento.pdf', tamanho:file.size, tipo:file.type||'application/pdf', enviadoEm:new Date().toISOString()};
+    return {path:path, nome:file.name||'documento', tamanho:file.size, tipo:file.type||'application/octet-stream', enviadoEm:new Date().toISOString()};
   });
 }
 function removerObjetoDocumento(path){
@@ -7133,6 +7180,22 @@ function getDocPreviewEl(){
   el.querySelector('.doc-hover-preview-close').addEventListener('click', hideDocPreview);
   return el;
 }
+/* v8.3: tipo é o MIME guardado no upload (ev.documento.tipo); documentos
+   enviados antes da v8.3 não têm tipo de imagem (só existia PDF), então
+   isso nunca muda o comportamento de um documento já existente. Confere
+   também pela extensão do nome como reforço, caso tipo venha vazio. */
+function isImageDoc(doc){
+  if(!doc) return false;
+  if(doc.tipo && doc.tipo.indexOf('image/')===0) return true;
+  /* 'application/octet-stream' é o fallback de uploadEventoDocumento()
+     quando o navegador não informa o MIME type do arquivo (acontece,
+     principalmente com arquivo vindo de certas câmeras/apps) — tratado
+     como "tipo desconhecido", igual a tipo vazio, pra não perder a
+     pré-visualização em <img> de uma foto só por isso. */
+  if(doc.tipo && doc.tipo!=='application/octet-stream') return false;
+  var ext = (doc.nome||'').toLowerCase().split('.').pop();
+  return ['jpg','jpeg','png','webp'].indexOf(ext)!==-1;
+}
 function showDocPreview(ev, anchorEl){
   if(!ev.documento || !ev.documento.path || mode!=='live') return;
   var el = getDocPreviewEl();
@@ -7150,7 +7213,9 @@ function showDocPreview(ev, anchorEl){
     if(el.hidden || el.dataset.docId !== ev.id) return;
     var body = el.querySelector('.doc-hover-preview-body');
     body.innerHTML = url
-      ? '<iframe class="doc-hover-preview-frame" src="'+esc(url)+'#toolbar=0&navpanes=0&view=FitH" title="Pré-visualização do documento"></iframe>'
+      ? (isImageDoc(ev.documento)
+          ? '<img class="doc-hover-preview-img" src="'+esc(url)+'" alt="Pré-visualização do documento" />'
+          : '<iframe class="doc-hover-preview-frame" src="'+esc(url)+'#toolbar=0&navpanes=0&view=FitH" title="Pré-visualização do documento"></iframe>')
       : '<div class="doc-hover-preview-loading">Não foi possível carregar a pré-visualização.</div>';
   });
 }
@@ -7855,7 +7920,7 @@ function resetForm(){
   updateEscolaRowVisibility();
   renderDocumentoFormInfo();
 }
-/* v7.0: mostra, acima do botão "Selecionar PDF…", o documento já salvo no
+/* v7.0: mostra, acima do botão "Selecionar PDF ou imagem…", o documento já salvo no
    evento (com "Ver"/"Remover") ou o aviso de que já foi arquivado
    localmente — nunca os dois junto com um novo arquivo escolhido, pra não
    confundir qual vai valer ao salvar (ver handleSubmit). */
@@ -7869,7 +7934,7 @@ function renderDocumentoFormInfo(){
   }
   if(doc.path){
     box.hidden = false;
-    box.innerHTML = 'Documento atual: <span class="mono">'+esc(doc.nome||'documento.pdf')+'</span>'+
+    box.innerHTML = 'Documento atual: <span class="mono">'+esc(doc.nome||'documento')+'</span>'+
       '<button type="button" class="btn btn-sm btn-ghost" id="btnDocumentoVerAtual">Ver</button>'+
       '<button type="button" class="btn btn-sm btn-ghost" id="btnDocumentoRemoverAtual">Remover</button>';
     $('btnDocumentoVerAtual').addEventListener('click', function(){ if(state.editingId) abrirDocumentoEvento(state.editingId); });
@@ -8040,7 +8105,10 @@ function handleSubmit(e){
   }
   var novoDocumentoFile = ($('f-documento').files && $('f-documento').files[0]) || null;
   if(novoDocumentoFile && novoDocumentoFile.size > DOC_MAX_BYTES){
-    switchFormModalTab(form, 'solicitante'); errEl.textContent = 'O documento passa de 15 MB — reduza o tamanho do PDF e tente novamente.'; return;
+    switchFormModalTab(form, 'solicitante'); errEl.textContent = 'O documento passa de 15 MB — reduza o tamanho do arquivo e tente novamente.'; return;
+  }
+  if(novoDocumentoFile && !isAllowedDocType(novoDocumentoFile)){
+    switchFormModalTab(form, 'solicitante'); errEl.textContent = 'Formato não aceito — envie um PDF, JPEG, PNG ou WEBP.'; return;
   }
   var payload = {
     tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht,
@@ -9051,6 +9119,15 @@ $_onReady(function(){
       if(actBtn.dataset.modalAct==='edit'){ closeModal(); openEditForm(id); }
       if(actBtn.dataset.modalAct==='dup'){ closeModal(); duplicateEvent(id); }
       if(actBtn.dataset.modalAct==='ver-doc'){ abrirDocumentoEvento(id); }
+      if(actBtn.dataset.modalAct==='print-escala'){
+        /* v8.3: mesma checagem de defesa em profundidade do gridClickHandler
+           (ver comentário lá) — o botão só aparece logado, mas confere de
+           novo aqui caso a sessão tenha expirado com o modal já aberto. */
+        if(!authUser){ showToast('Entre com sua conta para imprimir o Evento Especial.'); return; }
+        var evEsc = state.events.find(function(x){ return x.id===id; });
+        closeModal();
+        if(evEsc) openPrintOverlayHTML(escalaPrintReportHTML(evEsc), fitEscalaOrientacoes);
+      }
       if(actBtn.dataset.modalAct==='del'){
         closeModal();
         deleteEvent(id).then(function(){ showToast('Evento excluído.'); }).catch(function(){});
