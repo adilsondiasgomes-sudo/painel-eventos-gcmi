@@ -1338,14 +1338,26 @@ details.roster-view summary{
    pelo Subcomandante. Reaproveita .rel-print-area/.rel-letterhead/
    .rel-title/.rel-meta (mesmo cabeçalho/timbre dos outros relatórios) e
    soma classes próprias dos blocos que só essa impressão tem: brasão
-   ampliado no timbre, grade de dados do evento, caixa de orientações e os
-   2 blocos de assinatura nominais no rodapé.
+   redimensionado no timbre, grade de dados do evento, caixa de orientações
+   e os 2 blocos de assinatura nominais no rodapé.
    v8.0: enxugado a pedido do DG — removidas as seções de Recursos
    empregados e Efetivo escalado (cabiam mal numa folha A4 só e deixaram de
    ser o foco do documento, que virou um registro/autorização, não mais uma
    lista de chamada); por isso a tabela "ciente/assinatura" (.escala-sign-
-   table) saiu de uso e sua regra foi removida. */
-.escala-print-area .rel-crest{width:5cm;height:5cm;}
+   table) saiu de uso e sua regra foi removida.
+   v8.1: brasão reduzido de 5cm pra 3cm e as fontes do timbre (nome da
+   Prefeitura/Secretaria/Guarda) aumentadas, só dentro do EVENTO ESPECIAL,
+   pra ficarem proporcionais ao brasão menor. E — o motivo real do
+   documento ainda sair em 2 páginas quando a Observações do evento é bem
+   longa (ver print do DG) — a caixa de Orientações ganhou um "orçamento"
+   de altura fixo (ESCALA_ORIENT_MAX_H no JS) que o JS ajusta
+   automaticamente, encolhendo a fonte até o texto inteiro caber dentro
+   dele (fitEscalaOrientacoes(), chamada ao abrir a pré-visualização) — sem
+   cortar/esconder nenhuma palavra da orientação, só deixando o texto menor
+   quando for comprido. */
+.escala-print-area .rel-crest{width:3cm;height:3cm;}
+.escala-print-area .rel-letterhead-text strong{font-size:19px;}
+.escala-print-area .rel-letterhead-text span{font-size:13.5px;}
 .escala-info-grid{
   display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:9px 28px;
   margin-bottom:14px;
@@ -1364,8 +1376,13 @@ details.roster-view summary{
   margin:0 0 6px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
   color:#b5701a;
 }
-.escala-orientacoes p{margin:0 0 6px;font-size:13px;color:var(--text-list-1);line-height:1.55;white-space:pre-wrap;}
-.escala-orientacoes p:last-child{margin-bottom:0;}
+/* v8.1: fonte/altura de linha saem daqui e vão pro wrapper .escala-
+   orientacoes-body — é nele que fitEscalaOrientacoes() mexe, pra afetar os
+   2 parágrafos (instrução fixa do SISNEP + Observações do evento) juntos
+   e de uma vez. */
+.escala-orientacoes-body{font-size:13px;line-height:1.55;}
+.escala-orientacoes-body p{margin:0 0 6px;color:var(--text-list-1);white-space:pre-wrap;}
+.escala-orientacoes-body p:last-child{margin-bottom:0;}
 /* bloco de assinatura nominal — espaço em branco pra assinatura à caneta,
    linha, e nome/função impressos embaixo da linha (padrão de termo
    institucional). */
@@ -2324,7 +2341,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.1 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2958,6 +2975,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v8.1', date: '29/10/2026',
+    changes: [
+      'Polimentos no documento "EVENTO ESPECIAL" (v8.0), a pedido do DG: brasão do timbre reduzido de 5cm pra 3cm, com as fontes do nome da Prefeitura/Secretaria/Guarda aumentadas pra ficarem proporcionais ao brasão menor; e a caixa de Orientações passou a ajustar automaticamente o próprio tamanho de fonte pra caber numa folha A4 só, mesmo quando a Observações do evento é longa — sem nunca esconder ou cortar uma palavra da orientação, só deixando o texto um pouco menor quando for preciso.'
+    ]
+  },
   {
     version: 'v8.0', date: '29/10/2026',
     changes: [
@@ -8115,7 +8138,11 @@ function reportLetterheadHTML(){
    Cintia Helena Soares Gomes Pereira (mat. 140125-0) e o Subcomandante
    Adilson Dias Gomes, que são sempre quem assina esse documento. Usa o
    mesmo mecanismo de pré-visualização/impressão dos outros relatórios
-   (openPrintOverlayHTML — ver comentário logo abaixo sobre por quê). */
+   (openPrintOverlayHTML — ver comentário logo abaixo sobre por quê).
+   v8.1: brasão reduzido pra 3cm (ver CSS); e a caixa de Orientações
+   ganhou o wrapper #escalaOrientBody, que fitEscalaOrientacoes() usa pra
+   ajustar a fonte automaticamente — ver comentário dessa função, logo
+   depois desta. */
 function escalaPrintReportHTML(ev){
   var addr = ev.endereco||{};
   var dataTxt = fmtDateRangeLongWithWeekday(ev.data, ev.dataFim);
@@ -8136,10 +8163,10 @@ function escalaPrintReportHTML(ev){
       '<div class="escala-info-item"><span class="k">Solicitante</span><span class="v">'+(ev.solicitante?esc(ev.solicitante):'&mdash;')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Contato</span><span class="v">'+(ev.contato?esc(ev.contato):'&mdash;')+'</span></div>'+
     '</div>'+
-    '<div class="escala-orientacoes"><h4>Orientações</h4>'+
+    '<div class="escala-orientacoes"><h4>Orientações</h4><div class="escala-orientacoes-body" id="escalaOrientBody">'+
       '<p>Registrar a ação no SISNEP e lançar o evento no Relatório de Serviço.</p>'+
       (ev.observacoes ? '<p>'+esc(ev.observacoes)+'</p>' : '')+
-    '</div>'+
+    '</div></div>'+
     (ev.documento && ev.documento.path ? '<p style="margin-top:12px;font-size:11.5px;color:var(--text-list-2);">Há um documento de referência (ofício) anexado a este evento no Painel de Eventos &mdash; consulte-o no sistema, se necessário.</p>' : '')+
     '<div class="escala-footer-sign">'+
       '<div class="escala-sign-block">'+
@@ -8154,6 +8181,43 @@ function escalaPrintReportHTML(ev){
       '</div>'+
     '</div>'+
   '</div>';
+}
+/* v8.1: a caixa de Orientações é a única parte do documento "EVENTO
+   ESPECIAL" cujo tamanho não é previsível — vem da Observações do
+   evento, texto livre que pode ser bem longa (foi o que empurrou o
+   documento pra 2 páginas no print real que o DG mandou). Limitar a
+   altura dela com CSS (overflow:hidden/max-height) ficaria mais curto na
+   tela, mas escondendo parte da orientação — inaceitável num documento
+   que orienta o despacho da equipe. Em vez disso, essa função mede a
+   altura real de TODO o documento já desenhado (.escala-print-area, com
+   o overlay visível) contra ESCALA_ORIENT_MAX_H — o espaço utilizável de
+   uma folha A4 a 96dpi, já com uma margem de segurança — e, se passar
+   desse orçamento, encolhe fonte/entrelinha só da caixa de Orientações
+   (#escalaOrientBody), em passos, remedindo a cada passo, até caber ou
+   chegar no piso de legibilidade (10px). Se mesmo no piso o texto não
+   couber (observação extremamente longa), ele NÃO é cortado — segue
+   inteiro e o documento ocupa uma 2ª página; o mecanismo só evita a
+   2ª página quando dá, nunca esconde uma palavra pra forçar a folha
+   única. */
+var ESCALA_ORIENT_MAX_H = 980;
+function fitEscalaOrientacoes(){
+  var area = document.querySelector('#printOverlayContent .escala-print-area');
+  var body = document.getElementById('escalaOrientBody');
+  if(!area || !body) return;
+  var steps = [
+    {fs:13,   lh:1.55},
+    {fs:12.5, lh:1.5},
+    {fs:12,   lh:1.45},
+    {fs:11.5, lh:1.4},
+    {fs:11,   lh:1.35},
+    {fs:10.5, lh:1.3},
+    {fs:10,   lh:1.25}
+  ];
+  for(var i=0;i<steps.length;i++){
+    body.style.fontSize = steps[i].fs+'px';
+    body.style.lineHeight = String(steps[i].lh);
+    if(area.offsetHeight<=ESCALA_ORIENT_MAX_H || i===steps.length-1) break;
+  }
 }
 function buildFilteredTableHTML(fieldsConfig, selectedKeys, items){
   var fields = fieldsConfig.filter(function(f){ return selectedKeys.indexOf(f.key)!==-1; });
@@ -8341,10 +8405,19 @@ function closePrintOverlay(){ $('printOverlay').hidden = true; }
    fixo do DOM — usada pelo relatório da Agenda do Cmt, que não mantém uma
    área de impressão permanentemente visível na tela (só é montada na hora
    do clique, com os filtros de período já aplicados). */
-function openPrintOverlayHTML(html){
+function openPrintOverlayHTML(html, beforePrintFn){
   var host = $('printOverlayContent');
   host.innerHTML = html;
+  /* v8.1: o overlay precisa estar visível (hidden=false) ANTES de rodar
+     beforePrintFn — é só a partir daí que o conteúdo tem altura real pra
+     medir (com hidden=true o navegador nem desenha). beforePrintFn roda
+     antes do toast/window.print() de propósito: é a chance de um
+     relatório ajustar a própria formatação (ver fitEscalaOrientacoes())
+     antes da pré-visualização/impressão acontecer. Opcional — os outros
+     relatórios que chamam openPrintOverlayHTML não passam esse 2º
+     argumento e continuam exatamente como antes. */
   $('printOverlay').hidden = false;
+  if(typeof beforePrintFn==='function'){ try{ beforePrintFn(); }catch(e){} }
   showToast('Pronto — pressione Ctrl+P (ou Cmd+P) para imprimir ou salvar como PDF.');
   try{ window.print(); }catch(e){}
 }
@@ -9011,7 +9084,7 @@ $_onReady(function(){
          num momento de sessão expirada. */
       if(!authUser){ showToast('Entre com sua conta para imprimir o Evento Especial.'); return; }
       var evEsc = state.events.find(function(x){ return x.id===id; });
-      if(evEsc) openPrintOverlayHTML(escalaPrintReportHTML(evEsc));
+      if(evEsc) openPrintOverlayHTML(escalaPrintReportHTML(evEsc), fitEscalaOrientacoes);
       return;
     }
     if(act==='del'){
