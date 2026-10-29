@@ -1583,6 +1583,17 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 .tbl-type.pessoal{color:#8a6d1f;}
 .tbl-date{color:var(--text-list-1);font-weight:600;white-space:nowrap;}
 .tbl-time{font-family:var(--font-mono);color:var(--text-list-2);white-space:nowrap;}
+/* v8.2: "+N" ao lado do horário principal nas tabelas de coluna estreita
+   (Lista/Agenda e Relatório de Eventos) quando o evento tem horários
+   adicionais — ver horarioLabelCompact(). A lista completa de horários
+   fica no title (tooltip ao passar o mouse); o texto cheio (horarioLabel())
+   só aparece onde a coluna não é estreita: card, detalhe do evento e o
+   documento "EVENTO ESPECIAL". */
+.tbl-time-extra{
+  display:inline-block;margin-left:3px;padding:0 4px;border-radius:5px;
+  background:rgba(227,180,81,.18);color:#8a6d1f;font-size:10px;font-weight:700;
+  cursor:default;
+}
 .tbl-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:220px;}
 .tbl-actions{display:flex;gap:4px;white-space:nowrap;}
 .table-wrap .icon-btn{border-color:var(--line-list);background:rgba(28,39,64,.05);color:var(--text-list-2);}
@@ -2018,6 +2029,27 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
                   <select id="f-ht" required></select>
                 </div>
               </div>
+              <!-- v8.2: "Horários adicionais" — a pedido do DG, pra cobrir o
+                   evento que se repete em janelas de horário separadas no
+                   mesmo dia (ex.: manhã e noite). Opcional: Hora início/Hora
+                   término acima continuam sendo o horário principal do
+                   evento (e os únicos usados pra ordenação/filtro por
+                   horário em todo o painel); cada linha adicionada aqui é só
+                   mais um intervalo mostrado junto do principal em todo
+                   lugar que exibe o horário do evento (ver horarioLabel()).
+                   Mesmo mecanismo de "chips"/linhas dinâmicas já usado em
+                   Recursos/Efetivo (renderRecursoChips/renderEfetivoChips):
+                   state.formIntervalosExtras guarda a lista, renderIntervalosExtras()
+                   redesenha, e os cliques de adicionar/remover são
+                   delegados no wiring principal. -->
+              <div class="field" style="margin-top:14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                  <label style="margin:0;">Horários adicionais (opcional)</label>
+                  <button type="button" class="btn btn-sm btn-ghost" id="btnAddIntervaloExtra">+ Adicionar outro horário</button>
+                </div>
+                <p class="field-hint" style="margin:4px 0 0;">Use quando o mesmo evento acontece em janelas de horário separadas no mesmo dia (ex.: manhã e noite).</p>
+                <div id="intervalosExtrasList" style="margin-top:10px;"></div>
+              </div>
               <div class="grid grid-2" id="rowMultiDia" style="margin-top:10px;" hidden>
                 <div class="field">
                   <label for="f-data-fim">Até (opcional — cursos de vários dias)</label>
@@ -2341,7 +2373,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.1 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.2 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2976,6 +3008,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
   {
+    version: 'v8.2', date: '29/10/2026',
+    changes: [
+      'Novo campo "Horários adicionais" no formulário de Evento (aba Quando), a pedido do DG: cobre o evento que acontece em janelas de horário separadas no mesmo dia (ex.: manhã e noite) — o horário principal continua sendo o único usado pra ordenar/filtrar por horário, e cada horário adicional é opcional. Os horários extras aparecem em todo lugar que já mostrava o horário do evento: card, detalhe, documento "EVENTO ESPECIAL" e Relatório de Eventos impresso (texto completo, nunca escondido); na Lista/Agenda e na tabela em tela do Relatório de Eventos, que têm coluna de horário estreita de propósito, aparecem como "+N" com a lista completa ao passar o mouse.'
+    ]
+  },
+  {
     version: 'v8.1', date: '29/10/2026',
     changes: [
       'Polimentos no documento "EVENTO ESPECIAL" (v8.0), a pedido do DG: brasão do timbre reduzido de 5cm pra 3cm, com as fontes do nome da Prefeitura/Secretaria/Guarda aumentadas pra ficarem proporcionais ao brasão menor; e a caixa de Orientações passou a ajustar automaticamente o próprio tamanho de fonte pra caber numa folha A4 só, mesmo quando a Observações do evento é longa — sem nunca esconder ou cortar uma palavra da orientação, só deixando o texto um pouco menor quando for preciso.'
@@ -3564,6 +3602,9 @@ var state = {
   formType: null,
   formEfetivo: new Map(),
   formRecursos: [],
+  /* v8.2: horários adicionais do evento em edição/criação — ver comentário
+     junto do campo "Horários adicionais" no HTML. */
+  formIntervalosExtras: [],
   editingId: null,
   /* v4.0: Calendário/Relatório combinado de Logística/Licitações — mês
      corrente e filtro de área, independentes do período/âncora da Agenda. */
@@ -3655,6 +3696,42 @@ function fmtDateRangeCompact(dataIni, dataFim){
   var yy = String(df.getFullYear()).slice(-2);
   return pad(di.getDate())+'-'+pad(df.getDate())+mon+yy;
 }
+/* v8.2: "Horários adicionais" — ponto único que monta o texto do horário
+   de um evento Operacional/Administrativo, já incluindo as janelas extras
+   (ver state.formIntervalosExtras/e.intervalosExtras) quando existirem.
+   Sem extras, devolve exatamente o mesmo texto de antes (horaInicio–
+   horaTermino) — nenhum lugar que já chamava esc(e.horaInicio)+'…'
+   muda de aparência pra um evento sem horário adicional. Usada em todo
+   lugar que mostra o horário do evento pro usuário: card, detalhe, Lista/
+   Agenda, Relatório de Eventos (tela e impressão com seleção de campos) e
+   o documento "EVENTO ESPECIAL". Não se aplica aos compromissos da Agenda
+   do Cmt (tipo "pessoal") — esses não têm a funcionalidade, ficam com o
+   horário único de sempre. */
+/* lista normalizada [{hi,ht}] — principal primeiro, depois os extras
+   válidos (com início E término preenchidos) — usada por horarioLabel()
+   e horarioLabelCompact(), pra nunca duplicar a lógica de junção. */
+function horarioJanelas(e){
+  return [{hi:e.horaInicio, ht:e.horaTermino}].concat(
+    (e.intervalosExtras||[]).filter(function(iv){ return iv && iv.horaInicio && iv.horaTermino; })
+      .map(function(iv){ return {hi:iv.horaInicio, ht:iv.horaTermino}; })
+  );
+}
+function horarioLabel(e){
+  return horarioJanelas(e).map(function(j){ return esc(j.hi||'--:--')+' &ndash; '+esc(j.ht||'--:--'); }).join(', ');
+}
+/* v8.2: versão compacta de horarioLabel() pras tabelas de coluna estreita
+   (Lista/Agenda e Relatório de Eventos, em tela e impressão) — mostra só
+   o horário principal e, se houver horários adicionais, um "+N" com a
+   lista completa no title (tooltip), em vez de estourar a largura fixa
+   da coluna "Horário" dessas tabelas (ver .tbl-time{white-space:nowrap}).
+   Nada muda pra evento sem horário adicional. */
+function horarioLabelCompact(e){
+  var janelas = horarioJanelas(e);
+  var principal = esc(janelas[0].hi||'--:--')+' &ndash; '+esc(janelas[0].ht||'--:--');
+  if(janelas.length<2) return principal;
+  var full = janelas.map(function(j){ return (j.hi||'--:--')+'–'+(j.ht||'--:--'); }).join(', ');
+  return principal+' <span class="tbl-time-extra" title="Horários: '+esc(full)+'">+'+(janelas.length-1)+'</span>';
+}
 /* Um evento "ocorre" em um dia quando esse dia cai dentro do intervalo
    [data, dataFim] (dataFim opcional — sem ela, o evento vale só para "data"). */
 function eventOccursOn(e, iso){
@@ -3710,6 +3787,10 @@ function buildExampleEvents(){
 function toDbRow(e){
   var row = {
     tipo: e.tipo, data: e.data, data_fim: e.dataFim||null, hora_inicio: e.horaInicio, hora_termino: e.horaTermino,
+    /* v8.2: "Horários adicionais" — janelas de horário extras do mesmo
+       evento no mesmo dia (ver horarioLabel()); hora_inicio/hora_termino
+       continuam sendo o horário principal, único usado pra ordenação. */
+    intervalos_extras: e.intervalosExtras||[],
     local_ref: e.localRef, endereco: e.endereco||{}, efetivo: e.efetivo||[], recursos: e.recursos||[],
     modalidade: e.modalidade||null, assunto: e.assunto||null, encerramento: e.encerramento||null, solicitante: e.solicitante||null, contato: e.contato||null,
     observacoes: e.observacoes||null,
@@ -3724,6 +3805,7 @@ function toDbRow(e){
 function fromDbRow(r){
   return {
     id:r.id, tipo:r.tipo, data:r.data, dataFim:r.data_fim||null, horaInicio:r.hora_inicio, horaTermino:r.hora_termino,
+    intervalosExtras: r.intervalos_extras||[],
     localRef:r.local_ref, endereco:r.endereco||{}, efetivo:r.efetivo||[], recursos:r.recursos||[],
     modalidade:r.modalidade, assunto:r.assunto||null, encerramento:r.encerramento||null, solicitante:r.solicitante, contato:r.contato,
     observacoes:r.observacoes||null, exemplo:!!r.exemplo,
@@ -4718,6 +4800,7 @@ function backupExportPayload(){
     events: (state.events||[]).filter(function(e){ return e.tipo!=='pessoal'; }).map(function(e){
       return {
         tipo:e.tipo, data:e.data, dataFim:e.dataFim||null, horaInicio:e.horaInicio, horaTermino:e.horaTermino,
+        intervalosExtras:e.intervalosExtras||[],
         localRef:e.localRef, endereco:e.endereco||{}, efetivo:e.efetivo||[], recursos:e.recursos||[],
         modalidade:e.modalidade||null, assunto:e.assunto||null, encerramento:e.encerramento||null, solicitante:e.solicitante||null, contato:e.contato||null,
         observacoes:e.observacoes||null,
@@ -5878,7 +5961,7 @@ function eventModalHTML(e){
   }).join('') || '<span class="ec-resource-tag">&mdash; nenhum &mdash;</span>';
   return ''+
   '<div class="modal-head"><h3>'+(e.tipo==='operacional'?'Evento Operacional Especial':'Evento Administrativo')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span><span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span></div>'+
+  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span><span class="ec-time mono">'+horarioLabel(e)+'</span></div>'+
   '<div class="ec-fields">'+
   /* v7.5: "Evento"/"Assunto" sobe pra logo depois da data — a pedido do DG,
      fica mais natural saber do que se trata o evento antes de ver onde ele
@@ -5956,7 +6039,7 @@ function cardHTML(e){
     '</div>'+
     '<div class="ec-when" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;">'+
       '<span class="ec-date">'+dt+'</span>'+
-      '<span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>'+
+      '<span class="ec-time mono">'+horarioLabel(e)+'</span>'+
     '</div>'+
     (e.assunto ? '<div class="ec-evento-highlight" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span class="v">'+esc(e.assunto)+'</span></div>' : '')+
     '<div class="ec-local" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;">'+esc(e.localRef||'')+'</div>'+
@@ -7497,7 +7580,7 @@ function tableRowHTML(e){
   return ''+
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
-    '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
+    '<td class="tbl-time">'+horarioLabelCompact(e)+'</td>'+
     '<td>'+localCell+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
     '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
   '</tr>';
@@ -7657,6 +7740,28 @@ function renderRecursoChips(){
     return '<span class="chip chip-recurso"><span class="mono mat">'+esc(r.quantidade)+'&times;</span>'+esc(r.tipo)+'<button type="button" data-i="'+i+'">&#10005;</button></span>';
   }).join('');
 }
+/* v8.2: "Horários adicionais" — mesma engine de linha dinâmica usada em
+   Recursos (state.formRecursos/renderRecursoChips), mas cada linha aqui
+   precisa de 2 <select> (início/término), não só um chip de texto; por
+   isso popula os <select> logo após desenhar o HTML (populateTimeSelect
+   não aceita markup pronto, só o elemento já no DOM). */
+function intervaloExtraRowHTML(i){
+  return '<div class="grid grid-3 intervalo-extra-row" style="margin-bottom:8px;align-items:end;">'+
+    '<div class="field"><label>Hora início</label><select class="ie-hi" data-i="'+i+'"></select></div>'+
+    '<div class="field"><label>Hora término</label><select class="ie-ht" data-i="'+i+'"></select></div>'+
+    '<button type="button" class="btn btn-sm btn-ghost" data-act="rm-intervalo-extra" data-i="'+i+'">Remover horário</button>'+
+  '</div>';
+}
+function renderIntervalosExtras(){
+  var box = $('intervalosExtrasList'); if(!box) return;
+  box.innerHTML = state.formIntervalosExtras.map(function(iv,i){ return intervaloExtraRowHTML(i); }).join('');
+  state.formIntervalosExtras.forEach(function(iv,i){
+    var selHi = box.querySelector('.ie-hi[data-i="'+i+'"]');
+    var selHt = box.querySelector('.ie-ht[data-i="'+i+'"]');
+    if(selHi){ populateTimeSelect(selHi); selHi.value = iv.horaInicio||''; }
+    if(selHt){ populateTimeSelect(selHt); selHt.value = iv.horaTermino||''; }
+  });
+}
 
 /* ---------------- reaproveitamento de locais ---------------- */
 function recentAddressesFor(ref){
@@ -7727,6 +7832,7 @@ function resetForm(){
   state.formType = null;
   state.formEfetivo = new Map();
   state.formRecursos = [];
+  state.formIntervalosExtras = [];
   state.formDocumentoAtual = null;
   state.formDocumentoRemover = false;
   $('eventForm').reset();
@@ -7743,6 +7849,7 @@ function resetForm(){
   renderEfetivoChips();
   renderEfetivoList();
   renderRecursoChips();
+  renderIntervalosExtras();
   renderRefSelect();
   renderLocalSugestoes();
   updateEscolaRowVisibility();
@@ -7808,6 +7915,8 @@ function fillFormFromEvent(ev, opts){
   $('f-data-fim').value = opts.keepDate===false ? '' : (ev.dataFim||'');
   $('f-hi').value = ev.horaInicio||'';
   $('f-ht').value = ev.horaTermino||'';
+  state.formIntervalosExtras = (ev.intervalosExtras||[]).map(function(iv){ return {horaInicio:iv.horaInicio||'', horaTermino:iv.horaTermino||''}; });
+  renderIntervalosExtras();
   renderRefSelect();
   $('f-ref').value = ev.localRef||'';
   renderLocalSugestoes();
@@ -7893,6 +8002,21 @@ function handleSubmit(e){
     switchFormModalTab(form, 'quando'); errEl.textContent = 'Preencha a data e o horário do evento.'; return;
   }
   if(hi>=ht){ switchFormModalTab(form, 'quando'); errEl.textContent = 'A hora de término deve ser posterior à hora de início.'; return; }
+  /* v8.2: "Horários adicionais" — linha deixada totalmente em branco é
+     ignorada (o usuário clicou em "+Adicionar" e desistiu, sem remover a
+     linha); preenchida pela metade é erro, porque não dá pra saber se é
+     início ou término que falta. */
+  var intervalosExtras = [];
+  for(var ie=0; ie<state.formIntervalosExtras.length; ie++){
+    var ivHi = state.formIntervalosExtras[ie].horaInicio;
+    var ivHt = state.formIntervalosExtras[ie].horaTermino;
+    if(!ivHi && !ivHt) continue;
+    if(!ivHi || !ivHt){
+      switchFormModalTab(form, 'quando'); errEl.textContent = 'Preencha o início e o término de cada horário adicional (ou remova a linha em branco).'; return;
+    }
+    if(ivHi>=ivHt){ switchFormModalTab(form, 'quando'); errEl.textContent = 'Em "Horários adicionais", a hora de término deve ser posterior à de início.'; return; }
+    intervalosExtras.push({horaInicio:ivHi, horaTermino:ivHt});
+  }
   if(isAdmin && dataFim && dataFim < data){
     switchFormModalTab(form, 'quando'); errEl.textContent = 'A data "Até" não pode ser anterior à data de início.'; return;
   }
@@ -7919,7 +8043,8 @@ function handleSubmit(e){
     switchFormModalTab(form, 'solicitante'); errEl.textContent = 'O documento passa de 15 MB — reduza o tamanho do PDF e tente novamente.'; return;
   }
   var payload = {
-    tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht, localRef: ref,
+    tipo: state.formType, data: data, dataFim: (dataFim && dataFim!==data ? dataFim : null), horaInicio: hi, horaTermino: ht,
+    intervalosExtras: intervalosExtras, localRef: ref,
     endereco: {rua:rua, numero:num, bairro:bairro, cidade:cidade, estado:estado},
     efetivo: Array.from(state.formEfetivo.entries()).map(function(entry){ return {matricula:entry[0], nome:entry[1].nome, funcional:entry[1].funcional}; }),
     recursos: state.formRecursos.slice(),
@@ -8155,7 +8280,7 @@ function escalaPrintReportHTML(ev){
     '<div class="escala-info-grid">'+
       '<div class="escala-info-item full"><span class="k">Evento</span><span class="v">'+(ev.assunto?esc(ev.assunto):'&mdash;')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Data</span><span class="v">'+dataTxt+'</span></div>'+
-      '<div class="escala-info-item"><span class="k">Horário</span><span class="v">'+esc(ev.horaInicio||'--:--')+' &ndash; '+esc(ev.horaTermino||'--:--')+'</span></div>'+
+      '<div class="escala-info-item"><span class="k">Horário</span><span class="v">'+horarioLabel(ev)+'</span></div>'+
       '<div class="escala-info-item full"><span class="k">Local</span><span class="v">'+esc(ev.localRef||'')+'</span></div>'+
       '<div class="escala-info-item full"><span class="k">Endereço</span><span class="v">'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Atuação</span><span class="v">'+(ev.modalidade?esc(ev.modalidade):'&mdash;')+'</span></div>'+
@@ -8234,7 +8359,14 @@ function buildFilteredTableHTML(fieldsConfig, selectedKeys, items){
    precisam mais repetir a mesma informação. */
 var EVENTOS_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
-  {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'; }},
+  /* v8.2: aqui (impressão/exportação) usa horarioLabel() — a versão
+     cheia, sem esconder atrás de tooltip — porque "title" não aparece no
+     papel/PDF; a coluna só cresce um pouco quando o evento tem horário
+     adicional (table-layout continua automático, nunca corta texto). Na
+     tabela em tela (relTableRowHTML) e na Lista (tableRowHTML), que têm
+     coluna estreita de propósito e o detalhe completo a um clique, usa
+     horarioLabelCompact() em vez disso — ver os dois comentários lá. */
+  {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return '<td class="tbl-time">'+horarioLabel(e)+'</td>'; }},
   {key:'local', label:'Local', th:'<th class="th-local">Local</th>', td:function(e){ var addr=e.endereco||{}; var sub = e.tipo==='pessoal' ? (e.modalidade||'') : [addr.bairro,addr.cidade].filter(Boolean).join(', '); return '<td class="tbl-local">'+esc(e.localRef||(e.tipo==='pessoal'?'—':''))+(sub?'<br><span style="color:var(--ink-3);font-size:11px;">'+esc(sub)+'</span>':'')+'</td>'; }},
   {key:'motivo', label:'Evento/Motivo', th:'<th>Evento/Motivo</th>', td:function(e){ return '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'recursos', label:'Recursos', th:'<th>Recursos</th>', td:function(e){ var recursoTags=(e.recursos||[]).map(function(r){return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+recursoTags+'</div></td>'; }},
@@ -8308,7 +8440,7 @@ function relTableRowHTML(e){
   return ''+
   '<tr>'+
     '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'+
-    '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
+    '<td class="tbl-time">'+horarioLabelCompact(e)+'</td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
     '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
@@ -9051,6 +9183,29 @@ $_onReady(function(){
     var btn = e.target.closest('button'); if(!btn) return;
     state.formRecursos.splice(Number(btn.dataset.i), 1);
     renderRecursoChips();
+  });
+
+  /* v8.2: "Horários adicionais" — adicionar entra sempre em branco (o
+     próprio <select>, repopulado em renderIntervalosExtras(), já tem a
+     opção em branco no topo via populateTimeSelect(sel, true)); remover e
+     mudar valor são delegados no container (ele é redesenhado inteiro a
+     cada adicionar/remover, então o listener precisa ficar no pai fixo,
+     não nos <select>/<button> que somem e voltam). */
+  $('btnAddIntervaloExtra').addEventListener('click', function(){
+    state.formIntervalosExtras.push({horaInicio:'', horaTermino:''});
+    renderIntervalosExtras();
+  });
+  $('intervalosExtrasList').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-act="rm-intervalo-extra"]'); if(!btn) return;
+    state.formIntervalosExtras.splice(Number(btn.dataset.i), 1);
+    renderIntervalosExtras();
+  });
+  $('intervalosExtrasList').addEventListener('change', function(e){
+    var sel = e.target;
+    var i = Number(sel.dataset.i);
+    if(isNaN(i) || !state.formIntervalosExtras[i]) return;
+    if(sel.classList.contains('ie-hi')) state.formIntervalosExtras[i].horaInicio = sel.value;
+    else if(sel.classList.contains('ie-ht')) state.formIntervalosExtras[i].horaTermino = sel.value;
   });
 
   $('eventForm').addEventListener('submit', handleSubmit);
