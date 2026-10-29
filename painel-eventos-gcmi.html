@@ -1484,6 +1484,11 @@ table.ev-table{width:100%;border-collapse:collapse;min-width:900px;}
    Relatórios (.rel-ev-table, 9 colunas) e obrigavam essa tabela mais simples
    a rolar na horizontal mesmo no celular. Aqui ela pode encolher bem mais. */
 table.ev-table:not(.rel-ev-table){min-width:480px;}
+/* v7.8: Lista da Agenda geral — coluna Horário com largura fixa (cabe
+   "00:00 – 00:00" folgado) pra não "roubar" espaço do Local, que tem texto
+   bem mais variável/comprido (nome do local + bairro/cidade). */
+.agenda-list-table .th-time-narrow,
+.agenda-list-table td.tbl-time{width:118px;}
 table.ev-table thead th{
   text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--text-list-2);padding:13px 14px;
@@ -2271,7 +2276,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.7 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.8 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2905,6 +2910,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.8', date: '29/10/2026',
+    changes: [
+      'Lista da Agenda geral: coluna "Tipo" removida (a estrela ★ de "Cmt participa" passou a aparecer junto do Local); coluna "Horário" estreitada pra sobrar mais espaço pro Local; e nova coluna "Evento/Motivo" depois do Local.',
+      'O brasão ampliado (clique no brasão do cabeçalho) ganhou um atalho direto pra "Documentação Institucional" (termo de cessão de uso, direitos autorais e declaração de conformidade com a LGPD) — o mesmo documento que já existia em Configurações → "i · Sobre".'
+    ]
+  },
   {
     version: 'v7.7', date: '29/10/2026',
     changes: [
@@ -5766,7 +5778,12 @@ function crestModalHTML(){
     '<div class="crest-lightbox">'+
       '<div class="crest-big-wrap"><img src="'+esc(src)+'" alt="Brasão da Guarda Civil Municipal de Ipatinga" /></div>'+
     '</div>'+
-    '<p class="crest-credits">Desenvolvido por: Adilson Dias Gomes, em 08 de setembro de 2026.</p>';
+    '<p class="crest-credits">Desenvolvido por: Adilson Dias Gomes, em 08 de setembro de 2026.</p>'+
+    /* v7.8: atalho pedido pelo DG — do brasão ampliado direto pro termo de
+       cessão de uso/direitos autorais + declaração LGPD (mesmo documento já
+       acessível em Configurações → "i · Sobre"), sem precisar fechar e
+       navegar até lá. */
+    '<p class="crest-credits"><a href="#" id="crestLegalDocsLink">Consultar documentação institucional</a></p>';
 }
 function eventModalHTML(e){
   var addr = e.endereco||{};
@@ -7370,18 +7387,20 @@ function renderSemesterGrid(container, anchor, filtered){
 function tableRowHTML(e){
   var addr = e.endereco||{};
   /* v5.4: a pedido do DG, a Lista da Agenda geral mostra só até o campo
-     Local (Data/Horário/Local/Tipo) — mais confortável de ler numa lista
-     longa. Os detalhes completos (recursos, efetivo, atuação, solicitante,
-     ações de editar/duplicar/excluir) continuam a um clique, no modal de
-     detalhe do evento (a linha inteira já abre o modal via data-act="view"). */
+     Local — mais confortável de ler numa lista longa. Os detalhes completos
+     (recursos, efetivo, atuação, solicitante, ações de editar/duplicar/
+     excluir) continuam a um clique, no modal de detalhe do evento (a linha
+     inteira já abre o modal via data-act="view"). */
   /* v6.6: compromissos visíveis da Agenda do Cmt (tipo "pessoal") podem
-     aparecer aqui junto — mantém as mesmas 4 colunas, mas com rótulo/
+     aparecer aqui junto — mantém as mesmas colunas, mas com rótulo/
      conteúdo próprios (não tem recursos/efetivo/endereço institucional). */
-  /* v6.7: a pedido do DG, Local passou a vir antes de Tipo (é o dado que a
-     servidora busca primeiro ao ler a lista) e o rótulo do Tipo foi
-     abreviado (Oper./Adm./Comp.) — pensado pra sobrar mais espaço na tela
-     do celular, onde a tabela costuma cortar o texto. */
-  var tipoLabel = e.tipo==='operacional' ? 'Oper.' : (e.tipo==='administrativo' ? 'Adm.' : 'Comp.');
+  /* v7.8: a pedido do DG — coluna "Tipo" suprimida (a estrela ★ de "Cmt
+     participa" migrou pra junto do Local, já que era a única informação
+     que se perdia com o Tipo fora); coluna "Horário" estreitada (largura
+     fixa, cabe à vontade "00:00 – 00:00") pra sobrar espaço pro Local, que
+     tem texto mais variável/comprido; e nova coluna "Evento/Motivo" depois
+     do Local (mesmo campo/rótulo usado no Relatório de Eventos desde a
+     v7.6). */
   var localCell = e.tipo==='pessoal'
     ? esc(e.localRef||'—')+(e.modalidade ? '<br><span style="color:var(--ink-3);font-size:11px;">'+esc(e.modalidade)+'</span>' : '')
     : esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span>';
@@ -7389,8 +7408,8 @@ function tableRowHTML(e){
   '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date">'+(e.dataFim && e.dataFim!==e.data ? fmtDateRangeLong(e.data, e.dataFim) : (fmtDateLong(e.data)+(e.data ? ', '+esc(weekdayAbbrev(e.data)) : '')))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td>'+localCell+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span>'+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
+    '<td>'+localCell+(e.cmtParticipa ? ' <span class="tbl-cmt-badge" title="O Cmt participa ou participou deste evento">&#9733;</span>' : '')+'</td>'+
+    '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
   '</tr>';
 }
 function renderTable(container, list){
@@ -7398,8 +7417,8 @@ function renderTable(container, list){
     container.innerHTML = '<div class="empty-state"><h3>Nenhum evento encontrado</h3><p>Ajuste os filtros ou lance um novo evento.</p></div>';
     return;
   }
-  container.innerHTML = '<div class="table-wrap"><table class="ev-table"><thead><tr>'+
-    '<th>Data</th><th>Horário</th><th>Local</th><th>Tipo</th>'+
+  container.innerHTML = '<div class="table-wrap"><table class="ev-table agenda-list-table"><thead><tr>'+
+    '<th>Data</th><th class="th-time-narrow">Horário</th><th>Local</th><th>Evento/Motivo</th>'+
     '</tr></thead><tbody>'+list.map(tableRowHTML).join('')+'</tbody></table></div>';
 }
 
@@ -8671,7 +8690,19 @@ $_onReady(function(){
     $('legalDocsLink').addEventListener('click', function(e){ e.preventDefault(); openModal(legalModalHTML()); });
   }catch(e){ console.error('wiring legalDocsLink', e); }
   try{
-    var openCrestModal = function(){ openModal(crestModalHTML()); $('modalBox').classList.add('crest-modal'); };
+    var openCrestModal = function(){
+      openModal(crestModalHTML());
+      $('modalBox').classList.add('crest-modal');
+      var link = document.getElementById('crestLegalDocsLink');
+      if(link) link.addEventListener('click', function(e){
+        e.preventDefault();
+        /* v7.8: troca de conteúdo dentro do mesmo modal — precisa tirar a
+           classe crest-modal (max-width:420px) antes, senão o texto da
+           documentação institucional fica espremido na largura do brasão. */
+        $('modalBox').className = 'modal-box';
+        openModal(legalModalHTML());
+      });
+    };
     $('crestBtn').addEventListener('click', openCrestModal);
     $('crestBtn').addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openCrestModal(); } });
   }catch(e){ console.error('wiring crestBtn', e); }
