@@ -1693,6 +1693,28 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 .modal-box.cmt-modal .login-err{flex:none;}
 .modal-box.cmt-modal .modal-actions{flex:none;}
 
+/* v7.5: detalhe do evento (Operacional/Administrativo, eventModalHTML) —
+   card ampliado a pedido do DG: mais largo, fonte maior em todos os campos,
+   travado em altura (igual ao cmt-modal) pra sempre caber na tela com
+   scroll só nos campos, não no card inteiro. */
+.modal-box.event-modal{
+  max-width:880px;
+  max-height:calc(100vh - 80px);
+  display:flex;flex-direction:column;
+}
+.modal-box.event-modal .modal-head{flex:none;}
+.modal-box.event-modal .modal-head h3{font-size:20px;}
+.modal-box.event-modal .ec-fields{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:4px;}
+.modal-box.event-modal .modal-actions{flex:none;}
+.modal-box.event-modal .ec-when{margin-bottom:18px;}
+.modal-box.event-modal .ec-date{font-size:25px;}
+.modal-box.event-modal .ec-time{font-size:16px;}
+.modal-box.event-modal .ec-row{font-size:15px;margin-bottom:11px;gap:12px;}
+.modal-box.event-modal .ec-row .k{font-size:13px;min-width:128px;}
+.modal-box.event-modal .ec-tag,
+.modal-box.event-modal .ec-resource-tag{font-size:13px;padding:4px 9px;}
+.modal-box.event-modal .ec-cmt-badge{font-size:13px;}
+
 /* ---------- crest lightbox (brasão ampliado, com créditos ocultos) ---------- */
 .modal-box.crest-modal{
   max-width:420px;
@@ -2233,7 +2255,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.4 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.5 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2867,6 +2889,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.5', date: '29/10/2026',
+    changes: [
+      'Polimento no card de detalhe do evento (Operacional Especial/Administrativo): ficou maior e com fonte maior em todos os campos; o campo "Evento"/"Assunto" agora aparece antes do "Local"; e a data passou a exibir também o dia da semana por extenso (igual já acontecia nos cards da Agenda).'
+    ]
+  },
   {
     version: 'v7.4', date: '28/10/2026',
     changes: [
@@ -5722,11 +5750,15 @@ function eventModalHTML(e){
   }).join('') || '<span class="ec-resource-tag">&mdash; nenhum &mdash;</span>';
   return ''+
   '<div class="modal-head"><h3>'+(e.tipo==='operacional'?'Evento Operacional Especial':'Evento Administrativo')+'</h3><button class="modal-close" data-close="1" type="button">&#10005;</button></div>'+
-  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateRangeLong(e.data, e.dataFim)+'</span><span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span></div>'+
+  '<div class="ec-when" style="margin-bottom:14px;"><span class="ec-date">'+fmtDateRangeLongWithWeekday(e.data, e.dataFim)+'</span><span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span></div>'+
+  '<div class="ec-fields">'+
+  /* v7.5: "Evento"/"Assunto" sobe pra logo depois da data — a pedido do DG,
+     fica mais natural saber do que se trata o evento antes de ver onde ele
+     acontece. */
+  (e.assunto ? '<div class="ec-row"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span>'+esc(e.assunto)+'</span></div>' : '')+
   '<div class="ec-row"><span class="k">Local</span><span>'+esc(e.localRef||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Endereço</span><span>'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
   '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
-  (e.assunto ? '<div class="ec-row"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span>'+esc(e.assunto)+'</span></div>' : '')+
   (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
   '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>'+
   '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>'+
@@ -5736,6 +5768,7 @@ function eventModalHTML(e){
   (e.cmtParticipa ? '<div class="ec-row"><span class="k">Cmt</span><span class="ec-cmt-badge">&#9733; Participa deste evento</span></div>' : '')+
   (e.documento && e.documento.path ? '<div class="ec-row"><span class="k">Documento</span><span><button type="button" class="btn btn-sm btn-ghost" data-modal-act="ver-doc" data-id="'+esc(e.id)+'">Ver documento</button></span></div>' : '')+
   (e.documento && !e.documento.path && e.documento.arquivadoEm ? '<div class="ec-row"><span class="k">Documento</span><span>Arquivado localmente em '+esc(e.documento.arquivadoEm)+'</span></div>' : '')+
+  '</div>'+
   '<div class="modal-actions">'+
     '<button type="button" class="btn btn-danger btn-sm" data-modal-act="del" data-id="'+esc(e.id)+'">Excluir</button>'+
     '<button type="button" class="btn btn-ghost btn-sm" data-modal-act="dup" data-id="'+esc(e.id)+'">Duplicar</button>'+
@@ -5757,6 +5790,7 @@ function openEventModal(id){
   var ev = state.events.find(function(x){ return x.id===id; });
   if(!ev) return;
   openModal(ev.tipo==='pessoal' ? cmtEventModalHTML(ev) : eventModalHTML(ev));
+  if(ev.tipo!=='pessoal') $('modalBox').classList.add('event-modal'); /* v7.5: card ampliado */
   if(ev.tipo!=='pessoal' && ev.documento && ev.documento.path) wireDocPreviewHover(ev);
 }
 
