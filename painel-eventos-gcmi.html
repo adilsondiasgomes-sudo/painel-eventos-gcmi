@@ -1158,6 +1158,22 @@ body[data-screen="form"] .app{max-width:1360px;}
 .ec-local{font-size:13.5px;color:var(--ink-1);margin-bottom:2px;font-weight:600;}
 .ec-addr{font-size:12px;color:var(--ink-3);margin-bottom:10px;}
 
+/* v7.7: "Evento"/"Assunto" em destaque no card, logo abaixo do horário — a
+   pedido do DG. Deixa de aparecer também como ec-row mais abaixo (ver
+   cardHTML), pra não repetir a mesma informação duas vezes no mesmo card. */
+.ec-evento-highlight{
+  display:flex;flex-direction:column;gap:1px;
+  margin:2px 0 10px;padding:7px 10px;
+  background:rgba(227,180,81,.08);
+  border-left:3px solid var(--gold);
+  border-radius:6px;
+}
+.ec-evento-highlight .k{
+  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-3);
+}
+.ec-evento-highlight .v{font-size:14px;font-weight:700;color:var(--ink-1);line-height:1.3;}
+
 .ec-row{display:flex;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:6px;align-items:flex-start;}
 .ec-row .k{color:var(--ink-3);min-width:64px;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px;}
 
@@ -2255,7 +2271,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.6 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.7 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2889,6 +2905,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.7', date: '29/10/2026',
+    changes: [
+      'O campo "Evento" (ou "Assunto", no Administrativo) passou a aparecer em destaque no card da Agenda, logo abaixo do horário — antes vinha mais abaixo, junto dos outros campos (Atuação, Efetivo etc.), só como mais uma linha.'
+    ]
+  },
   {
     version: 'v7.6', date: '29/10/2026',
     changes: [
@@ -5829,10 +5851,10 @@ function cardHTML(e){
       '<span class="ec-date">'+dt+'</span>'+
       '<span class="ec-time mono">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</span>'+
     '</div>'+
+    (e.assunto ? '<div class="ec-evento-highlight" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span class="v">'+esc(e.assunto)+'</span></div>' : '')+
     '<div class="ec-local" data-act="view" data-id="'+esc(e.id)+'" style="cursor:pointer;">'+esc(e.localRef||'')+'</div>'+
     '<div class="ec-addr">'+esc(addrLine1)+(addr.bairro ? ' &middot; '+esc(addr.bairro) : '')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</div>'+
     '<div class="ec-row"><span class="k">Atuação</span><span>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</span></div>'+
-    (e.assunto ? '<div class="ec-row"><span class="k">'+(e.tipo==='operacional'?'Evento':'Assunto')+'</span><span>'+esc(e.assunto)+'</span></div>' : '')+
     (e.encerramento ? '<div class="ec-row"><span class="k">Encerramento</span><span>'+esc(e.encerramento)+(e.dataFim?' ('+fmtDateLong(e.dataFim)+')':'')+'</span></div>' : '')+
     (efetivoTags ? '<div class="ec-row"><span class="k">Efetivo</span><div class="ec-efetivo">'+efetivoTags+'</div></div>' : '')+
     (recursoTags ? '<div class="ec-row"><span class="k">'+(e.tipo==='administrativo'?'Participantes':'Recursos')+'</span><div class="ec-efetivo">'+recursoTags+'</div></div>' : '')+
