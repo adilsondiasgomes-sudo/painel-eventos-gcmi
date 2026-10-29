@@ -1397,6 +1397,28 @@ details.roster-view summary{
      uma segunda folha se sobrar só uma linha — mantém tudo numa A4 só. */
   .escala-print-area{page-break-inside:avoid;}
 }
+/* v8.5: "EVENTOS ESPECIAIS" (vários eventos, várias páginas) — ver o
+   comentário grande em eventosEspeciaisDiaPrintReportHTML() pro raciocínio
+   completo. Resumo do CSS: a <table> dá o cabeçalho repetido por página
+   (thead nativo); cada evento é um "cartão" com a mesma cara visual dos
+   outros relatórios (.rel-print-area), só que um por linha da tabela, pra
+   nunca quebrar no meio (page-break-inside:avoid no <tr>, reforçado no
+   <div> de dentro). */
+.eventos-especiais-wrap{max-width:960px;margin:0 auto;}
+.eventos-especiais-table{width:100%;border-collapse:separate;border-spacing:0;}
+.eventos-especiais-table thead td{padding:0 0 18px;}
+.eventos-especiais-table tbody td{padding:0;}
+.ee-event-card,.ee-sign-card{
+  background:var(--bg-list-row);border:1px solid var(--line-list);border-radius:14px;
+  box-shadow:0 14px 30px -24px rgba(15,25,50,.3);margin-bottom:14px;
+}
+.ee-event-card{padding:16px 20px 18px;}
+.ee-sign-card{padding:20px 20px 22px;margin-bottom:0;}
+.ee-sign-card .escala-footer-sign{margin-top:0;}
+@media print{
+  .eventos-especiais-table tr{page-break-inside:avoid;}
+  .ee-event-card,.ee-sign-card{page-break-inside:avoid;}
+}
 /* rebalanceamento de colunas do relatório: data compacta, local com mais espaço.
    table-layout permanece automático (o navegador calcula a largura de cada
    coluna a partir do conteúdo) para nunca cortar/sobrepor texto — os valores
@@ -2384,7 +2406,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.3 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.5 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2420,6 +2442,13 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <div class="field"><label for="rel-integrante">Integrante</label><input type="text" id="rel-integrante" placeholder="Nome, funcional ou matrícula…" /></div>
       <div class="field"><label for="rel-motivo">Motivo</label><input type="text" id="rel-motivo" placeholder="Buscar por assunto/motivo…" /></div>
       <button class="btn btn-sm btn-ghost" id="rel-clear" type="button">Limpar filtros</button>
+      <!-- v8.5: documento "EVENTOS ESPECIAIS" — reaproveita o filtro de
+           período (rel-data-ini/rel-data-fim) já existente logo acima,
+           ignora os demais filtros (tipo/local/etc.) e sempre restringe a
+           Operacional Especial; sem data marcada, assume hoje (ver
+           eventosEspeciaisDiaRange()). Só pra quem está logado — ver
+           updateRelatoriosAccessUI(). -->
+      <button class="btn btn-sm btn-ghost rel-print-btn" id="btnPrintEventosEspeciais" type="button" hidden title="Reúne todos os Eventos Operacional Especial do período (de/até acima) num único documento, em ordem cronológica.">Imprimir Eventos Especiais</button>
       <button class="btn btn-gold btn-sm rel-print-btn" id="btnPrintReport" type="button">Imprimir / Exportar</button>
     </div>
 
@@ -3018,6 +3047,18 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v8.5', date: '29/10/2026',
+    changes: [
+      'Novo documento "EVENTOS ESPECIAIS", a pedido do DG: reúne todos os eventos Operacional Especial de um período (um botão novo "Imprimir Eventos Especiais" na aba Relatórios, ao lado do filtro de data já existente — sem data marcada, assume o dia de hoje) num único arquivo, em ordem cronológica, com uma única assinatura cobrindo o período inteiro no final, em vez de uma por evento. O documento pode sair em várias páginas quando houver muitos eventos — o timbre e o período se repetem automaticamente no topo de cada página impressa, e cada evento nunca é cortado ao meio por uma quebra de página. Botão visível só para quem está logado.'
+    ]
+  },
+  {
+    version: 'v8.4', date: '29/10/2026',
+    changes: [
+      'Polimento no documento "EVENTO ESPECIAL", a pedido do DG: suprimida a linha "Emitido em DD/MM/AAAA às HH:MM" (podia distrair e ser confundida com a data do evento) e o campo "Endereço" (rua/bairro/cidade) — "Local" continua no documento.'
+    ]
+  },
   {
     version: 'v8.3', date: '29/10/2026',
     changes: [
@@ -5529,6 +5570,15 @@ function updateVistoriaAccessUI(){
   document.querySelectorAll('[data-view="vistoria"]').forEach(function(b){ b.hidden = restricted; });
   if(restricted && document.body.getAttribute('data-screen')==='vistoria'){ goToView('agenda'); }
 }
+/* v8.5: o botão "Imprimir Eventos Especiais" (aba Relatórios) é o 1º
+   elemento da aba a ficar restrito a quem está logado — mesma regra do
+   botão de impressão avulso no card/detalhe do evento (authUser, não
+   canManageEventos() — basta estar logado, não precisa ter permissão de
+   edição). A aba Relatórios continua pública pra todo o resto. */
+function updateRelatoriosAccessUI(){
+  var btn = $('btnPrintEventosEspeciais');
+  if(btn) btn.hidden = !authUser;
+}
 function updateAuthUI(){
   var btn = $('authBtn'), label = $('authUserLabel');
   if(!btn) return;
@@ -5561,7 +5611,7 @@ function updateAuthUI(){
      nenhum, deixando partes inteiras do painel travadas no estado
      antigo — por isso cada uma agora roda isolada; uma falha aparece só
      no console (com o nome da função), sem travar as outras. */
-  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI, updateViaturasAccessUI, updateVistoriaAccessUI, applyVistoriaKioskMode].forEach(function(fn){
+  [updateCfgAccessUI, updateFormAccessUI, updateCmtAgendaAccessUI, updateLogisticaAccessUI, updateLicitacoesAccessUI, updateDomainAccessUI, updateAuditoriaAccessUI, updateViaturasAccessUI, updateVistoriaAccessUI, applyVistoriaKioskMode, updateRelatoriosAccessUI].forEach(function(fn){
     try{ fn(); }catch(e){ console.error('updateAuthUI: '+fn.name, e); }
   });
 }
@@ -8336,32 +8386,38 @@ function reportLetterheadHTML(){
    ganhou o wrapper #escalaOrientBody, que fitEscalaOrientacoes() usa pra
    ajustar a fonte automaticamente — ver comentário dessa função, logo
    depois desta. */
-function escalaPrintReportHTML(ev){
-  var addr = ev.endereco||{};
+/* v8.5: a grade de dados + orientações de UM evento (sem timbre/título/
+   assinatura em volta) virou essa função própria — escalaPrintReportHTML()
+   (documento de 1 evento só) e eventosEspeciaisDiaPrintReportHTML()
+   (documento de vários) montam exatamente o mesmo "cartão" por evento a
+   partir daqui, pra garantir a mesma formatação/estética nos dois
+   documentos por construção, em vez de duas cópias do mesmo HTML que
+   poderiam divergir com o tempo. Note que a caixa de Orientações NÃO leva
+   mais id fixo (#escalaOrientBody) — com vários eventos na mesma página,
+   um id repetido seria inválido; fitOrientacoesBody()/fitEscalaOrientacoes()/
+   fitEventosEspeciaisOrientacoes() (logo abaixo) encontram a caixa de
+   cada evento por escopo (dentro do card daquele evento), não mais por id. */
+function escalaEventInfoHTML(ev){
   var dataTxt = fmtDateRangeLongWithWeekday(ev.data, ev.dataFim);
-  var metaTxt = 'Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   return ''+
-  '<div class="rel-print-area escala-print-area">'+
-    reportLetterheadHTML()+
-    '<h3 class="rel-title">EVENTO ESPECIAL</h3>'+
-    '<p class="rel-meta">'+esc(metaTxt)+'</p>'+
     '<div class="escala-info-grid">'+
       '<div class="escala-info-item full"><span class="k">Evento</span><span class="v">'+(ev.assunto?esc(ev.assunto):'&mdash;')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Data</span><span class="v">'+dataTxt+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Horário</span><span class="v">'+horarioLabel(ev)+'</span></div>'+
       '<div class="escala-info-item full"><span class="k">Local</span><span class="v">'+esc(ev.localRef||'')+'</span></div>'+
-      '<div class="escala-info-item full"><span class="k">Endereço</span><span class="v">'+esc([addr.rua,addr.numero].filter(Boolean).join(', '))+(addr.bairro?' &middot; '+esc(addr.bairro):'')+' &mdash; '+esc(addr.cidade||'')+'/'+esc(addr.estado||'')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Atuação</span><span class="v">'+(ev.modalidade?esc(ev.modalidade):'&mdash;')+'</span></div>'+
       (ev.encerramento ? '<div class="escala-info-item"><span class="k">Encerramento</span><span class="v">'+esc(ev.encerramento)+(ev.dataFim?' ('+fmtDateLong(ev.dataFim)+')':'')+'</span></div>' : '')+
       '<div class="escala-info-item"><span class="k">Solicitante</span><span class="v">'+(ev.solicitante?esc(ev.solicitante):'&mdash;')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Contato</span><span class="v">'+(ev.contato?esc(ev.contato):'&mdash;')+'</span></div>'+
     '</div>'+
-    '<div class="escala-orientacoes"><h4>Orientações</h4><div class="escala-orientacoes-body" id="escalaOrientBody">'+
+    '<div class="escala-orientacoes"><h4>Orientações</h4><div class="escala-orientacoes-body">'+
       '<p>Registrar a ação no SISNEP e lançar o evento no Relatório de Serviço.</p>'+
       (ev.observacoes ? '<p>'+esc(ev.observacoes)+'</p>' : '')+
     '</div></div>'+
-    (ev.documento && ev.documento.path ? '<p style="margin-top:12px;font-size:11.5px;color:var(--text-list-2);">Há um documento de referência (ofício) anexado a este evento no Painel de Eventos &mdash; consulte-o no sistema, se necessário.</p>' : '')+
-    '<div class="escala-footer-sign">'+
+    (ev.documento && ev.documento.path ? '<p style="margin-top:12px;font-size:11.5px;color:var(--text-list-2);">Há um documento de referência (ofício) anexado a este evento no Painel de Eventos &mdash; consulte-o no sistema, se necessário.</p>' : '');
+}
+function escalaSignatureBlockHTML(){
+  return '<div class="escala-footer-sign">'+
       '<div class="escala-sign-block">'+
         '<div class="sign-space"></div><div class="sign-line"></div>'+
         '<div class="sign-name">Cintia Helena Soares Gomes Pereira</div>'+
@@ -8372,7 +8428,20 @@ function escalaPrintReportHTML(ev){
         '<div class="sign-name">Adilson Dias Gomes</div>'+
         '<div class="sign-role">Subcomandante da GCMI</div>'+
       '</div>'+
-    '</div>'+
+    '</div>';
+}
+function escalaPrintReportHTML(ev){
+  return ''+
+  '<div class="rel-print-area escala-print-area">'+
+    reportLetterheadHTML()+
+    '<h3 class="rel-title">EVENTO ESPECIAL</h3>'+
+    /* v8.4: a pedido do DG — suprimida a linha "Emitido em DD/MM/AAAA às
+       HH:MM" (podia ser confundida com a data do evento, que já aparece
+       logo abaixo no campo "Data") e o campo "Endereço" (rua/bairro/
+       cidade), que era o único endereço no documento. "Local" (referência
+       do ponto) continua. */
+    escalaEventInfoHTML(ev)+
+    escalaSignatureBlockHTML()+
   '</div>';
 }
 /* v8.1: a caixa de Orientações é a única parte do documento "EVENTO
@@ -8393,10 +8462,12 @@ function escalaPrintReportHTML(ev){
    2ª página quando dá, nunca esconde uma palavra pra forçar a folha
    única. */
 var ESCALA_ORIENT_MAX_H = 980;
-function fitEscalaOrientacoes(){
-  var area = document.querySelector('#printOverlayContent .escala-print-area');
-  var body = document.getElementById('escalaOrientBody');
-  if(!area || !body) return;
+/* v8.5: núcleo do mecanismo de auto-ajuste, extraído pra ser reaproveitado
+   por fitEscalaOrientacoes() (1 evento, mede o documento inteiro) e
+   fitEventosEspeciaisOrientacoes() (vários eventos, mede cada "cartão" de
+   evento separadamente — ver comentário em eventosEspeciaisDiaPrintReportHTML()). */
+function fitOrientacoesBody(container, body, maxH){
+  if(!container || !body) return;
   var steps = [
     {fs:13,   lh:1.55},
     {fs:12.5, lh:1.5},
@@ -8409,8 +8480,104 @@ function fitEscalaOrientacoes(){
   for(var i=0;i<steps.length;i++){
     body.style.fontSize = steps[i].fs+'px';
     body.style.lineHeight = String(steps[i].lh);
-    if(area.offsetHeight<=ESCALA_ORIENT_MAX_H || i===steps.length-1) break;
+    if(container.offsetHeight<=maxH || i===steps.length-1) break;
   }
+}
+function fitEscalaOrientacoes(){
+  var area = document.querySelector('#printOverlayContent .escala-print-area');
+  var body = area && area.querySelector('.escala-orientacoes-body');
+  fitOrientacoesBody(area, body, ESCALA_ORIENT_MAX_H);
+}
+/* v8.5: mesmo mecanismo, só que percorre CADA evento do documento
+   "EVENTOS ESPECIAIS" (.ee-event-card) e ajusta a caixa de Orientações
+   daquele evento contra o orçamento de UMA página — aqui quase nunca
+   precisa encolher, porque, ao contrário do EVENTO ESPECIAL avulso (que
+   reparte a página com timbre+grade+assinatura), cada evento aqui tem a
+   folha inteira disponível (o timbre vira cabeçalho repetido da tabela —
+   ver eventosEspeciaisDiaPrintReportHTML() — e a assinatura é só uma, no
+   fim do documento todo, não por evento). */
+function fitEventosEspeciaisOrientacoes(){
+  document.querySelectorAll('#printOverlayContent .ee-event-card').forEach(function(card){
+    var body = card.querySelector('.escala-orientacoes-body');
+    fitOrientacoesBody(card, body, ESCALA_ORIENT_MAX_H);
+  });
+}
+/* ---------------- "EVENTOS ESPECIAIS" — todos os Operacional Especial de um período (v8.5) ----------------
+   Documento irmão do "EVENTO ESPECIAL" (1 evento só): em vez de um botão
+   por evento, esse sai do próprio filtro de período já existente na aba
+   Relatórios (rel-data-ini/rel-data-fim — reaproveitado, sem campo de data
+   novo) e reúne TODOS os eventos Operacional Especial do período (em
+   ordem cronológica) no mesmo documento — útil pra quem despacha o dia
+   inteiro de uma vez, em vez de folha por folha. Botão só aparece logado
+   (ver updateRelatoriosAccessUI()), mesma regra do Imprimir Evento
+   Especial avulso.
+
+   Ao contrário do EVENTO ESPECIAL (forçado a 1 página só), esse pode
+   crescer pra várias páginas — o pedido do DG foi "capricho na transição
+   de uma página pra outra, sem parecer bloco de notas". Três decisões
+   cobrem isso:
+   1) Timbre + "EVENTOS ESPECIAIS" + período viram o <thead> de uma
+      <table> (eventos-especiais-table) em vez de um bloco fixo no topo.
+      <thead> de tabela SEMPRE se repete no topo de cada página impressa,
+      nativamente, em qualquer navegador — diferente de "cabeçalho fixo"
+      via CSS (position:sticky/fixed), que não funciona na impressão (é
+      por isso, aliás, que o sticky do cabeçalho da Lista é desligado só
+      na impressão — ver @media print mais acima). Resultado: a cada nova
+      página, o documento se identifica de novo sozinho, sem precisar de
+      nenhuma lógica extra de paginação em JS.
+   2) Cada evento vira uma linha dessa tabela (um <td> por linha, com o
+      "cartão" do evento — escalaEventInfoHTML() — dentro), e
+      page-break-inside:avoid garante que esse cartão nunca é cortado no
+      meio por uma quebra de página: ou cabe inteiro no que sobra da
+      página atual, ou a página inteira pula pro evento começar do zero
+      na seguinte. Isso é o que evita o efeito "bloco de notas" (texto
+      cortado ao meio entre uma folha e outra).
+   3) A caixa de Orientações de cada evento usa fitEventosEspeciaisOrientacoes()
+      pra nunca ultrapassar sozinha o espaço de uma página — ver comentário
+      lá. A assinatura (escalaSignatureBlockHTML()) aparece uma única vez,
+      como a última linha da tabela, cobrindo o período inteiro — não uma
+      por evento (a pedido explícito do DG). */
+function eventosEspeciaisDiaRange(){
+  var di = $('rel-data-ini').value, df = $('rel-data-fim').value;
+  if(!di && !df){ var hoje = toISODate(new Date()); di = hoje; df = hoje; }
+  else if(di && !df){ df = di; }
+  else if(!di && df){ di = df; }
+  return {di:di, df:df};
+}
+function eventosEspeciaisDiaFilteredEvents(di, df){
+  return state.events.filter(function(e){
+    if(e.tipo!=='operacional') return false;
+    if(!e.data) return false;
+    var eDataFim = e.dataFim || e.data;
+    if(eDataFim < di) return false;
+    if(e.data > df) return false;
+    return true;
+  }).sort(function(a,b){
+    var ka=(a.data||'')+'T'+(a.horaInicio||'00:00'), kb=(b.data||'')+'T'+(b.horaInicio||'00:00');
+    return ka<kb?-1:(ka>kb?1:0);
+  });
+}
+function eventosEspeciaisPeriodoLabel(di, df){
+  return di===df ? fmtDateLong(di) : (fmtDateLong(di)+' até '+fmtDateLong(df));
+}
+function eventosEspeciaisDiaPrintReportHTML(events, di, df){
+  var headHTML = ''+
+    reportLetterheadHTML()+
+    '<h3 class="rel-title">EVENTOS ESPECIAIS</h3>'+
+    '<p class="rel-meta">Período: '+esc(eventosEspeciaisPeriodoLabel(di, df))+'</p>';
+  var rowsHTML = events.map(function(ev){
+    return '<tr class="ee-row"><td><div class="ee-event-card">'+escalaEventInfoHTML(ev)+'</div></td></tr>';
+  }).join('');
+  return ''+
+  '<div class="eventos-especiais-wrap">'+
+    '<table class="eventos-especiais-table">'+
+      '<thead><tr><td>'+headHTML+'</td></tr></thead>'+
+      '<tbody>'+
+        rowsHTML+
+        '<tr class="ee-row ee-sign-row"><td><div class="ee-sign-card">'+escalaSignatureBlockHTML()+'</div></td></tr>'+
+      '</tbody>'+
+    '</table>'+
+  '</div>';
 }
 function buildFilteredTableHTML(fieldsConfig, selectedKeys, items){
   var fields = fieldsConfig.filter(function(f){ return selectedKeys.indexOf(f.key)!==-1; });
@@ -9044,6 +9211,20 @@ $_onReady(function(){
         });
       }
       catch(err){ console.error('openPrintFieldsModal eventos', err); showToast('Erro ao abrir a pré-visualização: '+(err && err.message ? err.message : err)); }
+    });
+    /* v8.5: "Imprimir Eventos Especiais" — defesa em profundidade igual ao
+       print-escala avulso (o botão já só aparece logado, ver
+       updateRelatoriosAccessUI(), mas confere de novo aqui caso a sessão
+       expire com a aba já aberta). */
+    $('btnPrintEventosEspeciais').addEventListener('click', function(){
+      if(!authUser){ showToast('Entre com sua conta para imprimir Eventos Especiais.'); return; }
+      try{
+        var range = eventosEspeciaisDiaRange();
+        var list = eventosEspeciaisDiaFilteredEvents(range.di, range.df);
+        if(!list.length){ showToast('Nenhum Evento Operacional Especial no período selecionado.'); return; }
+        openPrintOverlayHTML(eventosEspeciaisDiaPrintReportHTML(list, range.di, range.df), fitEventosEspeciaisOrientacoes);
+      }
+      catch(err){ console.error('btnPrintEventosEspeciais', err); showToast('Erro ao abrir a pré-visualização: '+(err && err.message ? err.message : err)); }
     });
     $('printOverlayCloseBtn').addEventListener('click', closePrintOverlay);
     document.addEventListener('keydown', function(e){ if(e.key==='Escape' && $('printOverlay') && !$('printOverlay').hidden) closePrintOverlay(); });
