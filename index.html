@@ -1333,47 +1333,52 @@ details.roster-view summary{
 .rel-kpi .lbl{font-size:8.5px;color:var(--text-list-2);text-transform:uppercase;letter-spacing:.04em;line-height:1.2;}
 .rel-table-wrap .table-wrap{box-shadow:none;}
 
-/* v7.9: Escala de Evento — ordem de despacho impressa de um único evento
-   Operacional Especial, pro inspetor do turno levar pro pelotão. Reaproveita
-   .rel-print-area/.rel-letterhead/.rel-title/.rel-meta (mesmo cabeçalho/
-   timbre dos outros relatórios) e soma classes próprias pros blocos que só
-   essa impressão tem: grade de dados do evento, caixa de orientações em
-   destaque (texto de Observações) e tabela de "ciente/assinatura" do
-   efetivo escalado. */
+/* v7.9: "EVENTO ESPECIAL" — impressão de um único evento Operacional
+   Especial, documento de registro/autorização assinado pela escalante e
+   pelo Subcomandante. Reaproveita .rel-print-area/.rel-letterhead/
+   .rel-title/.rel-meta (mesmo cabeçalho/timbre dos outros relatórios) e
+   soma classes próprias dos blocos que só essa impressão tem: brasão
+   ampliado no timbre, grade de dados do evento, caixa de orientações e os
+   2 blocos de assinatura nominais no rodapé.
+   v8.0: enxugado a pedido do DG — removidas as seções de Recursos
+   empregados e Efetivo escalado (cabiam mal numa folha A4 só e deixaram de
+   ser o foco do documento, que virou um registro/autorização, não mais uma
+   lista de chamada); por isso a tabela "ciente/assinatura" (.escala-sign-
+   table) saiu de uso e sua regra foi removida. */
+.escala-print-area .rel-crest{width:5cm;height:5cm;}
 .escala-info-grid{
-  display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:10px 28px;
-  margin-bottom:16px;
+  display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:9px 28px;
+  margin-bottom:14px;
 }
 .escala-info-item.full{grid-column:1/-1;}
 .escala-info-item .k{
   display:block;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
   letter-spacing:.06em;color:var(--text-list-2);margin-bottom:2px;
 }
-.escala-info-item .v{font-size:13.5px;color:var(--text-list-1);font-weight:600;line-height:1.35;}
-.escala-section-title{
-  font-family:var(--font-display);font-size:13px;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--text-list-1);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line-list);
-}
+.escala-info-item .v{font-size:13.5px;color:var(--text-list-1);font-weight:600;line-height:1.3;}
 .escala-orientacoes{
-  margin:16px 0;padding:12px 14px;border:1px solid rgba(255,171,46,.5);border-left:4px solid var(--amber);
+  margin:14px 0 4px;padding:11px 14px;border:1px solid rgba(255,171,46,.5);border-left:4px solid var(--amber);
   border-radius:8px;background:rgba(255,171,46,.08);
 }
 .escala-orientacoes h4{
   margin:0 0 6px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
   color:#b5701a;
 }
-.escala-orientacoes p{margin:0;font-size:13px;color:var(--text-list-1);line-height:1.6;white-space:pre-wrap;}
-.escala-sign-table{width:100%;border-collapse:collapse;margin-top:2px;}
-.escala-sign-table th{
-  text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;
-  color:var(--text-list-2);padding:6px 10px;border-bottom:1px solid var(--line-list);
-}
-.escala-sign-table td{padding:11px 10px;font-size:12.5px;color:var(--text-list-1);border-bottom:1px solid var(--line-list);vertical-align:top;}
-.escala-sign-table td.sign-col{width:150px;}
-.escala-footer-sign{margin-top:26px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;}
-.escala-footer-sign .line{
-  flex:1 1 220px;border-top:1px solid var(--text-list-1);padding-top:6px;
-  font-size:11px;color:var(--text-list-2);text-align:center;
+.escala-orientacoes p{margin:0 0 6px;font-size:13px;color:var(--text-list-1);line-height:1.55;white-space:pre-wrap;}
+.escala-orientacoes p:last-child{margin-bottom:0;}
+/* bloco de assinatura nominal — espaço em branco pra assinatura à caneta,
+   linha, e nome/função impressos embaixo da linha (padrão de termo
+   institucional). */
+.escala-footer-sign{margin-top:32px;display:flex;justify-content:space-between;gap:28px;flex-wrap:wrap;}
+.escala-sign-block{flex:1 1 220px;text-align:center;}
+.escala-sign-block .sign-space{height:34px;}
+.escala-sign-block .sign-line{border-top:1px solid var(--text-list-1);}
+.escala-sign-block .sign-name{margin-top:6px;font-size:12px;font-weight:700;color:var(--text-list-1);}
+.escala-sign-block .sign-role{margin-top:1px;font-size:10.5px;color:var(--text-list-2);}
+@media print{
+  /* v8.0: evita que o documento (agora bem mais curto) quebre pro meio de
+     uma segunda folha se sobrar só uma linha — mantém tudo numa A4 só. */
+  .escala-print-area{page-break-inside:avoid;}
 }
 /* rebalanceamento de colunas do relatório: data compacta, local com mais espaço.
    table-layout permanece automático (o navegador calcula a largura de cada
@@ -2319,7 +2324,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.9 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.0 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2953,6 +2958,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v8.0', date: '29/10/2026',
+    changes: [
+      'Ajustes no documento "Imprimir Evento Especial" (v7.9), a pedido do DG: título virou "EVENTO ESPECIAL" (sem mais "Escala de Evento"/"Ordem de Despacho"); brasão do timbre ampliado pra 5cm; seções de Recursos empregados e Efetivo escalado removidas, pra caber inteiro numa folha A4 só; orientações passaram a trazer sempre a instrução de registrar a ação no SISNEP e lançar o evento no Relatório de Serviço, além da observação específica do evento quando houver; e o rodapé passou a ter 2 blocos de assinatura nominais fixos — a escalante Cintia Helena Soares Gomes Pereira (mat. 140125-0) e o Subcomandante Adilson Dias Gomes.'
+    ]
+  },
   {
     version: 'v7.9', date: '29/10/2026',
     changes: [
@@ -5914,7 +5925,7 @@ function cardHTML(e){
          já pode ver os detalhes do evento, então também pode imprimir a
          escala). Por isso usa authUser diretamente, não canManageEventos(). */
       ((canManageEventos() || (authUser && e.tipo==='operacional')) ? '<div class="ec-actions">'+
-        (authUser && e.tipo==='operacional' ? '<button class="icon-btn" title="Imprimir escala de despacho" data-act="print-escala" data-id="'+esc(e.id)+'">&#128424;</button>' : '')+
+        (authUser && e.tipo==='operacional' ? '<button class="icon-btn" title="Imprimir Evento Especial" data-act="print-escala" data-id="'+esc(e.id)+'">&#128424;</button>' : '')+
         (canManageEventos() ? '<button class="icon-btn" title="Duplicar / reaproveitar" data-act="dup" data-id="'+esc(e.id)+'">&#10697;</button>'+
           '<button class="icon-btn" title="Editar" data-act="edit" data-id="'+esc(e.id)+'">&#9998;</button>'+
           '<button class="icon-btn del" title="Excluir" data-act="del" data-id="'+esc(e.id)+'">&#10005;</button>' : '')+
@@ -8091,30 +8102,28 @@ function reportLetterheadHTML(){
     '</div>'+
   '</div>';
 }
-/* v7.9: Escala de Evento — ordem de despacho de UM evento Operacional
-   Especial, pensada pra sair impressa (ou em PDF) e ser repassada ao
-   inspetor do turno: reúne tudo que ele precisa pra despachar a equipe
-   (evento, data/hora, local completo, atuação, recursos, orientações
-   específicas tiradas de "Observações", e a relação nominal do efetivo
-   escalado com espaço pra cada um assinar "ciente"). Usa o mesmo
-   mecanismo de pré-visualização/impressão dos outros relatórios
+/* v7.9: impressão de UM evento Operacional Especial, pensada pra sair numa
+   folha A4 só (ou em PDF) e virar o registro/autorização do evento.
+   v8.0, ajustes a pedido do DG: título virou "EVENTO ESPECIAL" (sem mais
+   "Escala de Evento"/"Ordem de Despacho"); seções de Recursos empregados e
+   Efetivo escalado saíram (documento deixou de ser lista de chamada);
+   brasão do timbre ampliado pra 5cm (ver .escala-print-area .rel-crest);
+   orientações passaram a trazer sempre a instrução fixa de registrar a
+   ação no SISNEP e lançar o evento no Relatório de Serviço, além da
+   observação específica do evento quando houver; e o rodapé trocou as 2
+   linhas genéricas por 2 blocos de assinatura nominais fixos — a escalante
+   Cintia Helena Soares Gomes Pereira (mat. 140125-0) e o Subcomandante
+   Adilson Dias Gomes, que são sempre quem assina esse documento. Usa o
+   mesmo mecanismo de pré-visualização/impressão dos outros relatórios
    (openPrintOverlayHTML — ver comentário logo abaixo sobre por quê). */
 function escalaPrintReportHTML(ev){
   var addr = ev.endereco||{};
-  var recursoTags = (ev.recursos||[]).map(function(r){
-    return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';
-  }).join('') || '<span style="color:var(--text-list-2)">&mdash; nenhum recurso informado &mdash;</span>';
-  var efetivoRows = (ev.efetivo||[]).map(function(p){
-    return '<tr><td>'+esc(p.nome||'&mdash;')+'</td><td class="mono">'+esc(p.matricula||'&mdash;')+'</td>'+
-      '<td>'+(p.funcional?esc(p.funcional):'<span style="color:var(--text-list-2)">&mdash;</span>')+'</td>'+
-      '<td class="sign-col"></td></tr>';
-  }).join('') || '<tr><td colspan="4" style="color:var(--text-list-2);text-align:center;">Nenhum integrante nominado neste evento ainda.</td></tr>';
   var dataTxt = fmtDateRangeLongWithWeekday(ev.data, ev.dataFim);
   var metaTxt = 'Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   return ''+
-  '<div class="rel-print-area">'+
+  '<div class="rel-print-area escala-print-area">'+
     reportLetterheadHTML()+
-    '<h3 class="rel-title">Escala de Evento &mdash; Ordem de Despacho</h3>'+
+    '<h3 class="rel-title">EVENTO ESPECIAL</h3>'+
     '<p class="rel-meta">'+esc(metaTxt)+'</p>'+
     '<div class="escala-info-grid">'+
       '<div class="escala-info-item full"><span class="k">Evento</span><span class="v">'+(ev.assunto?esc(ev.assunto):'&mdash;')+'</span></div>'+
@@ -8127,15 +8136,22 @@ function escalaPrintReportHTML(ev){
       '<div class="escala-info-item"><span class="k">Solicitante</span><span class="v">'+(ev.solicitante?esc(ev.solicitante):'&mdash;')+'</span></div>'+
       '<div class="escala-info-item"><span class="k">Contato</span><span class="v">'+(ev.contato?esc(ev.contato):'&mdash;')+'</span></div>'+
     '</div>'+
-    (ev.observacoes ? '<div class="escala-orientacoes"><h4>Orientações para o despacho</h4><p>'+esc(ev.observacoes)+'</p></div>' : '')+
-    '<h4 class="escala-section-title">Recursos empregados</h4>'+
-    '<div class="tbl-tags" style="margin-bottom:4px;">'+recursoTags+'</div>'+
-    '<h4 class="escala-section-title">Efetivo escalado</h4>'+
-    '<table class="escala-sign-table"><thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Ciente / Assinatura</th></tr></thead><tbody>'+efetivoRows+'</tbody></table>'+
-    (ev.documento && ev.documento.path ? '<p style="margin-top:14px;font-size:11.5px;color:var(--text-list-2);">Há um documento de referência (ofício) anexado a este evento no Painel de Eventos &mdash; consulte-o no sistema, se necessário.</p>' : '')+
+    '<div class="escala-orientacoes"><h4>Orientações</h4>'+
+      '<p>Registrar a ação no SISNEP e lançar o evento no Relatório de Serviço.</p>'+
+      (ev.observacoes ? '<p>'+esc(ev.observacoes)+'</p>' : '')+
+    '</div>'+
+    (ev.documento && ev.documento.path ? '<p style="margin-top:12px;font-size:11.5px;color:var(--text-list-2);">Há um documento de referência (ofício) anexado a este evento no Painel de Eventos &mdash; consulte-o no sistema, se necessário.</p>' : '')+
     '<div class="escala-footer-sign">'+
-      '<div class="line">Inspetor do turno responsável pelo despacho</div>'+
-      '<div class="line">Data/hora do despacho</div>'+
+      '<div class="escala-sign-block">'+
+        '<div class="sign-space"></div><div class="sign-line"></div>'+
+        '<div class="sign-name">Cintia Helena Soares Gomes Pereira</div>'+
+        '<div class="sign-role">Escalante &middot; Matrícula 140125-0</div>'+
+      '</div>'+
+      '<div class="escala-sign-block">'+
+        '<div class="sign-space"></div><div class="sign-line"></div>'+
+        '<div class="sign-name">Adilson Dias Gomes</div>'+
+        '<div class="sign-role">Subcomandante da GCMI</div>'+
+      '</div>'+
     '</div>'+
   '</div>';
 }
@@ -8993,7 +9009,7 @@ $_onReady(function(){
       /* v7.9: botão só aparece logado (ver cardHTML), mas a checagem fica
          aqui também — defesa em profundidade, caso o botão continue em tela
          num momento de sessão expirada. */
-      if(!authUser){ showToast('Entre com sua conta para imprimir a escala.'); return; }
+      if(!authUser){ showToast('Entre com sua conta para imprimir o Evento Especial.'); return; }
       var evEsc = state.events.find(function(x){ return x.id===id; });
       if(evEsc) openPrintOverlayHTML(escalaPrintReportHTML(evEsc));
       return;
