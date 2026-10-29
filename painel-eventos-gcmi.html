@@ -2255,7 +2255,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.5 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v7.6 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2889,6 +2889,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v7.6', date: '29/10/2026',
+    changes: [
+      'Reordenadas as colunas do Relatório de Eventos (tela, impressão e exportação): agora seguem a ordem Data, Horário, Local, Evento/Motivo, Recursos, Efetivo, Atuação, Solicitante, Tipo. A coluna "Tipo" passou a mostrar o tipo abreviado (Oper./Adm./Comp.) em vez do nome completo, e "Solicitante" não repete mais o Evento/Motivo quando está vazia — cada coluna mostra só a sua própria informação.'
+    ]
+  },
   {
     version: 'v7.5', date: '29/10/2026',
     changes: [
@@ -7995,16 +8001,22 @@ function buildFilteredTableHTML(fieldsConfig, selectedKeys, items){
   var rowsHTML = items.map(function(it){ return '<tr>'+fields.map(function(f){ return f.td(it); }).join('')+'</tr>'; }).join('');
   return '<div class="table-wrap"><table class="ev-table rel-ev-table"><thead>'+theadHTML+'</thead><tbody>'+rowsHTML+'</tbody></table></div>';
 }
+/* v7.6: ordem de prioridade de exibição reorganizada a pedido do DG — Data,
+   Horário, Local, Evento-Motivo, Recursos, Efetivo, Atuação, Solicitante,
+   Tipo (esse último agora abreviado: Oper./Adm./Comp., em vez do nome
+   completo). "Solicitante" deixou de cair de volta no Assunto quando vazio
+   — isso já é coberto pela própria coluna Evento-Motivo, então os dois não
+   precisam mais repetir a mesma informação. */
 var EVENTOS_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
   {key:'horario', label:'Horário', th:'<th class="th-time-compact">Horário</th>', td:function(e){ return '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'; }},
-  {key:'tipo', label:'Tipo', th:'<th>Tipo</th>', td:function(e){ return '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Operacional':(e.tipo==='administrativo'?'Administrativo':'Compromisso'))+'</span></td>'; }},
   {key:'local', label:'Local', th:'<th class="th-local">Local</th>', td:function(e){ var addr=e.endereco||{}; var sub = e.tipo==='pessoal' ? (e.modalidade||'') : [addr.bairro,addr.cidade].filter(Boolean).join(', '); return '<td class="tbl-local">'+esc(e.localRef||(e.tipo==='pessoal'?'—':''))+(sub?'<br><span style="color:var(--ink-3);font-size:11px;">'+esc(sub)+'</span>':'')+'</td>'; }},
+  {key:'motivo', label:'Evento/Motivo', th:'<th>Evento/Motivo</th>', td:function(e){ return '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }},
   {key:'recursos', label:'Recursos', th:'<th>Recursos</th>', td:function(e){ var recursoTags=(e.recursos||[]).map(function(r){return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+recursoTags+'</div></td>'; }},
   {key:'efetivo', label:'Efetivo', th:'<th>Efetivo</th>', td:function(e){ var efetivoTags=(e.efetivo||[]).map(function(p){return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>';}).join('')||'<span style="color:var(--ink-3)">&mdash;</span>'; return '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'; }},
   {key:'atuacao', label:'Atuação/Modalidade', th:'<th>Atuação</th>', td:function(e){ return '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'; }},
-  {key:'solicitante', label:'Solicitante/Assunto', th:'<th>Solicitante</th>', td:function(e){ return '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'; }},
-  {key:'motivo', label:'Motivo', th:'<th>Motivo</th>', td:function(e){ return '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'; }}
+  {key:'solicitante', label:'Solicitante', th:'<th>Solicitante</th>', td:function(e){ return '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'; }},
+  {key:'tipo', label:'Tipo', th:'<th>Tipo</th>', td:function(e){ return '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+(e.tipo==='operacional'?'Oper.':(e.tipo==='administrativo'?'Adm.':'Comp.'))+'</span></td>'; }}
 ];
 var CMT_REL_FIELDS = [
   {key:'data', label:'Data', th:'<th class="th-date-compact">Data</th>', td:function(e){ return '<td class="tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'; }},
@@ -8065,18 +8077,20 @@ function relTableRowHTML(e){
   var addr = e.endereco||{};
   var recursoTags = (e.recursos||[]).map(function(r){ return '<span class="ec-resource-tag">'+esc(r.quantidade)+'&times; '+esc(r.tipo)+'</span>'; }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
   var efetivoTags = (e.efetivo||[]).map(function(p){ return '<span class="ec-tag">'+esc(p.funcional||firstName(p.nome))+'</span>'; }).join('') || '<span style="color:var(--ink-3)">&mdash;</span>';
-  var tipoLabel = e.tipo==='operacional' ? 'Operacional' : (e.tipo==='administrativo' ? 'Administrativo' : 'Compromisso');
+  /* v7.6: "Tipo" abreviado (Oper./Adm./Comp.) e última coluna, em vez do
+     nome completo logo depois do horário — ver EVENTOS_REL_FIELDS. */
+  var tipoLabel = e.tipo==='operacional' ? 'Oper.' : (e.tipo==='administrativo' ? 'Adm.' : 'Comp.');
   return ''+
   '<tr>'+
     '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'+
     '<td class="tbl-time">'+esc(e.horaInicio||'--:--')+' &ndash; '+esc(e.horaTermino||'--:--')+'</td>'+
-    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
+    '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
     '<td><div class="tbl-tags">'+recursoTags+'</div></td>'+
     '<td><div class="tbl-tags">'+efetivoTags+'</div></td>'+
     '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
-    '<td>'+(e.tipo==='administrativo' ? (e.assunto?esc(e.assunto):(e.solicitante?esc(e.solicitante):'&mdash;')) : (e.solicitante?esc(e.solicitante):'&mdash;'))+'</td>'+
-    '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
+    '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'+
+    '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
   '</tr>';
 }
 function renderRelatorio(){
@@ -8109,7 +8123,7 @@ function renderRelatorio(){
     return;
   }
   $('relTableWrap').innerHTML = '<div class="table-wrap"><table class="ev-table rel-ev-table"><thead><tr>'+
-    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th>Tipo</th><th class="th-local">Local</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th><th>Motivo</th>'+
+    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th class="th-local">Local</th><th>Evento/Motivo</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th><th>Tipo</th>'+
     '</tr></thead><tbody>'+list.map(relTableRowHTML).join('')+'</tbody></table></div>';
 }
 /* Impressão/exportação: o painel roda dentro de um iframe restrito (o
