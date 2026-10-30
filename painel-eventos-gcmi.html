@@ -1444,6 +1444,8 @@ details.roster-view summary{
 .rel-ev-table .th-local,
 .rel-ev-table td.tbl-local{min-width:170px;}
 .rel-ev-table td.tbl-date-compact{font-size:11.5px;white-space:nowrap;letter-spacing:.01em;}
+.rel-lanc-wrap{display:contents;}
+.rel-lanc-wrap[hidden]{display:none;}
 
 .print-overlay{
   position:fixed;inset:0;z-index:90;
@@ -2501,7 +2503,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.7 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v8.8 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -2536,6 +2538,14 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
       <div class="field"><label for="rel-solicitante">Solicitante</label><input type="text" id="rel-solicitante" placeholder="Buscar solicitante…" /></div>
       <div class="field"><label for="rel-integrante">Integrante</label><input type="text" id="rel-integrante" placeholder="Nome, funcional ou matrícula…" /></div>
       <div class="field"><label for="rel-motivo">Motivo</label><input type="text" id="rel-motivo" placeholder="Buscar por assunto/motivo…" /></div>
+      <!-- v8.8: filtro por data de lançamento (createdAt) — discreto, só
+           pra quem está logado (ver updateRelatoriosAccessUI); escondido
+           num wrapper com display:contents pra continuar alinhado como
+           campo normal de .rel-filters quando visível. -->
+      <div class="rel-lanc-wrap" id="relLancWrap" hidden>
+        <div class="field"><label for="rel-lanc-ini" title="Data em que o evento foi lançado no painel, não a data do evento">Lançado de</label><input type="date" id="rel-lanc-ini" /></div>
+        <div class="field"><label for="rel-lanc-fim">até</label><input type="date" id="rel-lanc-fim" /></div>
+      </div>
       <button class="btn btn-sm btn-ghost" id="rel-clear" type="button">Limpar filtros</button>
       <!-- v8.5: documento "EVENTOS ESPECIAIS" — reaproveita o filtro de
            período (rel-data-ini/rel-data-fim) já existente logo acima,
@@ -3142,6 +3152,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v8.8', date: '30/10/2026',
+    changes: [
+      'Três pendências antigas resolvidas, a pedido do DG: (1) o Relatório de Eventos passou a ordenar por padrão dos eventos futuros pros passados (antes era o contrário); (2) a data de lançamento do evento ("Lançado em") agora aparece como coluna discreta na tabela do Relatório de Eventos, com um filtro de período próprio ("Lançado de"/"até") — os dois, só visíveis pra quem está logado, sem entrar na seleção de campos de impressão/exportação; (3) revisão da configuração de recuperação de senha do Supabase — item explicado abaixo, depende de um ajuste manual no painel do Supabase que não pode ser feito por aqui.'
+    ]
+  },
   {
     version: 'v8.7', date: '30/10/2026',
     changes: [
@@ -5700,6 +5716,14 @@ function updateVistoriaAccessUI(){
 function updateRelatoriosAccessUI(){
   var btn = $('btnPrintEventosEspeciais');
   if(btn) btn.hidden = !authUser;
+  /* v8.8: filtro + coluna "Lançado em" (createdAt) só pra logado — ver
+     relFilteredEvents()/relTableRowHTML(). Reexecuta renderRelatorio() pra
+     a coluna aparecer/sumir na hora, sem esperar o próximo filtro. */
+  var lancWrap = $('relLancWrap');
+  if(lancWrap) lancWrap.hidden = !authUser;
+  if(typeof renderRelatorio==='function'){
+    try{ renderRelatorio(); }catch(err){ console.error('updateRelatoriosAccessUI/renderRelatorio', err); }
+  }
 }
 function updateAuthUI(){
   var btn = $('authBtn'), label = $('authUserLabel');
@@ -8462,10 +8486,24 @@ function relFilteredEvents(){
       if(hay.indexOf(integ)===-1) return false;
     }
     if(motivo && (e.assunto||'').toLowerCase().indexOf(motivo)===-1) return false;
+    /* v8.8: filtro discreto por data de lançamento (createdAt), só visível
+       logado — ver relLancWrap/updateRelatoriosAccessUI. Os inputs existem
+       sempre no DOM (só ficam ocultos pra deslogado), então ler o valor
+       aqui é seguro mesmo sem checar authUser de novo. */
+    var lancIniEl = $('rel-lanc-ini'), lancFimEl = $('rel-lanc-fim');
+    var lancIni = lancIniEl ? lancIniEl.value : '', lancFim = lancFimEl ? lancFimEl.value : '';
+    if(lancIni || lancFim){
+      var cd = e.createdAt ? e.createdAt.slice(0,10) : '';
+      if(lancIni && (!cd || cd < lancIni)) return false;
+      if(lancFim && (!cd || cd > lancFim)) return false;
+    }
     return true;
   }).sort(function(a,b){
+    /* v8.8, a pedido do DG: ordem padrão invertida pra mostrar dos eventos
+       futuros pros passados (antes era o contrário — do mais antigo pro
+       mais recente). */
     var ka=(a.data||'')+'T'+(a.horaInicio||'00:00'), kb=(b.data||'')+'T'+(b.horaInicio||'00:00');
-    return ka<kb?-1:(ka>kb?1:0);
+    return ka>kb?-1:(ka<kb?1:0);
   });
 }
 /* ---------------- Relatórios: seleção de campos antes de imprimir (v4.1) ----------------
@@ -8805,6 +8843,10 @@ function relTableRowHTML(e){
     '<td>'+(e.modalidade?esc(e.modalidade):'&mdash;')+'</td>'+
     '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'+
     '<td><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
+    /* v8.8: coluna discreta "Lançado em" (createdAt), só pra logado — não
+       entra na seleção de campos de impressão/exportação de propósito,
+       fica restrita à tela. */
+    (authUser ? '<td class="tbl-date-compact mono" style="color:var(--ink-3);">'+(e.createdAt?esc(fmtDateLong(e.createdAt.slice(0,10))):'&mdash;')+'</td>' : '')+
   '</tr>';
 }
 function renderRelatorio(){
@@ -8838,6 +8880,7 @@ function renderRelatorio(){
   }
   $('relTableWrap').innerHTML = '<div class="table-wrap"><table class="ev-table rel-ev-table"><thead><tr>'+
     '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th class="th-local">Local</th><th>Evento/Motivo</th><th>Recursos</th><th>Efetivo</th><th>Atuação</th><th>Solicitante</th><th>Tipo</th>'+
+    (authUser ? '<th class="th-date-compact">Lançado em</th>' : '')+
     '</tr></thead><tbody>'+list.map(relTableRowHTML).join('')+'</tbody></table></div>';
 }
 /* Impressão/exportação: o painel roda dentro de um iframe restrito (o
@@ -9790,7 +9833,7 @@ $_onReady(function(){
     nomeI.value = ''; funcI.value = ''; matI.value = '';
   });
 
-  ['rel-data-ini','rel-data-fim','rel-tipo','rel-local','rel-modalidade'].forEach(function(id){
+  ['rel-data-ini','rel-data-fim','rel-tipo','rel-local','rel-modalidade','rel-lanc-ini','rel-lanc-fim'].forEach(function(id){
     $(id).addEventListener('change', renderRelatorio);
   });
   $('rel-solicitante').addEventListener('input', renderRelatorio);
@@ -9800,6 +9843,7 @@ $_onReady(function(){
     $('rel-data-ini').value = ''; $('rel-data-fim').value = ''; $('rel-tipo').value = 'todos';
     $('rel-local').value = ''; $('rel-modalidade').value = ''; $('rel-solicitante').value = ''; $('rel-integrante').value = '';
     $('rel-motivo').value = '';
+    $('rel-lanc-ini').value = ''; $('rel-lanc-fim').value = '';
     renderRelatorio();
   });
 
