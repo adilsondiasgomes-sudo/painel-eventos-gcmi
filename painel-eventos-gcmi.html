@@ -1371,6 +1371,30 @@ details.roster-view summary{
 .escala-print-area .rel-crest{width:3cm;height:3cm;}
 .escala-print-area .rel-letterhead-text strong{font-size:19px;}
 .escala-print-area .rel-letterhead-text span{font-size:13.5px;}
+/* v9.2, a pedido do DG ("não há capricho na formatação da impressão... as
+   páginas estão cortadas como se fosse bloco de notas"): quando a
+   Observações é tão longa que nem o encolhimento automático (ver
+   fitEscalaOrientacoes() mais abaixo) consegue caber numa página só, o
+   EVENTO ESPECIAL agora pode virar a página sem perder o contexto —
+   reaproveita o mesmo truque do "EVENTOS ESPECIAIS" (v8.5,
+   .eventos-especiais-table/.ee-event-card): timbre+título viram o <thead>
+   de uma <table>, que o navegador repete nativamente no topo de cada
+   página impressa, e o corpo do documento (grade de dados + orientações +
+   assinaturas) vira um "cartão" único dentro do <tbody> — ver
+   escalaPrintReportHTML(). .escala-print-area continua sendo o wrapper
+   externo (por isso as 2 regras acima, e o seletor de
+   fitEscalaOrientacoes(), continuam valendo sem mudança), só que agora
+   ele é o pai da <table>, não mais o próprio "cartão" com fundo/borda —
+   esse visual passou pra .escala-card. */
+.escala-print-area{max-width:960px;margin:0 auto;}
+.escala-print-table{width:100%;border-collapse:separate;border-spacing:0;}
+.escala-print-table thead td{padding:0 0 18px;}
+.escala-print-table tbody td{padding:0;}
+.escala-card{
+  background:var(--bg-list-row);border:1px solid var(--line-list);
+  border-radius:14px;padding:24px 28px 28px;
+  box-shadow:0 20px 44px -30px rgba(15,25,50,.35);
+}
 .escala-info-grid{
   display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:9px 28px;
   margin-bottom:14px;
@@ -1406,9 +1430,16 @@ details.roster-view summary{
 .escala-sign-block .sign-name{margin-top:6px;font-size:12px;font-weight:700;color:var(--text-list-1);}
 .escala-sign-block .sign-role{margin-top:1px;font-size:10.5px;color:var(--text-list-2);}
 @media print{
-  /* v8.0: evita que o documento (agora bem mais curto) quebre pro meio de
-     uma segunda folha se sobrar só uma linha — mantém tudo numa A4 só. */
-  .escala-print-area{page-break-inside:avoid;}
+  /* v8.0: evita que o documento quebre pro meio de uma segunda folha se
+     sobrar só uma linha — mantém tudo numa A4 só sempre que o conteúdo
+     coube no orçamento de altura (ver ESCALA_ORIENT_MAX_H).
+     v9.2: a regra passou de .escala-print-area (o wrapper, que agora pode
+     legitimamente ocupar 2+ páginas) pra .escala-card (o "cartão" de
+     conteúdo em si) — evita cortar o cartão no meio quando ele não cabe
+     mais inteiro na página atual; nesse caso ele pula pra próxima página
+     inteiro, que já sai com o timbre repetido (thead da tabela). */
+  .escala-print-table tr{page-break-inside:avoid;}
+  .escala-card{page-break-inside:avoid;}
 }
 /* v8.5: "EVENTOS ESPECIAIS" (vários eventos, várias páginas) — ver o
    comentário grande em eventosEspeciaisDiaPrintReportHTML() pro raciocínio
@@ -2522,7 +2553,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v9.1 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v9.2 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -3171,6 +3202,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v9.2', date: '30/10/2026',
+    changes: [
+      'Três correções no Relatório de Eventos e na impressão de "EVENTO ESPECIAL", a pedido do DG: (1) o documento de impressão de um evento especial, quando a Observações é longa, agora repete o timbre e o título "EVENTO ESPECIAL" em toda página extra (mesmo mecanismo já usado em "EVENTOS ESPECIAIS"), em vez de a página seguinte sair sem nenhum contexto; (2) a coluna "Lançado em" da tabela de Relatório parou de cortar a data (trocado o formato longo pelo mesmo formato compacto já usado na coluna Data); (3) clicar numa linha do Relatório agora abre o evento, igual já acontecia nos Cards/Calendário/Lista.'
+    ]
+  },
   {
     version: 'v9.1', date: '30/10/2026',
     changes: [
@@ -8618,18 +8655,35 @@ function escalaSignatureBlockHTML(){
       '</div>'+
     '</div>';
 }
+/* v9.2, a pedido do DG: restruturado pra usar o mesmo mecanismo de
+   <table><thead> repetido do EVENTOS ESPECIAIS (v8.5, ver
+   eventosEspeciaisDiaPrintReportHTML() e o CSS .escala-print-table/
+   .escala-card acima) — quando a Observações do evento é longa demais
+   pra caber numa página mesmo após o encolhimento automático
+   (fitEscalaOrientacoes()), a 2ª página passa a repetir o timbre e o
+   título "EVENTO ESPECIAL" em vez de aparecer como uma folha solta sem
+   contexto ("bloco de notas"). .escala-print-area segue como wrapper
+   externo (centralização + seletores do brasão/timbre, ver CSS); o
+   "cartão" com fundo/borda que antes era o próprio .escala-print-area
+   agora é .escala-card, dentro do <tbody>. */
 function escalaPrintReportHTML(ev){
-  return ''+
-  '<div class="rel-print-area escala-print-area">'+
+  var headHTML = ''+
     reportLetterheadHTML()+
-    '<h3 class="rel-title">EVENTO ESPECIAL</h3>'+
-    /* v8.4: a pedido do DG — suprimida a linha "Emitido em DD/MM/AAAA às
-       HH:MM" (podia ser confundida com a data do evento, que já aparece
-       logo abaixo no campo "Data") e o campo "Endereço" (rua/bairro/
-       cidade), que era o único endereço no documento. "Local" (referência
-       do ponto) continua. */
-    escalaEventInfoHTML(ev)+
-    escalaSignatureBlockHTML()+
+    '<h3 class="rel-title">EVENTO ESPECIAL</h3>';
+  return ''+
+  '<div class="escala-print-area">'+
+    '<table class="escala-print-table">'+
+      '<thead><tr><td>'+headHTML+'</td></tr></thead>'+
+      '<tbody><tr><td><div class="escala-card">'+
+        /* v8.4: a pedido do DG — suprimida a linha "Emitido em DD/MM/AAAA às
+           HH:MM" (podia ser confundida com a data do evento, que já aparece
+           logo abaixo no campo "Data") e o campo "Endereço" (rua/bairro/
+           cidade), que era o único endereço no documento. "Local" (referência
+           do ponto) continua. */
+        escalaEventInfoHTML(ev)+
+        escalaSignatureBlockHTML()+
+      '</div></td></tr></tbody>'+
+    '</table>'+
   '</div>';
 }
 /* v8.1: a caixa de Orientações é a única parte do documento "EVENTO
@@ -8859,7 +8913,10 @@ function relTableRowHTML(e){
      nome completo logo depois do horário — ver EVENTOS_REL_FIELDS. */
   var tipoLabel = e.tipo==='operacional' ? 'Oper.' : (e.tipo==='administrativo' ? 'Adm.' : 'Comp.');
   return ''+
-  '<tr>'+
+  /* v9.2, a pedido do DG: a linha reage ao clique igual ao card/linha da
+     Lista da Agenda (ver tableRowHTML()) — data-act="view" é pego pelo
+     gridClickHandler delegado em #relTableWrap (ver wiring). */
+  '<tr data-act="view" data-id="'+esc(e.id)+'">'+
     '<td class="tbl-date tbl-date-compact mono">'+esc(fmtDateRangeCompact(e.data, e.dataFim))+'</td>'+
     '<td class="tbl-time">'+horarioLabelCompact(e)+'</td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
@@ -8870,8 +8927,12 @@ function relTableRowHTML(e){
     '<td class="th-tipo-compact"><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
     /* v8.8: coluna discreta "Lançado em" (createdAt), só pra logado — não
        entra na seleção de campos de impressão/exportação de propósito,
-       fica restrita à tela. */
-    (authUser ? '<td class="tbl-date-compact mono" style="color:var(--ink-3);">'+(e.createdAt?esc(fmtDateLong(e.createdAt.slice(0,10))):'&mdash;')+'</td>' : '')+
+       fica restrita à tela. v9.2: trocado fmtDateLong() (14 caracteres,
+       "29 DE OUT 2026") por fmtDateCompact() (mesmo formato/largura já
+       usado e comprovado na coluna Data) — o texto mais longo estava
+       estourando os 100px da coluna e sendo cortado pela rolagem
+       horizontal da tabela (acabamento ruim apontado pelo DG). */
+    (authUser ? '<td class="tbl-date-compact mono" style="color:var(--ink-3);">'+(e.createdAt?esc(fmtDateCompact(e.createdAt.slice(0,10))):'&mdash;')+'</td>' : '')+
   '</tr>';
 }
 function renderRelatorio(){
@@ -9736,6 +9797,12 @@ $_onReady(function(){
   $('eventGrid').addEventListener('click', gridClickHandler);
   $('calendarWrap').addEventListener('click', gridClickHandler);
   $('tableWrap').addEventListener('click', gridClickHandler);
+  /* v9.2, a pedido do DG: as linhas do Relatório de Eventos pareciam
+     clicáveis (cursor:pointer herdado de table.ev-table tbody tr) mas não
+     reagiam — faltava o data-act="view"/data-id na linha (ver
+     relTableRowHTML()) e o listener de delegação, que as outras 3 visões
+     (Cards/Calendário/Lista) já tinham desde sempre. */
+  $('relTableWrap').addEventListener('click', gridClickHandler);
 
   $('tipoFilter').addEventListener('click', function(e){
     var b = e.target.closest('button'); if(!b) return;
