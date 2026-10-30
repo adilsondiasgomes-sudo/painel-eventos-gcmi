@@ -2522,7 +2522,7 @@ table.ev-table tbody tr:last-child td{border-bottom:none;}
 
     <div class="cfg-pane" data-cfgpane="sobre">
       <div class="panel">
-        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v9.0 · Relatório Técnico</button></div>
+        <div class="panel-head"><span class="idx">i</span><h3>Sobre o Painel</h3><button class="version-badge" id="btnVersionLog" title="Relatório técnico de evolução do sistema" type="button">v9.1 · Relatório Técnico</button></div>
         <div class="about-box">
           <p>Este é o <strong>Painel de Eventos</strong> da Guarda Municipal de Ipatinga (GCMI), já consolidado para o lançamento e o planejamento dos eventos operacionais especiais e administrativos, restando ajustes de polimento contínuo.</p>
           <p>Os dados ficam salvos de forma <strong>compartilhada e em tempo real</strong> para quem abrir este painel, permitindo o uso simultâneo por mais de uma pessoa. A visualização é aberta a qualquer pessoa com o link; lançar, editar ou excluir eventos exige login em uma conta autorizada (botão "Entrar" no canto da tela).</p>
@@ -3171,6 +3171,12 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
    a leitura decimal fica ambígua/invertida: "4.10" parece menor que "4.9").
    Ex.: ...v4.8, v4.9, v5.0, v5.1, v5.2... */
 var VERSION_LOG = [
+  {
+    version: 'v9.1', date: '30/10/2026',
+    changes: [
+      'Mais um ajuste na tabela em tela do Relatório de Eventos, a pedido do DG: "Solicitante" saiu da exibição padrão (continua disponível na seleção de campos de impressão/exportação, como Recursos/Efetivo/Atuação desde a v9.0 — é lá, ao clicar em "Imprimir/Exportar", que se escolhe o que realmente sai no documento). Ficaram só Data, Horário, Local, Evento/Motivo e Tipo (+ Lançado em, logado) — as 4 primeiras com largura fixa e justa, só Evento/Motivo é flexível e ocupa o espaço que sobra.'
+    ]
+  },
   {
     version: 'v9.0', date: '30/10/2026',
     changes: [
@@ -8858,7 +8864,9 @@ function relTableRowHTML(e){
     '<td class="tbl-time">'+horarioLabelCompact(e)+'</td>'+
     '<td class="tbl-local">'+esc(e.localRef||'')+'<br><span style="color:var(--ink-3);font-size:11px;">'+esc([addr.bairro,addr.cidade].filter(Boolean).join(', '))+'</span></td>'+
     '<td>'+(e.assunto?esc(e.assunto):'<span style="color:var(--ink-3)">&mdash;</span>')+'</td>'+
-    '<td>'+(e.solicitante?esc(e.solicitante):'&mdash;')+'</td>'+
+    /* v9.1: Solicitante saiu da exibição padrão em tela, a pedido do DG —
+       continua disponível na seleção de campos de impressão/exportação
+       (EVENTOS_REL_FIELDS), igual Recursos/Efetivo/Atuação desde a v9.0. */
     '<td class="th-tipo-compact"><span class="tbl-type '+e.tipo+'"><span class="dot"></span>'+tipoLabel+'</span></td>'+
     /* v8.8: coluna discreta "Lançado em" (createdAt), só pra logado — não
        entra na seleção de campos de impressão/exportação de propósito,
@@ -8895,13 +8903,17 @@ function renderRelatorio(){
     $('relTableWrap').innerHTML = '<div class="empty-state"><h3>Nenhum evento encontrado</h3><p>Ajuste os filtros para gerar o relatório.</p></div>';
     return;
   }
-  /* v9.0, a pedido do DG ("ficou muito carregada"): tabela em tela
-     reduzida a Data/Horário/Local/Evento-Motivo/Solicitante/Tipo (+
-     Lançado em, só logado) — Recursos/Efetivo/Atuação saíram da tela
-     (continuam disponíveis na seleção de campos de impressão/exportação,
-     EVENTOS_REL_FIELDS, pra quem quiser incluir no documento impresso). */
+  /* v9.0/v9.1, a pedido do DG ("ficou muito carregada"): tabela em tela
+     reduzida a Data/Horário/Local/Evento-Motivo/Tipo (+ Lançado em, só
+     logado) — Recursos/Efetivo/Atuação (v9.0) e Solicitante (v9.1) saíram
+     da tela (continuam disponíveis na seleção de campos de impressão/
+     exportação, EVENTOS_REL_FIELDS — é lá, ao clicar em "Imprimir/
+     Exportar", que se escolhe o que realmente sai no documento). Data/
+     Horário/Tipo/Lançado em ficam com largura fixa e justa (ver CSS
+     th-date-compact/th-time-compact/th-tipo-compact); só Local e Evento/
+     Motivo são flexíveis e dividem o espaço que sobra. */
   $('relTableWrap').innerHTML = '<div class="table-wrap"><table class="ev-table rel-ev-table"><thead><tr>'+
-    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th class="th-local">Local</th><th>Evento/Motivo</th><th>Solicitante</th><th class="th-tipo-compact">Tipo</th>'+
+    '<th class="th-date-compact">Data</th><th class="th-time-compact">Horário</th><th class="th-local">Local</th><th>Evento/Motivo</th><th class="th-tipo-compact">Tipo</th>'+
     (authUser ? '<th class="th-date-compact">Lançado em</th>' : '')+
     '</tr></thead><tbody>'+list.map(relTableRowHTML).join('')+'</tbody></table></div>';
 }
